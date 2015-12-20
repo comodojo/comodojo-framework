@@ -6,7 +6,7 @@
     "keywords": [],
     "homepage": "https://comodojo.org",
      "support": {
-        "issues": "https://github.com/comodojo/comodojo/issues"
+        "issues": "https://github.com/comodojo/comodojo.framework/issues"
     },
     "authors": [
         {
@@ -33,5 +33,9 @@
         "comodojo/ldaph": "1.0.*",
         "comodojo/rpcserver": "^1.0",
         "comodojo/qotd": "^1.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^5.0",
+        "scrutinizer/ocular": "^1.0"
     }
 }
