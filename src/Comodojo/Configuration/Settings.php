@@ -26,29 +26,13 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Extender {
+class Settings {
 
-    public static function addTask($name, $class, $description = null) {
-
-    }
-
-    public static function removeTask($name) {
+    public static function addSetting($setting, $value) {
 
     }
 
-    public static function addPlugin($event, $class, $method = null) {
-
-    }
-
-    public static function removePlugin($event, $class, $method = null) {
-
-    }
-
-    public static function addCommand($command, $class, $description = null, $aliases = array(), $options = array(), $arguments = array()) {
-
-    }
-
-    public static function removeCommand($command) {
+    public static function removeSetting($setting, $value) {
 
     }
 
