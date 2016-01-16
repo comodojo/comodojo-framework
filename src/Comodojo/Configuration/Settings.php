@@ -393,6 +393,5 @@ class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
         return $this;
         
     }
-	
 
 }

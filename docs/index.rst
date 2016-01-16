@@ -30,8 +30,10 @@ Contents:
 
    status
    installation
-   authentication
    applications
+   usersandroles
+   authentication
+   appendix_a_installer
 
 Indices and tables
 ==================
