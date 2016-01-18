@@ -30,17 +30,19 @@ use \Exception;
 
 class Authentication implements \Serializable {
 	
-	private $id    = 0;
+	private $id      = 0;
 	
-	private $name  = "";
+	private $name    = "";
 	
-	private $desc  = "";
+	private $desc    = "";
 	
-	private $cls   = "";
+	private $cls     = "";
 	
-	private $param = "";
+	private $param   = "";
 	
-	private $dbh   = null;
+	private $package = "";
+	
+	private $dbh     = null;
 	
 	function __construct(Database $dbh) {
 		
@@ -77,6 +79,20 @@ class Authentication implements \Serializable {
 	public function setDescription($desc) {
 		
 		$this->desc = $desc;
+		
+		return $this;
+		
+	}
+	
+	public function getPackage() {
+		
+		return $this->package;
+		
+	}
+	
+	public function setPackage($package) {
+		
+		$this->package = $package;
 		
 		return $this;
 		
@@ -139,11 +155,12 @@ class Authentication implements \Serializable {
 	
 	private function create() {
 		
-		$query = sprintf("INSERT INTO comodojo_authentication VALUES (0, '%s', '%s', '%s', '%s')",
+		$query = sprintf("INSERT INTO comodojo_authentication VALUES (0, '%s', '%s', '%s', '%s', '%s')",
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->description),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->cls),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->param)
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->param),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->package)
 		);
 		       
         try {
@@ -165,11 +182,12 @@ class Authentication implements \Serializable {
 	
 	private function update() {
 		
-		$query = sprintf("UPDATE comodojo_authentication SET name = '%s', value = '%s', class = '%s', parameters = '%s' WHERE id = %d",
+		$query = sprintf("UPDATE comodojo_authentication SET name = '%s', value = '%s', class = '%s', parameters = '%s', package = '%s' WHERE id = %d",
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->description),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->cls),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->param),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->package),
 			$this->settings[$name]['id']
 		);
 		       
@@ -205,11 +223,12 @@ class Authentication implements \Serializable {
 
         }
         
-        $this->id    = 0;
-        $this->name  = "";
-        $this->desc  = "";
-        $this->cls   = "";
-        $this->param = "";
+        $this->id      = 0;
+        $this->name    = "";
+        $this->desc    = "";
+        $this->cls     = "";
+        $this->param   = "";
+        $this->package = "";
 		
 		return $this;
 		
@@ -219,11 +238,12 @@ class Authentication implements \Serializable {
 		
 		$auth = new Authentication($dbh);
 		
-		$auth->id    = $data[0];
-		$auth->name  = $data[1];
-		$auth->desc  = $data[2];
-		$auth->cls   = $data[3];
-		$auth->param = $data[4];
+		$auth->id      = $data[0];
+		$auth->name    = $data[1];
+		$auth->desc    = $data[2];
+		$auth->cls     = $data[3];
+		$auth->param   = $data[4];
+		$auth->package = $data[5];
         
         return $auth;
 		
@@ -245,7 +265,8 @@ class Authentication implements \Serializable {
     		$this->name,
     		$this->desc,
     		$this->cls,
-    		$this->param
+    		$this->param,
+    		$this->package
     	);
     	
     	return serialize(
@@ -265,11 +286,12 @@ class Authentication implements \Serializable {
     	
     	$data = unserialize($data);
     	
-		$auth->id    = $data[0];
-		$auth->name  = $data[1];
-		$auth->desc  = $data[2];
-		$auth->cls   = $data[3];
-		$auth->param = $data[4];
+		$auth->id      = $data[0];
+		$auth->name    = $data[1];
+		$auth->desc    = $data[2];
+		$auth->cls     = $data[3];
+		$auth->param   = $data[4];
+		$auth->package = $data[5];
         
         return $this;
         

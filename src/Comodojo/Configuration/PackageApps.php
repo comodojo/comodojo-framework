@@ -29,66 +29,75 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Apps implements \Iterator, \ArrayAccess, \Countable, \Serializable {
+class PackageApps implements \Iterator, \ArrayAccess, \Countable, \Serializable {
 	
 	private $apps     = array();
 	
 	private $current  = 0;
 	
+	private $name     = "";
+	
 	private $dbh      = null;
 	
-	function __construct(Database $dbh) {
+	function __construct($name, Database $dbh) {
 		
-		$this->dbh = $dbh;
+		$this->name = $name;
+		$this->dbh  = $dbh;
 		
 		$this->loadApps();
 		
 	}
 	
-	public function getPackageApps($name) {
+	public function getApp($name) {
 		
-		if (in_array($name, $this->apps))
-			return new PackageApps($name, $this->dbh);
-		
-		return null;
+		if (!isset($this->apps[$name]))
+			return null;
+			
+		return PackageApp::loadApp($this->apps[$name], $this->dbh);
 		
 	}
 	
-	public function setPackageApps($name, PackageApps $value) {
+	public function getApps() {
 		
-    	if ($value->getPackageName() !== $name) {
-    		
-    		$value->setPackageName($name);
-    		
-    	}
-    	
-    	return $this->loadApps();
+		return array_keys($this->apps);
 		
 	}
 	
-	public function removePackageApps($name) {
+	public function getPackageName() {
 		
-		if (in_array($name, $this->apps)) {
+		return $this->name;
+		
+	}
+	
+	public function setPackageName($name) {
+		
+		$this->name = $name;
+		
+		foreach ($this->getApps() as $appName) {
 			
-			$apps = new PackageApps($name, $this->dbh);
+			$app = $this->getApp($appName);
 			
-			foreach($apps->getApps() as $app) {
-				
-				$apps->removeApp($app);
-				
-			}
+			$app->setPackageName($name)->save();
 			
 		}
 		
-    	$this->loadApps();
+		return $this;
 		
 	}
 	
-	public function getPackages() {
+	
+	
+	public function removeApp($name) {
 		
-		$this->loadApps();
+		if (isset($this->apps[$name])) {
+			
+			unset($this->apps[$name]);
+			
+			PackageApp::loadApp($this->apps[$name], $this->dbh)->delete();
+			
+		}
 		
-		return $this->apps;
+		return $this;
 		
 	}
 	
@@ -96,7 +105,9 @@ class Apps implements \Iterator, \ArrayAccess, \Countable, \Serializable {
 		
 		$this->apps = array();
 		
-		$query = "SELECT distinct package as p FROM comodojo_apps ORDER BY name";
+		$query = sprintf("SELECT * FROM comodojo_apps WHERE package = '%s' ORDER BY name",
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->name)
+		);
 		       
         try {
             
@@ -115,7 +126,7 @@ class Apps implements \Iterator, \ArrayAccess, \Countable, \Serializable {
 
             foreach ($data as $row) {
             
-            	array_push($this->apps, $row['p']);
+                $this->apps[$row['name']] = intval($row['id']);
             
             }
         
@@ -143,15 +154,15 @@ class Apps implements \Iterator, \ArrayAccess, \Countable, \Serializable {
     }
 	
     /**
-     * Return the current app value
+     * Return the current app description
      *
-     * @return string $value
+     * @return string $description
      */
     public function current() {
     	
-    	$apps = $this->getPackages();
+    	$apps = $this->getApps();
         
-    	return $this->getPackageApps($apps[$this->current]);
+    	return $this->getApp($apps[$this->current]);
         
     }
 	
@@ -162,7 +173,7 @@ class Apps implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      */
     public function key() {
     	
-    	$apps = $this->getPackages();
+    	$apps = $this->getApps();
     	
     	return $apps[$this->current];
         
@@ -182,13 +193,13 @@ class Apps implements \Iterator, \ArrayAccess, \Countable, \Serializable {
     }
 	
     /**
-     * Check if there's a next value
+     * Check if there's a next description
      *
      * @return boolean $hasNext
      */
     public function valid() {
     	
-    	$apps = $this->getPackages();
+    	$apps = $this->getApps();
     	
     	return isset($apps[$this->current]);
         
@@ -207,20 +218,20 @@ class Apps implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      */
     public function offsetExists($name) {
     	
-    	return in_array($name, $this->apps);
+    	return isset($this->apps[$name]);
         
     }
 	
     /**
-     * Get a app value
+     * Get a app description
      *
      * @param string $name
      *
-     * @return string $value
+     * @return string $description
      */
     public function offsetGet($name) {
     	
-        return $this->getPackageApps($name);
+        return $this->getApp($name);
         
     }
 	
@@ -228,13 +239,15 @@ class Apps implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      * Set a app
      *
      * @param string $name
-     * @param string $value
+     * @param PackageApp $app
      *
      * @return Apps $this
      */
-    public function offsetSet($name, $value) {
+    public function offsetSet($name, $app) {
     	
-    	$this->setPackageApps($name, $value);
+    	$app->setName($name)->save();
+    	
+    	$this->apps[$name] = $app->getID();
         
         return $this;
         
@@ -249,7 +262,7 @@ class Apps implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      */
     public function offsetUnset($name) {
         
-        return $this->removePackageApps($name);
+        return $this->removeApp($name);
         
     }
 	

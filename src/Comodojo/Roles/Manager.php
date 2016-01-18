@@ -163,7 +163,7 @@ class Manager implements \Iterator, \ArrayAccess, \Countable, \Serializable {
     	
     	$roles = $this->getRoles();
     	
-    	return $this->getRolesByName($roles[$this->current])->getID();
+    	return $roles[$this->current];
         
     }
 	
@@ -200,13 +200,13 @@ class Manager implements \Iterator, \ArrayAccess, \Countable, \Serializable {
     /**
      * Check if an offset exists
      *
-     * @param int $id
+     * @param string $name
      *
      * @return boolean $hasRole
      */
-    public function offsetExists($id) {
+    public function offsetExists($name) {
     	
-    	$role = $this->getRoleByID($id);
+    	$role = $this->getRoleByName($name);
     	
     	return !is_null($role);
         
@@ -215,39 +215,44 @@ class Manager implements \Iterator, \ArrayAccess, \Countable, \Serializable {
     /**
      * Get a role
      *
-     * @param int $id
+     * @param string $name
      *
      * @return Role $role
      */
-    public function offsetGet($id) {
+    public function offsetGet($name) {
     	
-        return $this->getRoleByID($id);
+        return $this->getRoleByName($name);
         
     }
 	
     /**
      * Set a role
      *
-     * @param int  $id
-     * @param Role $value
+     * @param string $name
+     * @param Role   $value
      *
      * @return Manager $this
      */
-    public function offsetSet($id, &$value) {
+    public function offsetSet($name, &$value) {
     	
-    	$role = $this->getRoleByName($id);
+    	$role = $this->getRoleByName($name);
     	
     	if (!is_null($role)) {
     		
-    		$role->setName($value->getName())->setDescription($value->getDescription());
+    		$value->setName($name);
+    		
+    		$role->setName($value->getName())
+    			->setDescription($value->getDescription())
+    			->setPackage($value->getPackage());
     		
     	} else {
     		
-    		$role = $this->addRole($value->getName(), $value->getDescription());
+    		$role = $this->addRole($value->getName(), $value->getDescription())
+    			->setPackage($value->getPackage());
     		
     	}
     	
-        $value = $role;
+        $value = $role->save();
         
         return $this;
         
@@ -256,13 +261,13 @@ class Manager implements \Iterator, \ArrayAccess, \Countable, \Serializable {
     /**
      * Remove a setting
      *
-     * @param int  $id
+     * @param string $name
      *
      * @return Manager $this
      */
-    public function offsetUnset($id) {
+    public function offsetUnset($name) {
     	
-    	$role = $this->getRoleByName($id);
+    	$role = $this->getRoleByName($name);
     	
     	if (!is_null($role)) {
     		

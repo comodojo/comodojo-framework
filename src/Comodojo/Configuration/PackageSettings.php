@@ -29,66 +29,179 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
+class PackageSettings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
 	
 	private $settings = array();
 	
 	private $current  = 0;
 	
+	private $name     = "";
+	
 	private $dbh      = null;
 	
-	function __construct(Database $dbh) {
+	function __construct($name, Database $dbh) {
 		
-		$this->dbh = $dbh;
+		$this->name = $name;
+		$this->dbh  = $dbh;
 		
 		$this->loadSettings();
 		
 	}
 	
-	public function getPackageSettings($name) {
+	public function getValue($name) {
 		
-		if (in_array($name, $this->settings))
-			return new PackageSettings($name, $this->dbh);
+		if (!isset($this->settings[$name]))
+			return false;
 		
-		return null;
-		
-	}
-	
-	public function setPackageSettings($name, PackageSettings $value) {
-		
-    	if ($value->getPackageName() !== $name) {
-    		
-    		$value->setPackageName($name);
-    		
-    	}
-    	
-    	return $this->loadSettings();
+		return $this->settings[$name]['value'];
 		
 	}
 	
-	public function removePackageSettings($name) {
+	public function setValue($name, $value) {
 		
-		if (in_array($name, $this->settings)) {
+		if (!isset($this->settings[$name])) {
 			
-			$settings = new PackageSettings($name, $this->dbh);
-			
-			foreach($settings->getSettings() as $setting) {
-				
-				$settings->removeSetting($setting);
-				
-			}
+			$this->settings[$name] = array();
+			$this->settings[$name]['id'] = 0;
 			
 		}
 		
-    	$this->loadSettings();
+		$this->settings[$name]['value'] = $value;
+		
+		$this->saveSetting($name);
+		
+		return $this;
 		
 	}
 	
-	public function getPackages() {
+	public function getSettings() {
 		
-		$this->loadSettings();
+		return array_keys($this->settings);
 		
-		return $this->settings;
+	}
+	
+	public function getPackageName() {
+		
+		return $this->name;
+		
+	}
+	
+	public function setPackageName($name) {
+		
+		$this->name = $name;
+		
+		foreach ($this->getSettings() as $setting)
+			$this->updateSetting($setting);
+		
+		return $this;
+		
+	}
+	
+	
+	
+	public function removeSetting($name) {
+		
+		if (isset($this->settings[$name])) {
+			
+			unset($this->settings[$name]);
+			
+			$this->deleteSetting($name);
+			
+		}
+		
+		return $this;
+		
+	}
+	
+	private function saveSetting($name) {
+		
+		if (isset($this->settings[$name])) {
+		
+			if ($this->settings[$name]['id'] == 0) {
+				
+				$this->createSetting($name);
+				
+			} else {
+				
+				$this->updateSetting($name);
+				
+			}
+			
+			ksort($this->settings);
+			
+		}
+		
+		return $this;
+		
+	}
+	
+	private function createSetting($name) {
+		
+		$query = sprintf("INSERT INTO comodojo_settings VALUES (0, '%s', '%s', '%s')",
+			mysqli_real_escape_string($this->dbh->getHandler(), $name),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->settings[$name]['value']),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->name)
+		);
+		       
+        try {
+            
+            $result = $this->dbh->query($query);
+         
+
+        } catch (DatabaseException $de) {
+            
+            throw $de;
+
+        }
+        
+        $this->settings[$name]['id'] = $result->getInsertId();
+        
+        return $this;
+		
+	}
+	
+	private function updateSetting($name) {
+		
+		$query = sprintf("UPDATE comodojo_settings SET name = '%s', value = '%s', package = '%s' WHERE id = %d",
+			mysqli_real_escape_string($this->dbh->getHandler(), $name),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->settings[$name]['value']),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
+			$this->settings[$name]['id']
+		);
+		       
+        try {
+            
+            $this->dbh->query($query);
+         
+
+        } catch (DatabaseException $de) {
+            
+            throw $de;
+
+        }
+        
+        return $this;
+		
+	}
+	
+	private function deleteSetting($name) {
+		
+		$query = sprintf("DELETE FROM comodojo_settings WHERE id = %d",
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->settings[$name]['id'])
+		);
+		       
+        try {
+            
+            $this->dbh->query($query);
+         
+
+        } catch (DatabaseException $de) {
+            
+            throw $de;
+
+        }
+		
+		return $this;
 		
 	}
 	
@@ -96,7 +209,9 @@ class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
 		
 		$this->settings = array();
 		
-		$query = "SELECT distinct package as p FROM comodojo_settings ORDER BY name";
+		$query = sprintf("SELECT * FROM comodojo_settings WHERE package = '%s' ORDER BY name",
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->name)
+		);
 		       
         try {
             
@@ -115,7 +230,10 @@ class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
 
             foreach ($data as $row) {
             
-            	array_push($this->settings, $row['p']);
+                $this->settings[$row['name']] = array();
+                
+                $this->settings[$row['name']]['id']    = intval($row['id']);
+                $this->settings[$row['name']]['value'] = $row['value'];
             
             }
         
@@ -149,9 +267,9 @@ class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      */
     public function current() {
     	
-    	$settings = $this->getPackages();
+    	$settings = $this->getSettings();
         
-    	return $this->getPackageSettings($settings[$this->current]);
+    	return $this->getValue($settings[$this->current]);
         
     }
 	
@@ -162,7 +280,7 @@ class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      */
     public function key() {
     	
-    	$settings = $this->getPackages();
+    	$settings = $this->getSettings();
     	
     	return $settings[$this->current];
         
@@ -188,7 +306,7 @@ class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      */
     public function valid() {
     	
-    	$settings = $this->getPackages();
+    	$settings = $this->getSettings();
     	
     	return isset($settings[$this->current]);
         
@@ -207,7 +325,7 @@ class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      */
     public function offsetExists($name) {
     	
-    	return in_array($name, $this->settings);
+    	return isset($this->settings[$name]);
         
     }
 	
@@ -220,7 +338,7 @@ class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      */
     public function offsetGet($name) {
     	
-        return $this->getPackageSettings($name);
+        return $this->getValue($name);
         
     }
 	
@@ -234,7 +352,7 @@ class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      */
     public function offsetSet($name, $value) {
     	
-    	$this->setPackageSettings($name, $value);
+        $this->setValue($name, $value);
         
         return $this;
         
@@ -249,7 +367,7 @@ class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      */
     public function offsetUnset($name) {
         
-        return $this->removePackageSettings($name);
+        return $this->removeSetting($name);
         
     }
 	
