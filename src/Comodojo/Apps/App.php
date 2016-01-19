@@ -29,7 +29,7 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class PackageApp implements \Serializable {
+class App implements \Serializable {
 	
 	private $id   = 0;
 	
@@ -54,13 +54,27 @@ class PackageApp implements \Serializable {
 		
 	}
 	
+	public function getName() {
+		
+		return $this->name;
+		
+	}
+	
+	public function setName($name) {
+		
+		$this->name = $name;
+		
+		return $this;
+		
+	}
+	
 	public function getDescription() {
 		
 		return $this->description;
 		
 	}
 	
-	public function setDescription($description = "") {
+	public function setDescription($description) {
 		
 		$this->description = $description;
 		
@@ -149,7 +163,7 @@ class PackageApp implements \Serializable {
         	
         	$data = $data[0];
         	
-        	$app = new PackageApp($data['package'], $dbh);
+        	$app = new App($data['package'], $dbh);
         	
         	$app->id   = $data['id'];
         	$app->name = $data['name'];

@@ -29,9 +29,11 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
+class Apps implements \Iterator, \ArrayAccess, \Countable, \Serializable {
 	
-	private $settings = array();
+	private $apps     = array();
+	
+	private $packages = array();
 	
 	private $current  = 0;
 	
@@ -41,62 +43,72 @@ class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
 		
 		$this->dbh = $dbh;
 		
-		$this->loadSettings();
+		$this->loadApps();
 		
 	}
 	
-	public function getPackageSettings($name) {
+	public function getPackageApps($name) {
 		
-		if (in_array($name, $this->settings))
-			return new PackageSettings($name, $this->dbh);
-		
-		return null;
+		return $this->packages[$name];
 		
 	}
 	
-	public function setPackageSettings($name, PackageSettings $value) {
+	public function getApp($name) {
 		
-    	if ($value->getPackageName() !== $name) {
-    		
-    		$value->setPackageName($name);
-    		
-    	}
+		if (!isset($this->apps[$name]))
+			return null;
+			
+		return App::loadApp($this->apps[$name], $this->dbh);
+		
+	}
+	
+	public function addApp($name, $app) {
     	
-    	return $this->loadSettings();
+    	$app->setName($name)->save();
+    	
+    	$this->apps[$name] = $app->getID();
+    	
+    	array_push($this->packages[$plugin->getPackage()], $name);
+    	
+    	sort($this->packages[$plugin->getPackage()]);
+        
+        return $this;
 		
 	}
 	
-	public function removePackageSettings($name) {
+	public function removeApp($name) {
 		
-		if (in_array($name, $this->settings)) {
-			
-			$settings = new PackageSettings($name, $this->dbh);
-			
-			foreach($settings->getSettings() as $setting) {
-				
-				$settings->removeSetting($setting);
-				
-			}
-			
-		}
+		$app = $this->getApp($name);
 		
-    	$this->loadSettings();
+		unset($this->apps[$name]);
+		
+		$idx = array_search($name, $this->packages[$app->getPackage()]);
+		
+		array_splice($this->packages[$app->getPackage()], $idx, 1);
+    	
+    	$app->delete();
+        
+        return $this;
+		
+	}
+	
+	public function getApps() {
+		
+		return array_keys($this->apps);
 		
 	}
 	
 	public function getPackages() {
 		
-		$this->loadSettings();
-		
-		return $this->settings;
+		return array_keys($this->packages);
 		
 	}
 	
-	private function loadSettings() {
+	private function loadApps() {
 		
-		$this->settings = array();
+		$this->apps = array();
 		
-		$query = "SELECT distinct package as p FROM comodojo_settings ORDER BY name";
+		$query = "SELECT distinct package as p, name, id FROM comodojo_apps ORDER BY name";
 		       
         try {
             
@@ -115,37 +127,18 @@ class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
 
             foreach ($data as $row) {
             
-            	array_push($this->settings, $row['p']);
+            	if (isset($this->packages[$row['p']]))
+            		$this->packages[$row['p']] = array();
+            		
+            	array_push($this->packages[$row['p']], $row['name']);
+            	
+            	$this->apps[$row['name']] = $row['id'];
             
             }
         
         }
         
         return $this;
-		
-	}
-	
-	public static function addSetting($package, $name, $value, $dbh) {
-		
-		$pack = new PackageSettings($package, $dbh);
-		
-		return $pack->setValue($name, $value);
-		
-	}
-	
-	public static function removeSetting($package, $name, $dbh) {
-		
-		$pack = new PackageSettings($package, $dbh);
-		
-		return $pack->removeSetting($name);
-		
-	}
-	
-	public static function getSetting($package, $name, $dbh) {
-		
-		$pack = new PackageSettings($package, $dbh);
-		
-		return $pack->getValue($name);
 		
 	}
 	
@@ -156,7 +149,7 @@ class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
     /**
      * Reset the iterator
      *
-     * @return Settings $this
+     * @return Apps $this
      */
     public function rewind() {
 			
@@ -167,35 +160,35 @@ class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
     }
 	
     /**
-     * Return the current setting value
+     * Return the current app value
      *
      * @return string $value
      */
     public function current() {
     	
-    	$settings = $this->getPackages();
+    	$apps = $this->getApps();
         
-    	return $this->getPackageSettings($settings[$this->current]);
+    	return $this->getApp($apps[$this->current]);
         
     }
 	
     /**
-     * Return the current setting name
+     * Return the current app name
      *
      * @return string $name
      */
     public function key() {
     	
-    	$settings = $this->getPackages();
+    	$apps = $this->getApps();
     	
-    	return $settings[$this->current];
+    	return $apps[$this->current];
         
     }
 	
     /**
      * Fetch the iterator
      *
-     * @return Settings $this
+     * @return Apps $this
      */
     public function next() {
     
@@ -212,9 +205,9 @@ class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      */
     public function valid() {
     	
-    	$settings = $this->getPackages();
+    	$apps = $this->getApps();
     	
-    	return isset($settings[$this->current]);
+    	return isset($apps[$this->current]);
         
     }
 	
@@ -227,16 +220,16 @@ class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      *
      * @param string $name
      *
-     * @return boolean $hasSetting
+     * @return boolean $hasApp
      */
     public function offsetExists($name) {
     	
-    	return in_array($name, $this->settings);
+    	return in_array($name, $this->apps);
         
     }
 	
     /**
-     * Get a setting value
+     * Get a app value
      *
      * @param string $name
      *
@@ -244,36 +237,34 @@ class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      */
     public function offsetGet($name) {
     	
-        return $this->getPackageSettings($name);
+        return $this->getApp($name);
         
     }
 	
     /**
-     * Set a setting
+     * Set a app
      *
      * @param string $name
      * @param string $value
      *
-     * @return Settings $this
+     * @return Apps $this
      */
-    public function offsetSet($name, $value) {
+    public function offsetSet($name, $app) {
     	
-    	$this->setPackageSettings($name, $value);
-        
-        return $this;
+    	return $this->addApp($name, $app);
         
     }
 	
     /**
-     * Remove a setting
+     * Remove a app
      *
      * @param string $name
      *
-     * @return Settings $this
+     * @return Apps $this
      */
     public function offsetUnset($name) {
         
-        return $this->removePackageSettings($name);
+        return $this->removeApp($name);
         
     }
 	
@@ -282,15 +273,15 @@ class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      */
 	
     /**
-     * Return the amount of settings loaded
+     * Return the amount of apps loaded
      *
      * @return int $count
      */
     public function count() {
     	
-    	$settings = $this->getSettings();
+    	$apps = $this->getApps();
     	
-    	return count($settings);
+    	return count($apps);
         
     }
 	
@@ -305,9 +296,10 @@ class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      */
     public function serialize() {
     	
-    	return serialize(
-            $this->settings
-        );
+    	return serialize(array(
+            json_encode($this->apps),
+            json_encode($this->packages)
+        ));
         
     }
 	
@@ -316,11 +308,14 @@ class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      *
      * @param string $data Serialized data
      *
-     * @return Settings $this
+     * @return Apps $this
      */
     public function unserialize($data) {
     	
-    	$this->settings = unserialize($data);
+    	$data = unserialize($data);
+    	
+    	$this->apps     = json_decode($data[0], true);
+    	$this->packages = json_decode($data[1], true);
         
         return $this;
         

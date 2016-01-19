@@ -29,9 +29,11 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Apps implements \Iterator, \ArrayAccess, \Countable, \Serializable {
+class Plugins implements \Iterator, \ArrayAccess, \Countable, \Serializable {
 	
-	private $apps     = array();
+	private $plugins  = array();
+	
+	private $fw       = array();
 	
 	private $current  = 0;
 	
@@ -39,64 +41,60 @@ class Apps implements \Iterator, \ArrayAccess, \Countable, \Serializable {
 	
 	function __construct(Database $dbh) {
 		
-		$this->dbh = $dbh;
+		$this->dbh  = $dbh;
 		
-		$this->loadApps();
-		
-	}
-	
-	public function getPackageApps($name) {
-		
-		if (in_array($name, $this->apps))
-			return new PackageApps($name, $this->dbh);
-		
-		return null;
+		$this->loadPlugins();
 		
 	}
 	
-	public function setPackageApps($name, PackageApps $value) {
+	public function getPlugin($name) {
 		
-    	if ($value->getPackageName() !== $name) {
-    		
-    		$value->setPackageName($name);
-    		
-    	}
-    	
-    	return $this->loadApps();
-		
-	}
-	
-	public function removePackageApps($name) {
-		
-		if (in_array($name, $this->apps)) {
+		if (!isset($this->plugins[$name]))
+			return null;
 			
-			$apps = new PackageApps($name, $this->dbh);
+		return Plugin::loadPlugin($this->plugins[$name], $this->dbh);
+		
+	}
+	
+	public function getPlugins() {
+		
+		return array_keys($this->plugins);
+		
+	}
+	
+	public function getSupportedFrameworks() {
+		
+		return array_keys($this->fw);
+		
+	}
+	
+	public function getPluginsByFramework($fw) {
+		
+		return $this->fw[$fw];
+		
+	}
+	
+	public function removePlugin($name) {
+		
+		if (isset($this->plugins[$name])) {
 			
-			foreach($apps->getApps() as $app) {
-				
-				$apps->removeApp($app);
-				
-			}
+			unset($this->plugins[$name]);
+			
+			Plugin::loadPlugin($this->plugins[$name], $this->dbh)->delete();
 			
 		}
 		
-    	$this->loadApps();
+		return $this;
 		
 	}
 	
-	public function getPackages() {
+	private function loadPlugins() {
 		
-		$this->loadApps();
+		$this->plugins = array();
 		
-		return $this->apps;
-		
-	}
-	
-	private function loadApps() {
-		
-		$this->apps = array();
-		
-		$query = "SELECT distinct package as p FROM comodojo_apps ORDER BY name";
+		$query = sprintf("SELECT * FROM comodojo_plugins WHERE package = '%s' ORDER BY name",
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->name)
+		);
 		       
         try {
             
@@ -115,10 +113,21 @@ class Apps implements \Iterator, \ArrayAccess, \Countable, \Serializable {
 
             foreach ($data as $row) {
             
-            	array_push($this->apps, $row['p']);
+                $this->plugins[$row['name']] = intval($row['id']);
+                
+                if (!isset($this->fw[$row['framework']]))
+                	$this->fw[$row['framework']] = array();
+                	
+                array_push($this->fw[$row['framework']], $row['name']);
             
             }
         
+        }
+        
+        foreach ($this->fw as $fw => $list) {
+        	
+        	$this->fw[$fw] = sort($list);
+        	
         }
         
         return $this;
@@ -132,7 +141,7 @@ class Apps implements \Iterator, \ArrayAccess, \Countable, \Serializable {
     /**
      * Reset the iterator
      *
-     * @return Apps $this
+     * @return Plugins $this
      */
     public function rewind() {
 			
@@ -143,35 +152,35 @@ class Apps implements \Iterator, \ArrayAccess, \Countable, \Serializable {
     }
 	
     /**
-     * Return the current app value
+     * Return the current plugin description
      *
-     * @return string $value
+     * @return string $description
      */
     public function current() {
     	
-    	$apps = $this->getPackages();
+    	$plugins = $this->getPlugins();
         
-    	return $this->getPackageApps($apps[$this->current]);
+    	return $this->getPlugin($plugins[$this->current]);
         
     }
 	
     /**
-     * Return the current app name
+     * Return the current plugin name
      *
      * @return string $name
      */
     public function key() {
     	
-    	$apps = $this->getPackages();
+    	$plugins = $this->getPlugins();
     	
-    	return $apps[$this->current];
+    	return $plugins[$this->current];
         
     }
 	
     /**
      * Fetch the iterator
      *
-     * @return Apps $this
+     * @return Plugins $this
      */
     public function next() {
     
@@ -182,15 +191,15 @@ class Apps implements \Iterator, \ArrayAccess, \Countable, \Serializable {
     }
 	
     /**
-     * Check if there's a next value
+     * Check if there's a next description
      *
      * @return boolean $hasNext
      */
     public function valid() {
     	
-    	$apps = $this->getPackages();
+    	$plugins = $this->getPlugins();
     	
-    	return isset($apps[$this->current]);
+    	return isset($plugins[$this->current]);
         
     }
 	
@@ -203,53 +212,59 @@ class Apps implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      *
      * @param string $name
      *
-     * @return boolean $hasApp
+     * @return boolean $hasPlugin
      */
     public function offsetExists($name) {
     	
-    	return in_array($name, $this->apps);
+    	return isset($this->plugins[$name]);
         
     }
 	
     /**
-     * Get a app value
+     * Get a plugin description
      *
      * @param string $name
      *
-     * @return string $value
+     * @return string $description
      */
     public function offsetGet($name) {
     	
-        return $this->getPackageApps($name);
+        return $this->getPlugin($name);
         
     }
 	
     /**
-     * Set a app
+     * Set a plugin
      *
      * @param string $name
-     * @param string $value
+     * @param Plugin $plugin
      *
-     * @return Apps $this
+     * @return Plugins $this
      */
-    public function offsetSet($name, $value) {
+    public function offsetSet($name, $plugin) {
     	
-    	$this->setPackageApps($name, $value);
+    	$plugin->setName($name)->save();
+    	
+    	$this->plugins[$name] = $plugin->getID();
+    	
+    	array_push($this->fw[$plugin->getFramework()], $name);
+    	
+    	sort($this->fw[$plugin->getFramework()]);
         
         return $this;
         
     }
 	
     /**
-     * Remove a app
+     * Remove a plugin
      *
      * @param string $name
      *
-     * @return Apps $this
+     * @return Plugins $this
      */
     public function offsetUnset($name) {
         
-        return $this->removePackageApps($name);
+        return $this->removePlugin($name);
         
     }
 	
@@ -258,15 +273,15 @@ class Apps implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      */
 	
     /**
-     * Return the amount of apps loaded
+     * Return the amount of plugins loaded
      *
      * @return int $count
      */
     public function count() {
     	
-    	$apps = $this->getApps();
+    	$plugins = $this->getPlugins();
     	
-    	return count($apps);
+    	return count($plugins);
         
     }
 	
@@ -281,9 +296,10 @@ class Apps implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      */
     public function serialize() {
     	
-    	return serialize(
-            $this->apps
-        );
+    	return serialize(array(
+            json_encode($this->plugins),
+            json_encode($this->fw)
+        ));
         
     }
 	
@@ -292,11 +308,14 @@ class Apps implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      *
      * @param string $data Serialized data
      *
-     * @return Apps $this
+     * @return Plugins $this
      */
     public function unserialize($data) {
     	
-    	$this->apps = unserialize($data);
+    	$data = unserialize($data);
+    	
+    	$this->plugins = json_decode($data[0], true);
+    	$this->fw      = json_decode($data[1], true);
         
         return $this;
         

@@ -29,55 +29,44 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class PackageApps implements \Iterator, \ArrayAccess, \Countable, \Serializable {
+class Routes implements \Iterator, \ArrayAccess, \Countable, \Serializable {
 	
-	private $apps     = array();
+	private $routes   = array();
 	
 	private $current  = 0;
 	
-	private $name     = "";
-	
 	private $dbh      = null;
 	
-	function __construct($name, Database $dbh) {
+	function __construct(Database $dbh) {
 		
-		$this->name = $name;
 		$this->dbh  = $dbh;
 		
-		$this->loadApps();
+		$this->loadRoutes();
 		
 	}
 	
-	public function getApp($name) {
+	public function getRoute($name) {
 		
-		if (!isset($this->apps[$name]))
+		if (!isset($this->routes[$name]))
 			return null;
 			
-		return PackageApp::loadApp($this->apps[$name], $this->dbh);
+		return Route::loadRoute($this->routes[$name], $this->dbh);
 		
 	}
 	
-	public function getApps() {
+	public function getRoutes() {
 		
-		return array_keys($this->apps);
-		
-	}
-	
-	public function getPackageName() {
-		
-		return $this->name;
+		return array_keys($this->routes);
 		
 	}
 	
-	public function setPackageName($name) {
+	public function removeRoute($name) {
 		
-		$this->name = $name;
-		
-		foreach ($this->getApps() as $appName) {
+		if (isset($this->routes[$name])) {
 			
-			$app = $this->getApp($appName);
+			unset($this->routes[$name]);
 			
-			$app->setPackageName($name)->save();
+			Route::loadRoute($this->routes[$name], $this->dbh)->delete();
 			
 		}
 		
@@ -85,29 +74,11 @@ class PackageApps implements \Iterator, \ArrayAccess, \Countable, \Serializable 
 		
 	}
 	
-	
-	
-	public function removeApp($name) {
+	private function loadRoutes() {
 		
-		if (isset($this->apps[$name])) {
-			
-			unset($this->apps[$name]);
-			
-			PackageApp::loadApp($this->apps[$name], $this->dbh)->delete();
-			
-		}
+		$this->routes = array();
 		
-		return $this;
-		
-	}
-	
-	private function loadApps() {
-		
-		$this->apps = array();
-		
-		$query = sprintf("SELECT * FROM comodojo_apps WHERE package = '%s' ORDER BY name",
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->name)
-		);
+		$query = "SELECT * FROM comodojo_routes ORDER BY route";
 		       
         try {
             
@@ -126,7 +97,7 @@ class PackageApps implements \Iterator, \ArrayAccess, \Countable, \Serializable 
 
             foreach ($data as $row) {
             
-                $this->apps[$row['name']] = intval($row['id']);
+                $this->routes[$row['route']] = intval($row['id']);
             
             }
         
@@ -143,7 +114,7 @@ class PackageApps implements \Iterator, \ArrayAccess, \Countable, \Serializable 
     /**
      * Reset the iterator
      *
-     * @return Apps $this
+     * @return Routes $this
      */
     public function rewind() {
 			
@@ -154,35 +125,35 @@ class PackageApps implements \Iterator, \ArrayAccess, \Countable, \Serializable 
     }
 	
     /**
-     * Return the current app description
+     * Return the current route description
      *
      * @return string $description
      */
     public function current() {
     	
-    	$apps = $this->getApps();
+    	$routes = $this->getRoutes();
         
-    	return $this->getApp($apps[$this->current]);
+    	return $this->getRoute($routes[$this->current]);
         
     }
 	
     /**
-     * Return the current app name
+     * Return the current route name
      *
      * @return string $name
      */
     public function key() {
     	
-    	$apps = $this->getApps();
+    	$routes = $this->getRoutes();
     	
-    	return $apps[$this->current];
+    	return $routes[$this->current];
         
     }
 	
     /**
      * Fetch the iterator
      *
-     * @return Apps $this
+     * @return Routes $this
      */
     public function next() {
     
@@ -199,9 +170,9 @@ class PackageApps implements \Iterator, \ArrayAccess, \Countable, \Serializable 
      */
     public function valid() {
     	
-    	$apps = $this->getApps();
+    	$routes = $this->getRoutes();
     	
-    	return isset($apps[$this->current]);
+    	return isset($routes[$this->current]);
         
     }
 	
@@ -214,16 +185,16 @@ class PackageApps implements \Iterator, \ArrayAccess, \Countable, \Serializable 
      *
      * @param string $name
      *
-     * @return boolean $hasApp
+     * @return boolean $hasRoute
      */
     public function offsetExists($name) {
     	
-    	return isset($this->apps[$name]);
+    	return isset($this->routes[$name]);
         
     }
 	
     /**
-     * Get a app description
+     * Get a route description
      *
      * @param string $name
      *
@@ -231,38 +202,38 @@ class PackageApps implements \Iterator, \ArrayAccess, \Countable, \Serializable 
      */
     public function offsetGet($name) {
     	
-        return $this->getApp($name);
+        return $this->getRoute($name);
         
     }
 	
     /**
-     * Set a app
+     * Set a route
      *
      * @param string $name
-     * @param PackageApp $app
+     * @param Route $route
      *
-     * @return Apps $this
+     * @return Routes $this
      */
-    public function offsetSet($name, $app) {
+    public function offsetSet($name, $route) {
     	
-    	$app->setName($name)->save();
+    	$route->setName($name)->save();
     	
-    	$this->apps[$name] = $app->getID();
+    	$this->routes[$name] = $route->getID();
         
         return $this;
         
     }
 	
     /**
-     * Remove a app
+     * Remove a route
      *
      * @param string $name
      *
-     * @return Apps $this
+     * @return Routes $this
      */
     public function offsetUnset($name) {
         
-        return $this->removeApp($name);
+        return $this->removeRoute($name);
         
     }
 	
@@ -271,15 +242,15 @@ class PackageApps implements \Iterator, \ArrayAccess, \Countable, \Serializable 
      */
 	
     /**
-     * Return the amount of apps loaded
+     * Return the amount of routes loaded
      *
      * @return int $count
      */
     public function count() {
     	
-    	$apps = $this->getApps();
+    	$routes = $this->getRoutes();
     	
-    	return count($apps);
+    	return count($routes);
         
     }
 	
@@ -295,7 +266,7 @@ class PackageApps implements \Iterator, \ArrayAccess, \Countable, \Serializable 
     public function serialize() {
     	
     	return serialize(
-            $this->apps
+            $this->routes
         );
         
     }
@@ -305,11 +276,11 @@ class PackageApps implements \Iterator, \ArrayAccess, \Countable, \Serializable 
      *
      * @param string $data Serialized data
      *
-     * @return Apps $this
+     * @return Routes $this
      */
     public function unserialize($data) {
     	
-    	$this->apps = unserialize($data);
+    	$this->routes = unserialize($data);
         
         return $this;
         

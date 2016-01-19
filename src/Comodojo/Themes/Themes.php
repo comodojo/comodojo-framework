@@ -29,9 +29,9 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
+class Themes implements \Iterator, \ArrayAccess, \Countable, \Serializable {
 	
-	private $settings = array();
+	private $themes     = array();
 	
 	private $current  = 0;
 	
@@ -39,64 +39,48 @@ class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
 	
 	function __construct(Database $dbh) {
 		
-		$this->dbh = $dbh;
+		$this->dbh  = $dbh;
 		
-		$this->loadSettings();
-		
-	}
-	
-	public function getPackageSettings($name) {
-		
-		if (in_array($name, $this->settings))
-			return new PackageSettings($name, $this->dbh);
-		
-		return null;
+		$this->loadThemes();
 		
 	}
 	
-	public function setPackageSettings($name, PackageSettings $value) {
+	public function getTheme($name) {
 		
-    	if ($value->getPackageName() !== $name) {
-    		
-    		$value->setPackageName($name);
-    		
-    	}
-    	
-    	return $this->loadSettings();
-		
-	}
-	
-	public function removePackageSettings($name) {
-		
-		if (in_array($name, $this->settings)) {
+		if (!isset($this->themes[$name]))
+			return null;
 			
-			$settings = new PackageSettings($name, $this->dbh);
+		return Theme::loadTheme($this->themes[$name], $this->dbh);
+		
+	}
+	
+	public function getThemes() {
+		
+		return array_keys($this->themes);
+		
+	}
+	
+	public function removeTheme($name) {
+		
+		if (isset($this->themes[$name])) {
 			
-			foreach($settings->getSettings() as $setting) {
-				
-				$settings->removeSetting($setting);
-				
-			}
+			unset($this->themes[$name]);
+			
+			Theme::loadTheme($this->themes[$name], $this->dbh)->delete();
 			
 		}
 		
-    	$this->loadSettings();
+		return $this;
 		
 	}
 	
-	public function getPackages() {
+	private function loadThemes() {
 		
-		$this->loadSettings();
+		$this->themes = array();
 		
-		return $this->settings;
-		
-	}
-	
-	private function loadSettings() {
-		
-		$this->settings = array();
-		
-		$query = "SELECT distinct package as p FROM comodojo_settings ORDER BY name";
+		$query = sprintf("SELECT * FROM comodojo_themes WHERE package = '%s' ORDER BY name",
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->name)
+		);
 		       
         try {
             
@@ -115,37 +99,13 @@ class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
 
             foreach ($data as $row) {
             
-            	array_push($this->settings, $row['p']);
+                $this->themes[$row['name']] = intval($row['id']);
             
             }
         
         }
         
         return $this;
-		
-	}
-	
-	public static function addSetting($package, $name, $value, $dbh) {
-		
-		$pack = new PackageSettings($package, $dbh);
-		
-		return $pack->setValue($name, $value);
-		
-	}
-	
-	public static function removeSetting($package, $name, $dbh) {
-		
-		$pack = new PackageSettings($package, $dbh);
-		
-		return $pack->removeSetting($name);
-		
-	}
-	
-	public static function getSetting($package, $name, $dbh) {
-		
-		$pack = new PackageSettings($package, $dbh);
-		
-		return $pack->getValue($name);
 		
 	}
 	
@@ -156,7 +116,7 @@ class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
     /**
      * Reset the iterator
      *
-     * @return Settings $this
+     * @return Themes $this
      */
     public function rewind() {
 			
@@ -167,35 +127,35 @@ class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
     }
 	
     /**
-     * Return the current setting value
+     * Return the current theme description
      *
-     * @return string $value
+     * @return string $description
      */
     public function current() {
     	
-    	$settings = $this->getPackages();
+    	$themes = $this->getThemes();
         
-    	return $this->getPackageSettings($settings[$this->current]);
+    	return $this->getTheme($themes[$this->current]);
         
     }
 	
     /**
-     * Return the current setting name
+     * Return the current theme name
      *
      * @return string $name
      */
     public function key() {
     	
-    	$settings = $this->getPackages();
+    	$themes = $this->getThemes();
     	
-    	return $settings[$this->current];
+    	return $themes[$this->current];
         
     }
 	
     /**
      * Fetch the iterator
      *
-     * @return Settings $this
+     * @return Themes $this
      */
     public function next() {
     
@@ -206,15 +166,15 @@ class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
     }
 	
     /**
-     * Check if there's a next value
+     * Check if there's a next description
      *
      * @return boolean $hasNext
      */
     public function valid() {
     	
-    	$settings = $this->getPackages();
+    	$themes = $this->getThemes();
     	
-    	return isset($settings[$this->current]);
+    	return isset($themes[$this->current]);
         
     }
 	
@@ -227,53 +187,55 @@ class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      *
      * @param string $name
      *
-     * @return boolean $hasSetting
+     * @return boolean $hasTheme
      */
     public function offsetExists($name) {
     	
-    	return in_array($name, $this->settings);
+    	return isset($this->themes[$name]);
         
     }
 	
     /**
-     * Get a setting value
+     * Get a theme description
      *
      * @param string $name
      *
-     * @return string $value
+     * @return string $description
      */
     public function offsetGet($name) {
     	
-        return $this->getPackageSettings($name);
+        return $this->getTheme($name);
         
     }
 	
     /**
-     * Set a setting
+     * Set a theme
      *
      * @param string $name
-     * @param string $value
+     * @param Theme $theme
      *
-     * @return Settings $this
+     * @return Themes $this
      */
-    public function offsetSet($name, $value) {
+    public function offsetSet($name, $theme) {
     	
-    	$this->setPackageSettings($name, $value);
+    	$theme->setName($name)->save();
+    	
+    	$this->themes[$name] = $theme->getID();
         
         return $this;
         
     }
 	
     /**
-     * Remove a setting
+     * Remove a theme
      *
      * @param string $name
      *
-     * @return Settings $this
+     * @return Themes $this
      */
     public function offsetUnset($name) {
         
-        return $this->removePackageSettings($name);
+        return $this->removeTheme($name);
         
     }
 	
@@ -282,15 +244,15 @@ class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      */
 	
     /**
-     * Return the amount of settings loaded
+     * Return the amount of themes loaded
      *
      * @return int $count
      */
     public function count() {
     	
-    	$settings = $this->getSettings();
+    	$themes = $this->getThemes();
     	
-    	return count($settings);
+    	return count($themes);
         
     }
 	
@@ -306,7 +268,7 @@ class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
     public function serialize() {
     	
     	return serialize(
-            $this->settings
+            $this->themes
         );
         
     }
@@ -316,11 +278,11 @@ class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      *
      * @param string $data Serialized data
      *
-     * @return Settings $this
+     * @return Themes $this
      */
     public function unserialize($data) {
     	
-    	$this->settings = unserialize($data);
+    	$this->themes = unserialize($data);
         
         return $this;
         

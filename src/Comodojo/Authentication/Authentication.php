@@ -38,7 +38,7 @@ class Authentication implements \Serializable {
 	
 	private $cls     = "";
 	
-	private $param   = "";
+	private $param   = array();
 	
 	private $package = "";
 	
@@ -109,7 +109,7 @@ class Authentication implements \Serializable {
 		$class = $this->cls;
 		
 		if (class_exists($class))
-			return $class();
+			return new $class();
 		
 		return null;
 		
@@ -125,13 +125,28 @@ class Authentication implements \Serializable {
 	
 	public function getParameters() {
 		
-		return $this->param;
+		return array_keys($this->params);
 		
 	}
 	
-	public function setParameters($param) {
+	public function getParameter($name) {
 		
-		$this->param = $param;
+		return $this->params[$name];
+		
+	}
+	
+	public function setParameter($name, $value) {
+		
+		$this->params[$name] = $value;
+		
+		return $this;
+		
+	}
+	
+	public function unsetParameter($name) {
+		
+		if (isset($this->params[$name]))
+			unset($this->params[$name]);
 		
 		return $this;
 		
@@ -159,7 +174,7 @@ class Authentication implements \Serializable {
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->description),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->cls),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->param),
+			mysqli_real_escape_string($this->dbh->getHandler(), json_encode($this->param)),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->package)
 		);
 		       
@@ -186,9 +201,9 @@ class Authentication implements \Serializable {
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->description),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->cls),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->param),
+			mysqli_real_escape_string($this->dbh->getHandler(), json_encode($this->param)),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->package),
-			$this->settings[$name]['id']
+			$this->id
 		);
 		       
         try {
@@ -227,7 +242,7 @@ class Authentication implements \Serializable {
         $this->name    = "";
         $this->desc    = "";
         $this->cls     = "";
-        $this->param   = "";
+        $this->param   = array();
         $this->package = "";
 		
 		return $this;
@@ -242,7 +257,7 @@ class Authentication implements \Serializable {
 		$auth->name    = $data[1];
 		$auth->desc    = $data[2];
 		$auth->cls     = $data[3];
-		$auth->param   = $data[4];
+		$auth->param   = json_decode($data[4]);
 		$auth->package = $data[5];
         
         return $auth;
@@ -265,7 +280,7 @@ class Authentication implements \Serializable {
     		$this->name,
     		$this->desc,
     		$this->cls,
-    		$this->param,
+    		json_encode($this->param),
     		$this->package
     	);
     	
@@ -290,7 +305,7 @@ class Authentication implements \Serializable {
 		$auth->name    = $data[1];
 		$auth->desc    = $data[2];
 		$auth->cls     = $data[3];
-		$auth->param   = $data[4];
+		$auth->param   = json_decode($data[4]);
 		$auth->package = $data[5];
         
         return $this;
