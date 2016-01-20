@@ -92,9 +92,7 @@ class Plugins implements \Iterator, \ArrayAccess, \Countable, \Serializable {
 		
 		$this->plugins = array();
 		
-		$query = sprintf("SELECT * FROM comodojo_plugins WHERE package = '%s' ORDER BY name",
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->name)
-		);
+		$query = "SELECT * FROM comodojo_plugins ORDER BY name";
 		       
         try {
             

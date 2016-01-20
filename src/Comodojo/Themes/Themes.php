@@ -78,9 +78,7 @@ class Themes implements \Iterator, \ArrayAccess, \Countable, \Serializable {
 		
 		$this->themes = array();
 		
-		$query = sprintf("SELECT * FROM comodojo_themes WHERE package = '%s' ORDER BY name",
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->name)
-		);
+		$query = "SELECT * FROM comodojo_themes ORDER BY name";
 		       
         try {
             

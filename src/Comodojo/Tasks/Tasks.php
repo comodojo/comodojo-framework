@@ -29,9 +29,9 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Rpc implements \Iterator, \ArrayAccess, \Countable, \Serializable {
+class Tasks implements \Iterator, \ArrayAccess, \Countable, \Serializable {
 	
-	private $methods  = array();
+	private $tasks    = array();
 	
 	private $current  = 0;
 	
@@ -41,32 +41,32 @@ class Rpc implements \Iterator, \ArrayAccess, \Countable, \Serializable {
 		
 		$this->dbh  = $dbh;
 		
-		$this->loadRpcMethods();
+		$this->loadTasks();
 		
 	}
 	
-	public function getRpcMethod($name) {
+	public function getTask($name) {
 		
-		if (!isset($this->methods[$name]))
+		if (!isset($this->tasks[$name]))
 			return null;
 			
-		return Rpc::loadRpcMethod($this->methods[$name], $this->dbh);
+		return Task::loadTask($this->tasks[$name], $this->dbh);
 		
 	}
 	
-	public function getRpcMethods() {
+	public function getTasks() {
 		
-		return array_keys($this->methods);
+		return array_keys($this->tasks);
 		
 	}
 	
-	public function removeRpcMethod($name) {
+	public function removeTask($name) {
 		
-		if (isset($this->methods[$name])) {
+		if (isset($this->tasks[$name])) {
 			
-			unset($this->methods[$name]);
+			unset($this->tasks[$name]);
 			
-			Rpc::loadRpcMethod($this->methods[$name], $this->dbh)->delete();
+			Task::loadTask($this->tasks[$name], $this->dbh)->delete();
 			
 		}
 		
@@ -74,11 +74,11 @@ class Rpc implements \Iterator, \ArrayAccess, \Countable, \Serializable {
 		
 	}
 	
-	private function loadRpcMethods() {
+	private function loadTasks() {
 		
-		$this->methods = array();
+		$this->tasks = array();
 		
-		$query = "SELECT * FROM comodojo_rpc ORDER BY name";
+		$query = "SELECT * FROM comodojo_tasks ORDER BY name";
 		       
         try {
             
@@ -97,7 +97,7 @@ class Rpc implements \Iterator, \ArrayAccess, \Countable, \Serializable {
 
             foreach ($data as $row) {
             
-                $this->methods[$row['name']] = intval($row['id']);
+                $this->tasks[$row['name']] = intval($row['id']);
             
             }
         
@@ -114,7 +114,7 @@ class Rpc implements \Iterator, \ArrayAccess, \Countable, \Serializable {
     /**
      * Reset the iterator
      *
-     * @return RpcMethods $this
+     * @return Tasks $this
      */
     public function rewind() {
 			
@@ -125,35 +125,35 @@ class Rpc implements \Iterator, \ArrayAccess, \Countable, \Serializable {
     }
 	
     /**
-     * Return the current method description
+     * Return the current task description
      *
      * @return string $description
      */
     public function current() {
     	
-    	$methods = $this->getRpcMethods();
+    	$tasks = $this->getTasks();
         
-    	return $this->getRpcMethod($methods[$this->current]);
+    	return $this->getTask($tasks[$this->current]);
         
     }
 	
     /**
-     * Return the current method name
+     * Return the current task name
      *
      * @return string $name
      */
     public function key() {
     	
-    	$methods = $this->getRpcMethods();
+    	$tasks = $this->getTasks();
     	
-    	return $methods[$this->current];
+    	return $tasks[$this->current];
         
     }
 	
     /**
      * Fetch the iterator
      *
-     * @return RpcMethods $this
+     * @return Tasks $this
      */
     public function next() {
     
@@ -170,9 +170,9 @@ class Rpc implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      */
     public function valid() {
     	
-    	$methods = $this->getRpcMethods();
+    	$tasks = $this->getTasks();
     	
-    	return isset($methods[$this->current]);
+    	return isset($tasks[$this->current]);
         
     }
 	
@@ -185,16 +185,16 @@ class Rpc implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      *
      * @param string $name
      *
-     * @return boolean $hasRpc
+     * @return boolean $hasTask
      */
     public function offsetExists($name) {
     	
-    	return isset($this->methods[$name]);
+    	return isset($this->tasks[$name]);
         
     }
 	
     /**
-     * Get a method description
+     * Get a task description
      *
      * @param string $name
      *
@@ -202,38 +202,38 @@ class Rpc implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      */
     public function offsetGet($name) {
     	
-        return $this->getRpcMethod($name);
+        return $this->getTask($name);
         
     }
 	
     /**
-     * Set a method
+     * Set a task
      *
      * @param string $name
-     * @param Rpc $method
+     * @param Task $task
      *
-     * @return RpcMethods $this
+     * @return Tasks $this
      */
-    public function offsetSet($name, $method) {
+    public function offsetSet($name, $task) {
     	
-    	$method->setName($name)->save();
+    	$task->setName($name)->save();
     	
-    	$this->methods[$name] = $method->getID();
+    	$this->tasks[$name] = $task->getID();
         
         return $this;
         
     }
 	
     /**
-     * Remove a method
+     * Remove a task
      *
      * @param string $name
      *
-     * @return RpcMethods $this
+     * @return Tasks $this
      */
     public function offsetUnset($name) {
         
-        return $this->removeRpcMethod($name);
+        return $this->removeTask($name);
         
     }
 	
@@ -242,15 +242,15 @@ class Rpc implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      */
 	
     /**
-     * Return the amount of methods loaded
+     * Return the amount of tasks loaded
      *
      * @return int $count
      */
     public function count() {
     	
-    	$methods = $this->getRpcMethods();
+    	$tasks = $this->getTasks();
     	
-    	return count($methods);
+    	return count($tasks);
         
     }
 	
@@ -266,7 +266,7 @@ class Rpc implements \Iterator, \ArrayAccess, \Countable, \Serializable {
     public function serialize() {
     	
     	return serialize(
-            $this->methods
+            $this->tasks
         );
         
     }
@@ -276,11 +276,11 @@ class Rpc implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      *
      * @param string $data Serialized data
      *
-     * @return RpcMethods $this
+     * @return Tasks $this
      */
     public function unserialize($data) {
     	
-    	$this->methods = unserialize($data);
+    	$this->tasks = unserialize($data);
         
         return $this;
         

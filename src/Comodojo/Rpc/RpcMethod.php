@@ -29,17 +29,23 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Theme implements \Serializable {
+class RpcMethod implements \Serializable {
 	
-	private $id   = 0;
+	private $id         = 0;
 	
-	private $name = "";
+	private $name       = "";
 	
-	private $pack = "";
+	private $callback   = "";
 	
-	private $desc = "";
+	private $method     = "";
 	
-	private $dbh  = null;
+	private $desc       = "";
+	
+	private $signatures = array();
+	
+	private $pack       = "";
+	
+	private $dbh        = null;
 	
 	function __construct(Database $dbh) {
 		
@@ -67,15 +73,43 @@ class Theme implements \Serializable {
 		
 	}
 	
+	public function getCallback() {
+		
+		return $this->callback;
+		
+	}
+	
+	public function setCallback($callback) {
+		
+		$this->callback = $callback;
+		
+		return $this;
+		
+	}
+	
+	public function getMethod() {
+		
+		return $this->method;
+		
+	}
+	
+	public function setMethod($method) {
+		
+		$this->method = $method;
+		
+		return $this;
+		
+	}
+	
 	public function getDescription() {
 		
-		return $this->description;
+		return $this->desc;
 		
 	}
 	
 	public function setDescription($description) {
 		
-		$this->description = $description;
+		$this->desc = $description;
 		
 		return $this;
 		
@@ -95,9 +129,9 @@ class Theme implements \Serializable {
 		
 	}
 	
-	public static function loadTheme($id, $dbh) {
+	public static function loadRpcMethod($id, $dbh) {
 		
-		$query = sprintf("SELECT * FROM comodojo_themes WHERE id = %d",
+		$query = sprintf("SELECT * FROM comodojo_rpc WHERE id = %d",
 			$id
 		);
 		       
@@ -118,14 +152,17 @@ class Theme implements \Serializable {
         	
         	$data = $data[0];
         	
-        	$theme = new Theme($dbh);
+        	$rpc = new Rpc($dbh);
         	
-        	$theme->id   = $data['id'];
-        	$theme->name = $data['name'];
-        	$theme->desc = $data['description'];
-        	$theme->pack = $data['package'];
+        	$rpc->id         = $data['id'];
+	    	$rpc->name       = $data['name'];
+	        $rpc->pack       = $data['package'];
+	        $rpc->callback   = $data['callback'];
+	        $rpc->method     = $data['method'];
+	        $rpc->desc       = $data['ddescription'];
+	        $rpc->signatures = json_decode($data['signatures'], true);
         	
-        	return $theme;
+        	return $rpc;
         	
         }
 		
@@ -133,7 +170,7 @@ class Theme implements \Serializable {
 	
 	public function delete() {
 		
-		$query = sprintf("DELETE FROM comodojo_themes WHERE id = %d",
+		$query = sprintf("DELETE FROM comodojo_rpc WHERE id = %d",
 			$this->id
 		);
 		       
@@ -148,10 +185,13 @@ class Theme implements \Serializable {
 
         }
         
-        $this->id   = 0;
-        $this->name = "";
-        $this->desc = "";
-        $this->pack = "";
+        $this->id         = 0;
+    	$this->name       = "";
+        $this->pack       = "";
+        $this->callback   = "";
+        $this->method     = "";
+        $this->desc       = "";
+        $this->signatures = array();
 		
 		return $this;
 		
@@ -161,11 +201,11 @@ class Theme implements \Serializable {
 		
 		if ($this->id == 0) {
 			
-			$this->createTheme();
+			$this->createRpcMethod();
 			
 		} else {
 			
-			$this->updateTheme($name);
+			$this->updateRpcMethod($name);
 			
 		}
 		
@@ -173,11 +213,14 @@ class Theme implements \Serializable {
 		
 	}
 	
-	private function createTheme() {
+	private function createRpcMethod() {
 		
-		$query = sprintf("INSERT INTO comodojo_themes VALUES (0, '%s', '%s', '%s')",
+		$query = sprintf("INSERT INTO comodojo_rpc VALUES (0, '%s', '%s', '%s', '%s', '%s', '%s')",
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->callback),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->method),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->desc),
+			mysqli_real_escape_string($this->dbh->getHandler(), json_encode($this->signatures)),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->pack)
 		);
 		       
@@ -198,11 +241,14 @@ class Theme implements \Serializable {
 		
 	}
 	
-	private function updateTheme() {
+	private function updateRpcMethod() {
 		
-		$query = sprintf("UPDATE comodojo_themes SET name = '%s', description = '%s', package = '%s' WHERE id = %d",
+		$query = sprintf("UPDATE comodojo_rpc SET name = '%s', callback = '%s', method = '%s', description = '%s', signatures = '%s', package = '%s' WHERE id = %d",
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->callback),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->method),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->desc),
+			mysqli_real_escape_string($this->dbh->getHandler(), json_encode($this->signatures)),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->pack),
 			$this->id
 		);
@@ -235,9 +281,12 @@ class Theme implements \Serializable {
     	
     	return serialize(array(
             $this->id,
-            $this->name,
-            $this->desc,
-            $this->pack
+	    	$this->name,
+	        $this->pack,
+	        $this->callback,
+	        $this->method,
+	        $this->desc,
+	        json_encode($this->signatures)
         ));
         
     }
@@ -247,19 +296,23 @@ class Theme implements \Serializable {
      *
      * @param string $data Serialized data
      *
-     * @return Themes $this
+     * @return Rpc $this
      */
     public function unserialize($data) {
     	
-    	$themeData = unserialize($data);
+    	$commandData = unserialize($data);
     	
-    	$this->id   = intval($themeData[0]);
-    	$this->name = $themeData[1];
-    	$this->desc = $themeData[2];
-    	$this->pack = $themeData[3];
+    	$this->id         = intval($rpcData[0]);
+    	$this->name       = $rpcData[1];
+        $this->pack       = $rpcData[2];
+        $this->callback   = $rpcData[3];
+        $this->method     = $rpcData[4];
+        $this->desc       = $rpcData[5];
+        $this->signatures = json_decode($rpcData[6], true);
         
         return $this;
         
     }
 
 }
+

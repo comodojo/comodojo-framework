@@ -29,9 +29,9 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Rpc implements \Iterator, \ArrayAccess, \Countable, \Serializable {
+class Commands implements \Iterator, \ArrayAccess, \Countable, \Serializable {
 	
-	private $methods  = array();
+	private $commands  = array();
 	
 	private $current  = 0;
 	
@@ -41,32 +41,32 @@ class Rpc implements \Iterator, \ArrayAccess, \Countable, \Serializable {
 		
 		$this->dbh  = $dbh;
 		
-		$this->loadRpcMethods();
+		$this->loadCommands();
 		
 	}
 	
-	public function getRpcMethod($name) {
+	public function getCommand($name) {
 		
-		if (!isset($this->methods[$name]))
+		if (!isset($this->commands[$name]))
 			return null;
 			
-		return Rpc::loadRpcMethod($this->methods[$name], $this->dbh);
+		return Command::loadCommand($this->commands[$name], $this->dbh);
 		
 	}
 	
-	public function getRpcMethods() {
+	public function getCommands() {
 		
-		return array_keys($this->methods);
+		return array_keys($this->commands);
 		
 	}
 	
-	public function removeRpcMethod($name) {
+	public function removeCommand($name) {
 		
-		if (isset($this->methods[$name])) {
+		if (isset($this->commands[$name])) {
 			
-			unset($this->methods[$name]);
+			unset($this->commands[$name]);
 			
-			Rpc::loadRpcMethod($this->methods[$name], $this->dbh)->delete();
+			Command::loadCommand($this->commands[$name], $this->dbh)->delete();
 			
 		}
 		
@@ -74,11 +74,11 @@ class Rpc implements \Iterator, \ArrayAccess, \Countable, \Serializable {
 		
 	}
 	
-	private function loadRpcMethods() {
+	private function loadCommands() {
 		
-		$this->methods = array();
+		$this->commands = array();
 		
-		$query = "SELECT * FROM comodojo_rpc ORDER BY name";
+		$query = "SELECT * FROM comodojo_commands ORDER BY command";
 		       
         try {
             
@@ -97,7 +97,7 @@ class Rpc implements \Iterator, \ArrayAccess, \Countable, \Serializable {
 
             foreach ($data as $row) {
             
-                $this->methods[$row['name']] = intval($row['id']);
+                $this->commands[$row['command']] = intval($row['id']);
             
             }
         
@@ -114,7 +114,7 @@ class Rpc implements \Iterator, \ArrayAccess, \Countable, \Serializable {
     /**
      * Reset the iterator
      *
-     * @return RpcMethods $this
+     * @return Commands $this
      */
     public function rewind() {
 			
@@ -125,35 +125,35 @@ class Rpc implements \Iterator, \ArrayAccess, \Countable, \Serializable {
     }
 	
     /**
-     * Return the current method description
+     * Return the current command description
      *
      * @return string $description
      */
     public function current() {
     	
-    	$methods = $this->getRpcMethods();
+    	$commands = $this->getCommands();
         
-    	return $this->getRpcMethod($methods[$this->current]);
+    	return $this->getCommand($commands[$this->current]);
         
     }
 	
     /**
-     * Return the current method name
+     * Return the current command name
      *
      * @return string $name
      */
     public function key() {
     	
-    	$methods = $this->getRpcMethods();
+    	$commands = $this->getCommands();
     	
-    	return $methods[$this->current];
+    	return $commands[$this->current];
         
     }
 	
     /**
      * Fetch the iterator
      *
-     * @return RpcMethods $this
+     * @return Commands $this
      */
     public function next() {
     
@@ -170,9 +170,9 @@ class Rpc implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      */
     public function valid() {
     	
-    	$methods = $this->getRpcMethods();
+    	$commands = $this->getCommands();
     	
-    	return isset($methods[$this->current]);
+    	return isset($commands[$this->current]);
         
     }
 	
@@ -185,16 +185,16 @@ class Rpc implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      *
      * @param string $name
      *
-     * @return boolean $hasRpc
+     * @return boolean $hasCommand
      */
     public function offsetExists($name) {
     	
-    	return isset($this->methods[$name]);
+    	return isset($this->commands[$name]);
         
     }
 	
     /**
-     * Get a method description
+     * Get a command description
      *
      * @param string $name
      *
@@ -202,38 +202,38 @@ class Rpc implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      */
     public function offsetGet($name) {
     	
-        return $this->getRpcMethod($name);
+        return $this->getCommand($name);
         
     }
 	
     /**
-     * Set a method
+     * Set a command
      *
      * @param string $name
-     * @param Rpc $method
+     * @param Command $command
      *
-     * @return RpcMethods $this
+     * @return Commands $this
      */
-    public function offsetSet($name, $method) {
+    public function offsetSet($name, $command) {
     	
-    	$method->setName($name)->save();
+    	$command->setName($name)->save();
     	
-    	$this->methods[$name] = $method->getID();
+    	$this->commands[$name] = $command->getID();
         
         return $this;
         
     }
 	
     /**
-     * Remove a method
+     * Remove a command
      *
      * @param string $name
      *
-     * @return RpcMethods $this
+     * @return Commands $this
      */
     public function offsetUnset($name) {
         
-        return $this->removeRpcMethod($name);
+        return $this->removeCommand($name);
         
     }
 	
@@ -242,15 +242,15 @@ class Rpc implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      */
 	
     /**
-     * Return the amount of methods loaded
+     * Return the amount of commands loaded
      *
      * @return int $count
      */
     public function count() {
     	
-    	$methods = $this->getRpcMethods();
+    	$commands = $this->getCommands();
     	
-    	return count($methods);
+    	return count($commands);
         
     }
 	
@@ -266,8 +266,8 @@ class Rpc implements \Iterator, \ArrayAccess, \Countable, \Serializable {
     public function serialize() {
     	
     	return serialize(
-            $this->methods
-        );
+    		$this->commands
+    	);
         
     }
 	
@@ -276,11 +276,11 @@ class Rpc implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      *
      * @param string $data Serialized data
      *
-     * @return RpcMethods $this
+     * @return Commands $this
      */
     public function unserialize($data) {
     	
-    	$this->methods = unserialize($data);
+    	$this->commands = unserialize($data);
         
         return $this;
         

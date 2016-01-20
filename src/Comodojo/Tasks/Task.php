@@ -29,11 +29,13 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Theme implements \Serializable {
+class Task implements \Serializable {
 	
 	private $id   = 0;
 	
 	private $name = "";
+	
+	private $cls  = "";
 	
 	private $pack = "";
 	
@@ -67,6 +69,31 @@ class Theme implements \Serializable {
 		
 	}
 	
+	public function getClass() {
+		
+		return $this->cls;
+		
+	}
+	
+	public function getInstance() {
+		
+		$class = $this->cls;
+		
+		if (class_exists($class))
+			return new $class();
+		
+		return null;
+		
+	}
+	
+	public function setClass($class) {
+		
+		$this->cls = $class;
+		
+		return $this;
+		
+	}
+	
 	public function getDescription() {
 		
 		return $this->description;
@@ -95,9 +122,9 @@ class Theme implements \Serializable {
 		
 	}
 	
-	public static function loadTheme($id, $dbh) {
+	public static function loadTask($id, $dbh) {
 		
-		$query = sprintf("SELECT * FROM comodojo_themes WHERE id = %d",
+		$query = sprintf("SELECT * FROM comodojo_tasks WHERE id = %d",
 			$id
 		);
 		       
@@ -118,14 +145,15 @@ class Theme implements \Serializable {
         	
         	$data = $data[0];
         	
-        	$theme = new Theme($dbh);
+        	$task = new Task($dbh);
         	
-        	$theme->id   = $data['id'];
-        	$theme->name = $data['name'];
-        	$theme->desc = $data['description'];
-        	$theme->pack = $data['package'];
+        	$task->id   = $data['id'];
+        	$task->name = $data['name'];
+        	$task->cls  = $data['class'];
+        	$task->desc = $data['description'];
+        	$task->pack = $data['package'];
         	
-        	return $theme;
+        	return $task;
         	
         }
 		
@@ -133,7 +161,7 @@ class Theme implements \Serializable {
 	
 	public function delete() {
 		
-		$query = sprintf("DELETE FROM comodojo_themes WHERE id = %d",
+		$query = sprintf("DELETE FROM comodojo_tasks WHERE id = %d",
 			$this->id
 		);
 		       
@@ -150,6 +178,7 @@ class Theme implements \Serializable {
         
         $this->id   = 0;
         $this->name = "";
+        $this->cls  = "";
         $this->desc = "";
         $this->pack = "";
 		
@@ -161,11 +190,11 @@ class Theme implements \Serializable {
 		
 		if ($this->id == 0) {
 			
-			$this->createTheme();
+			$this->createTask();
 			
 		} else {
 			
-			$this->updateTheme($name);
+			$this->updateTask($name);
 			
 		}
 		
@@ -173,10 +202,11 @@ class Theme implements \Serializable {
 		
 	}
 	
-	private function createTheme() {
+	private function createTask() {
 		
-		$query = sprintf("INSERT INTO comodojo_themes VALUES (0, '%s', '%s', '%s')",
+		$query = sprintf("INSERT INTO comodojo_tasks VALUES (0, '%s', '%s', '%s', '%s')",
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->cls),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->desc),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->pack)
 		);
@@ -198,10 +228,11 @@ class Theme implements \Serializable {
 		
 	}
 	
-	private function updateTheme() {
+	private function updateTask() {
 		
-		$query = sprintf("UPDATE comodojo_themes SET name = '%s', description = '%s', package = '%s' WHERE id = %d",
+		$query = sprintf("UPDATE comodojo_tasks SET name = '%s', class = '%s', description = '%s', package = '%s' WHERE id = %d",
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->cls),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->desc),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->pack),
 			$this->id
@@ -236,6 +267,7 @@ class Theme implements \Serializable {
     	return serialize(array(
             $this->id,
             $this->name,
+            $this->cls,
             $this->desc,
             $this->pack
         ));
@@ -247,16 +279,17 @@ class Theme implements \Serializable {
      *
      * @param string $data Serialized data
      *
-     * @return Themes $this
+     * @return Tasks $this
      */
     public function unserialize($data) {
     	
-    	$themeData = unserialize($data);
+    	$taskData = unserialize($data);
     	
-    	$this->id   = intval($themeData[0]);
-    	$this->name = $themeData[1];
-    	$this->desc = $themeData[2];
-    	$this->pack = $themeData[3];
+    	$this->id   = intval($taskData[0]);
+    	$this->name = $taskData[1];
+    	$this->cls  = $taskData[2];
+    	$this->desc = $taskData[3];
+    	$this->pack = $taskData[4];
         
         return $this;
         

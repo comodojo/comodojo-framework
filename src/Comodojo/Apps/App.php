@@ -167,7 +167,7 @@ class App implements \Serializable {
         	
         	$app->id   = $data['id'];
         	$app->name = $data['name'];
-        	$app->desc = $data['desc'];
+        	$app->desc = $data['description'];
         	
         	return $app;
         	
