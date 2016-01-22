@@ -1,8 +1,6 @@
-<?php namespace Comodojo\Roles;
+<?php namespace Comodojo\Configuration;
 
 use \Comodojo\Database\Database;
-use \Comodojo\Users\UserProfile;
-use \Comodojo\Configuration\PackageApp;
 use \Comodojo\Exception\DatabaseException;
 use \Exception;
 
@@ -30,43 +28,11 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Role implements \Serializable {
+class Role extends ConfigElement {
 	
-	private $id   = 0;
+	protected $desc = "";
 	
-	private $name = "";
-	
-	private $desc = "";
-	
-	private $app  = null;
-	
-	private $dbh  = null;
-	
-	function __construct(Database $dbh) {
-		
-		$this->dbh = $dbh;
-		
-	}
-	
-	public function getID() {
-		
-		return $this->id;
-		
-	}
-	
-	public function getName() {
-		
-		return $this->name;
-		
-	}
-	
-	public function setName($name) {
-		
-		$this->name = $name;
-		
-		return $this;
-		
-	}
+	protected $app  = null;
 	
 	public function getDescription() {
 		
@@ -89,6 +55,9 @@ class Role implements \Serializable {
 	}
 	
 	public function setLandingApp($app) {
+		
+		if (is_numeric($app))
+			$app = App::load(intval($app), $this->dbh);
 		
 		$this->app = $app;
 		
@@ -128,7 +97,7 @@ class Role implements \Serializable {
         	
         	foreach ($data as $row) {
         		
-        		array_push($users, UserProfile::loadUser($row['id'], $this->dbh));
+        		array_push($users, User::load($row['id'], $this->dbh));
         		
         	}
 			
@@ -170,7 +139,7 @@ class Role implements \Serializable {
         	
         	foreach ($data as $row) {
         		
-        		array_push($apps, PackageApp::loadApp($row['id'], $this->dbh));
+        		array_push($apps, App::load($row['id'], $this->dbh));
         		
         	}
 			
@@ -180,23 +149,68 @@ class Role implements \Serializable {
 		
 	}
 	
-	public function save() {
+	public static function load($id, $dbh) {
 		
-		if ($this->id == 0) {
-			
-			$this->create();
-			
-		} else {
-			
-			$this->update();
-			
-		}
+		$query = sprintf("SELECT * FROM comodojo_roles WHERE id = %d",
+			$id
+		);
+		       
+        try {
+            
+            $result = $dbh->query($query);
+         
+
+        } catch (DatabaseException $de) {
+            
+            throw $de;
+
+        }
         
-        return $this;
+        if ($result->getLength() > 0) {
+        
+        	$data = $result->getData();
+        	
+        	$data = array_values($data[0]);
+        	
+        	$role = new Role($dbh);
+        	
+        	$role->setData($data);
+        	
+        	return $role;
+        	
+        }
 		
 	}
 	
-	private function create() {
+    protected function getData() {
+    	
+    	$data = array(
+    		$this->id,
+    		$this->name,
+    		$this->desc
+    	);
+    	
+    	if 	(!is_null($this->app) && $this->app->getID() !== 0)
+    		array_push($data, $this->app->getID());
+    	
+    	return $data;
+        
+    }
+	
+    protected function setData($data) {
+    	
+		$this->id   = $data[0];
+		$this->name = $data[1];
+		$this->desc = $data[2];
+		
+		if (!isset($data[3]) && is_numeric($data[3]))
+			$this->app = App::load(intval($data[3]), $this->dbh);
+        
+        return $this;
+        
+    }
+	
+	protected function create() {
 		
 		$query = sprintf("INSERT INTO comodojo_roles VALUES (0, '%s', '%s', %s)",
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
@@ -224,7 +238,7 @@ class Role implements \Serializable {
 		
 	}
 	
-	private function update() {
+	protected function update() {
 		
 		$query = sprintf("UPDATE comodojo_roles SET name = '%s', value = '%s', landingapp = %s WHERE id = %d",
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
@@ -233,7 +247,7 @@ class Role implements \Serializable {
 				$this->dbh->getHandler(), 
 				(is_null($this->app) || $this->app->getID() == 0)?'NULL':$this->app->getID()
 			),
-			$this->settings[$name]['id']
+			$this->id
 		);
 		       
         try {
@@ -268,77 +282,11 @@ class Role implements \Serializable {
 
         }
         
-        $this->id   = 0;
-        $this->name = "";
-        $this->desc = "";
-        $this->app  = null;
+        $this->setData(array(0, "", ""));
 		
 		return $this;
 		
 	}
-	
-	public static function loadData($dbh, $data) {
-		
-		$role = new Role($dbh);
-		
-		$role->id   = $data[0];
-		$role->name = $data[1];
-		$role->desc = $data[2];
-		
-		if (!isset($data[3]) && is_numeric($data[3]))
-			$role->app = PackageApp::loadApp(intval($data[3]), $this->dbh);
-        
-        return $role;
-		
-	}
-	
-    /**
-     * The following methods implement the Serializable interface
-     */
-	
-    /**
-     * Return the serialized data
-     *
-     * @return string $serialized
-     */
-    public function serialize() {
-    	
-    	$data = array(
-    		$this->id,
-    		$this->name,
-    		$this->desc
-    	);
-    	
-    	if 	(!is_null($this->app) && $this->app->getID() !== 0)
-    		array_push($data, $this->app->getID());
-    	
-    	return serialize(
-            $data
-        );
-        
-    }
-	
-    /**
-     * Return the unserialized object
-     *
-     * @param string $data Serialized data
-     *
-     * @return Manager $this
-     */
-    public function unserialize($data) {
-    	
-    	$data = unserialize($data);
-    	
-		$role->id   = $data[0];
-		$role->name = $data[1];
-		$role->desc = $data[2];
-		
-		if (!isset($data[3]) && is_numeric($data[3]))
-			$role->app = PackageApp::loadApp(intval($data[3]), $this->dbh);
-        
-        return $this;
-        
-    }
 	
 
 }

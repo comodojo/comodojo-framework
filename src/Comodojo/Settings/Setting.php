@@ -29,77 +29,19 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Route extends ConfigElement {
+class Setting extends ConfigElement {
 	
-	protected $type    = "";
+	protected $value = "";
 	
-	protected $cls     = "";
-	
-	protected $params  = array();
-	
-	public function getType() {
+	public function getValue() {
 		
-		return $this->type;
+		return $this->value;
 		
 	}
 	
-	public function setType($type) {
+	public function setValue($value) {
 		
-		$this->type = $type;
-		
-		return $this;
-		
-	}
-	
-	public function getClass() {
-		
-		return $this->cls;
-		
-	}
-	
-	public function getInstance() {
-		
-		$class = $this->cls;
-		
-		if (class_exists($class))
-			return new $class();
-		
-		return null;
-		
-	}
-	
-	public function setClass($class) {
-		
-		$this->cls = $class;
-		
-		return $this;
-		
-	}
-	
-	public function getParameters() {
-		
-		return array_keys($this->params);
-		
-	}
-	
-	public function getParameter($name) {
-		
-		return $this->params[$name];
-		
-	}
-	
-	public function setParameter($name, $value) {
-		
-		$this->params[$name] = $value;
-		
-		return $this;
-		
-	}
-	
-	public function unsetParameter($name) {
-		
-		if (isset($this->params[$name]))
-			unset($this->params[$name]);
+		$this->value = $value;
 		
 		return $this;
 		
@@ -107,7 +49,7 @@ class Route extends ConfigElement {
 	
 	public static function load($id, $dbh) {
 		
-		$query = sprintf("SELECT * FROM comodojo_routes WHERE id = %d",
+		$query = sprintf("SELECT * FROM comodojo_settings WHERE id = %d",
 			$id
 		);
 		       
@@ -128,11 +70,11 @@ class Route extends ConfigElement {
         	
         	$data = array_values($data[0]);
         	
-        	$route = new Route($dbh);
+        	$setting = new Setting($dbh);
         	
-        	$route->setData($data);
+        	$setting->setData($data);
         	
-        	return $route;
+        	return $setting;
         	
         }
 		
@@ -142,23 +84,19 @@ class Route extends ConfigElement {
     	
     	return array(
             $this->id,
-	    	$this->name,
-	    	$this->type,
-	    	$this->cls,
-	    	json_encode($this->params),
-	    	$this->package
+            $this->name,
+            $this->value,
+            $this->package
         );
         
     }
-    
-    protected function setData($data) {
+	
+	protected function setData($data) {
     	
     	$this->id      = intval($data[0]);
     	$this->name    = $data[1];
-    	$this->type    = $data[2];
-    	$this->cls     = $data[3];
-    	$this->params  = json_decode($data[4], true);
-    	$this->package = $data[5];
+    	$this->value   = $data[2];
+    	$this->package = $data[3];
         
         return $this;
         
@@ -166,11 +104,9 @@ class Route extends ConfigElement {
 	
 	protected function create() {
 		
-		$query = sprintf("INSERT INTO comodojo_routes VALUES (0, '%s', '%s', '%s', '%s', '%s')",
+		$query = sprintf("INSERT INTO comodojo_settings VALUES (0, '%s', '%s', '%s')",
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->type),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->cls),
-			mysqli_real_escape_string($this->dbh->getHandler(), json_encode($this->params)),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->value),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->package)
 		);
 		       
@@ -193,11 +129,9 @@ class Route extends ConfigElement {
 	
 	protected function update() {
 		
-		$query = sprintf("UPDATE comodojo_routes SET `route` = '%s', `type` = '%s', `class` = '%s', `parameters` = '%s', `package` = '%s' WHERE id = %d",
+		$query = sprintf("UPDATE comodojo_settings SET name = '%s', value = '%s', package = '%s' WHERE id = %d",
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->type),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->cls),
-			mysqli_real_escape_string($this->dbh->getHandler(), json_encode($this->params)),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->value),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->package),
 			$this->id
 		);
@@ -219,7 +153,7 @@ class Route extends ConfigElement {
 	
 	public function delete() {
 		
-		$query = sprintf("DELETE FROM comodojo_routes WHERE id = %d",
+		$query = sprintf("DELETE FROM comodojo_settings WHERE id = %d",
 			$this->id
 		);
 		       
@@ -233,8 +167,8 @@ class Route extends ConfigElement {
             throw $de;
 
         }
-        
-        $this->setData(array(0, "", "", "", "[]", ""));
+        	
+        $this->setData(array(0, "", "", ""));
 		
 		return $this;
 		

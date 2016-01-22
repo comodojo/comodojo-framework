@@ -29,55 +29,29 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Command implements \Serializable {
+class Command extends ConfigElement {
 	
-	private $id     = 0;
+	protected $cls    = "";
 	
-	private $comm   = "";
+	protected $desc   = "";
 	
-	private $pack   = "";
+	protected $alias  = array();
 	
-	private $cls    = "";
+	protected $opt    = array();
 	
-	private $desc   = "";
-	
-	private $alias  = array();
-	
-	private $opt    = array();
-	
-	private $args   = array();
-	
-	private $dbh    = null;
-	
-	function __construct(Database $dbh) {
-		
-		$this->dbh  = $dbh;
-		
-	}
-	
-	public function getID() {
-		
-		return $this->id;
-		
-	}
-	
-	public function getCommandName() {
-		
-		return $this->comm;
-		
-	}
-	
-	public function setCommandName($name) {
-		
-		$this->comm = $name;
-		
-		return $this;
-		
-	}
+	protected $args   = array();
 	
 	public function getAliases() {
 		
 		return $this->alias;
+		
+	}
+	
+	public function setAliases($aliases) {
+		
+		$this->alias = $aliases;
+		
+		return $this;
 		
 	}
 	
@@ -115,9 +89,20 @@ class Command implements \Serializable {
 		
 	}
 	
-	public function getRowOptions() {
+	public function getRawOptions() {
 		
 		return $this->opt;
+		
+	}
+	
+	public function setRawOptions($options) {
+		
+		$this->opt = array();
+		
+		foreach ($options as $name => $opt)
+			$this->addOption($name, $opt['short_name'], $opt['long_name'], $opt['action'], $opt['description']);
+			
+		return $this;
 		
 	}
 	
@@ -261,9 +246,20 @@ class Command implements \Serializable {
 		
 	}
 	
-	public function getRowArguments() {
+	public function getRawArguments() {
 		
 		return $this->args;
+		
+	}
+	
+	public function setRawArguments($arguments) {
+		
+		$this->args = array();
+		
+		foreach ($arguments as $name => $arg)
+			$this->addArgument($name, $arg['choices'], $arg['multiple'], $arg['optional'], $arg['description']);
+			
+		return $this;
 		
 	}
 	
@@ -452,21 +448,7 @@ class Command implements \Serializable {
 		
 	}
 	
-	public function getPackageName() {
-		
-		return $this->pack;
-		
-	}
-	
-	public function setPackageName($name) {
-		
-		$this->pack = $name;
-		
-		return $this;
-		
-	}
-	
-	public static function loadCommand($id, $dbh) {
+	public static function load($id, $dbh) {
 		
 		$query = sprintf("SELECT * FROM comodojo_commands WHERE id = %d",
 			$id
@@ -487,18 +469,11 @@ class Command implements \Serializable {
         
         	$data = $result->getData();
         	
-        	$data = $data[0];
+        	$data = array_values($data[0]);
         	
         	$command = new Command($dbh);
         	
-        	$command->id     = $data['id'];
-	    	$command->comm   = $data['ccommand'];
-	        $command->pack   = $data['package'];
-	        $command->cls    = $data['class'];
-	        $command->desc   = $data['ddescription'];
-	        $command->alias  = json_decode($data['aliases'], true);
-	        $command->opt    = json_decode($data['options'], true);
-	        $command->args   = json_decode($data['arguments'], true);
+        	$command->setData($data);
         	
         	return $command;
         	
@@ -506,62 +481,46 @@ class Command implements \Serializable {
 		
 	}
 	
-	public function delete() {
-		
-		$query = sprintf("DELETE FROM comodojo_commands WHERE id = %d",
-			$this->id
-		);
-		       
-        try {
-            
-            $this->dbh->query($query);
-         
-
-        } catch (DatabaseException $de) {
-            
-            throw $de;
-
-        }
+    protected function getData() {
+    	
+    	return array(
+            $this->id,
+	        $this->name,
+	        $this->cls,
+	        $this->desc,
+	        json_encode($this->alias),
+	        json_encode($this->opt),
+	        json_encode($this->args),
+	        $this->package
+        );
         
-        $this->id     = 0;
-    	$this->comm   = "";
-        $this->pack   = "";
-        $this->cls    = "";
-        $this->desc   = "";
-        $this->alias  = array();
-        $this->opt    = array();
-        $this->args   = array();
-		
-		return $this;
-		
-	}
+    }
 	
-	public function save() {
-		
-		if ($this->id == 0) {
-			
-			$this->createCommand();
-			
-		} else {
-			
-			$this->updateCommand($name);
-			
-		}
-		
-		return $this;
-		
-	}
+	protected function setData($data) {
+    	
+    	$this->id     = intval($data[0]);
+    	$this->name   = $data[1];
+        $this->cls    = $data[2];
+        $this->desc   = $data[3];
+        $this->alias  = json_decode($data[4], true);
+        $this->opt    = json_decode($data[5], true);
+        $this->args   = json_decode($data[6], true);
+        $this->package= $data[7];
+        
+        return $this;
+        
+    }
 	
-	private function createCommand() {
+	protected function create() {
 		
 		$query = sprintf("INSERT INTO comodojo_commands VALUES (0, '%s', '%s', '%s', '%s', '%s', '%s', '%s')",
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->comm),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->cls),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->desc),
 			mysqli_real_escape_string($this->dbh->getHandler(), json_encode($this->alias)),
 			mysqli_real_escape_string($this->dbh->getHandler(), json_encode($this->opt)),
 			mysqli_real_escape_string($this->dbh->getHandler(), json_encode($this->args)),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->pack)
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->package)
 		);
 		       
         try {
@@ -581,16 +540,16 @@ class Command implements \Serializable {
 		
 	}
 	
-	private function updateCommand() {
+	protected function update() {
 		
 		$query = sprintf("UPDATE comodojo_commands SET command = '%s', class = '%s', description = '%s', aliases = '%s', options = '%s', arguments = '%s', package = '%s' WHERE id = %d",
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->comm),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->cls),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->desc),
 			mysqli_real_escape_string($this->dbh->getHandler(), json_encode($this->alias)),
 			mysqli_real_escape_string($this->dbh->getHandler(), json_encode($this->opt)),
 			mysqli_real_escape_string($this->dbh->getHandler(), json_encode($this->args)),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->pack),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->package),
 			$this->id
 		);
 		       
@@ -609,52 +568,27 @@ class Command implements \Serializable {
 		
 	}
 	
-    /**
-     * The following methods implement the Serializable interface
-     */
-	
-    /**
-     * Return the serialized data
-     *
-     * @return string $serialized
-     */
-    public function serialize() {
-    	
-    	return serialize(array(
-            $this->id,
-	        $this->comm,
-	        $this->pack,
-	        $this->cls,
-	        $this->desc,
-	        json_encode($this->alias),
-	        json_encode($this->opt),
-	        json_encode($this->args)
-        ));
+	public function delete() {
+		
+		$query = sprintf("DELETE FROM comodojo_commands WHERE id = %d",
+			$this->id
+		);
+		       
+        try {
+            
+            $this->dbh->query($query);
+         
+
+        } catch (DatabaseException $de) {
+            
+            throw $de;
+
+        }
+		
+        $this->setData(array(0, "", "", "", "[]", "[]", "[]", ""));
         
-    }
-	
-    /**
-     * Return the unserialized object
-     *
-     * @param string $data Serialized data
-     *
-     * @return Command $this
-     */
-    public function unserialize($data) {
-    	
-    	$commandData = unserialize($data);
-    	
-    	$this->id     = intval($commandData[0]);
-    	$this->comm   = $commandData[1];
-        $this->pack   = $commandData[2];
-        $this->cls    = $commandData[3];
-        $this->desc   = $commandData[4];
-        $this->alias  = json_decode($commandData[5], true);
-        $this->opt    = json_decode($commandData[6], true);
-        $this->args   = json_decode($commandData[7], true);
-        
-        return $this;
-        
-    }
+		return $this;
+		
+	}
 
 }

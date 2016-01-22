@@ -29,125 +29,57 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
+abstract class ConfigIterator implements \Iterator, \ArrayAccess, \Countable, \Serializable {
 	
-	private $settings = array();
+	protected $data     = array();
 	
-	private $current  = 0;
+	protected $current  = 0;
 	
-	private $dbh      = null;
+	protected $dbh      = null;
 	
 	function __construct(Database $dbh) {
 		
-		$this->dbh = $dbh;
+		$this->dbh  = $dbh;
 		
-		$this->loadSettings();
-		
-	}
-	
-	public function getPackageSettings($name) {
-		
-		if (in_array($name, $this->settings))
-			return new PackageSettings($name, $this->dbh);
-		
-		return null;
+		$this->loadData();
 		
 	}
 	
-	public function setPackageSettings($name, PackageSettings $value) {
+	public function getList() {
 		
-    	if ($value->getPackageName() !== $name) {
-    		
-    		$value->setPackageName($name);
-    		
-    	}
-    	
-    	return $this->loadSettings();
+		return array_keys($this->data);
 		
 	}
 	
-	public function removePackageSettings($name) {
-		
-		if (in_array($name, $this->settings)) {
-			
-			$settings = new PackageSettings($name, $this->dbh);
-			
-			foreach($settings->getSettings() as $setting) {
-				
-				$settings->removeSetting($setting);
-				
-			}
-			
-		}
-		
-    	$this->loadSettings();
-		
-	}
-	
-	public function getPackages() {
-		
-		$this->loadSettings();
-		
-		return $this->settings;
-		
-	}
-	
-	private function loadSettings() {
-		
-		$this->settings = array();
-		
-		$query = "SELECT distinct package as p FROM comodojo_settings ORDER BY name";
-		       
-        try {
-            
-            $result = $this->dbh->query($query);
-         
-
-        } catch (DatabaseException $de) {
-            
-            throw $de;
-
-        }
+	protected function loadList($data, $fieldName) {
         
-        if ($result->getLength() > 0) {
+        if ($data->getLength() > 0) {
 
-            $data = $result->getData();
+            $data = $data->getData();
 
             foreach ($data as $row) {
             
-            	array_push($this->settings, $row['p']);
+                $this->data[$row[$fieldName]] = intval($row['id']);
             
             }
         
         }
-        
-        return $this;
 		
 	}
 	
-	public static function addSetting($package, $name, $value, $dbh) {
+	abstract protected function loadData();
+	
+	public function addElement($name, $element) {
 		
-		$pack = new PackageSettings($package, $dbh);
-		
-		return $pack->setValue($name, $value);
+    	$element->setName($name)->save();
+    	
+    	$this->data[$name] = $element->getID();
 		
 	}
 	
-	public static function removeSetting($package, $name, $dbh) {
-		
-		$pack = new PackageSettings($package, $dbh);
-		
-		return $pack->removeSetting($name);
-		
-	}
+	abstract public function getElementByName($name);
 	
-	public static function getSetting($package, $name, $dbh) {
-		
-		$pack = new PackageSettings($package, $dbh);
-		
-		return $pack->getValue($name);
-		
-	}
+	abstract public function removeElementByName($name);
 	
     /**
      * The following methods implement the Iterator interface
@@ -156,7 +88,7 @@ class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
     /**
      * Reset the iterator
      *
-     * @return Settings $this
+     * @return Routes $this
      */
     public function rewind() {
 			
@@ -167,35 +99,31 @@ class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
     }
 	
     /**
-     * Return the current setting value
+     * Return the current route description
      *
-     * @return string $value
+     * @return string $description
      */
     public function current() {
-    	
-    	$settings = $this->getPackages();
         
-    	return $this->getPackageSettings($settings[$this->current]);
+    	return $this->getElementByName($this->data[$this->current]);
         
     }
 	
     /**
-     * Return the current setting name
+     * Return the current route name
      *
      * @return string $name
      */
     public function key() {
     	
-    	$settings = $this->getPackages();
-    	
-    	return $settings[$this->current];
+    	return $this->data[$this->current];
         
     }
 	
     /**
      * Fetch the iterator
      *
-     * @return Settings $this
+     * @return Routes $this
      */
     public function next() {
     
@@ -206,15 +134,13 @@ class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
     }
 	
     /**
-     * Check if there's a next value
+     * Check if there's a next description
      *
      * @return boolean $hasNext
      */
     public function valid() {
     	
-    	$settings = $this->getPackages();
-    	
-    	return isset($settings[$this->current]);
+    	return isset($this->data[$this->current]);
         
     }
 	
@@ -227,53 +153,53 @@ class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      *
      * @param string $name
      *
-     * @return boolean $hasSetting
+     * @return boolean $hasRoute
      */
     public function offsetExists($name) {
     	
-    	return in_array($name, $this->settings);
+    	return isset($this->data[$name]);
         
     }
 	
     /**
-     * Get a setting value
+     * Get a route description
      *
      * @param string $name
      *
-     * @return string $value
+     * @return string $description
      */
     public function offsetGet($name) {
     	
-        return $this->getPackageSettings($name);
+        return $this->getElementByName($name);
         
     }
 	
     /**
-     * Set a setting
+     * Set a route
      *
      * @param string $name
-     * @param string $value
+     * @param ConfigElement $element
      *
-     * @return Settings $this
+     * @return ConfigIterator $this
      */
-    public function offsetSet($name, $value) {
+    public function offsetSet($name,  $element) {
     	
-    	$this->setPackageSettings($name, $value);
+    	$this->addElement($name, $element);
         
         return $this;
         
     }
 	
     /**
-     * Remove a setting
+     * Remove a route
      *
      * @param string $name
      *
-     * @return Settings $this
+     * @return ConfigIterator $this
      */
     public function offsetUnset($name) {
         
-        return $this->removePackageSettings($name);
+        return $this->removeElementByName($name);
         
     }
 	
@@ -282,15 +208,13 @@ class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      */
 	
     /**
-     * Return the amount of settings loaded
+     * Return the amount of routes loaded
      *
      * @return int $count
      */
     public function count() {
     	
-    	$settings = $this->getSettings();
-    	
-    	return count($settings);
+    	return count($this->data);
         
     }
 	
@@ -306,7 +230,7 @@ class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
     public function serialize() {
     	
     	return serialize(
-            $this->settings
+            $this->data
         );
         
     }
@@ -316,11 +240,11 @@ class Settings implements \Iterator, \ArrayAccess, \Countable, \Serializable {
      *
      * @param string $data Serialized data
      *
-     * @return Settings $this
+     * @return Routes $this
      */
     public function unserialize($data) {
     	
-    	$this->settings = unserialize($data);
+    	$this->data = unserialize($data);
         
         return $this;
         

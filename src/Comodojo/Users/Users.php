@@ -2,7 +2,6 @@
 
 use \Comodojo\Database\Database;
 use \Comodojo\Exception\DatabaseException;
-use \Comodojo\Exception\ConfigurationException;
 use \Exception;
 
 /**
@@ -29,14 +28,14 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Apps extends ConfigIterator {
+class Users extends ConfigIterator {
 	
 	public function getElementByName($name) {
 		
 		if (!isset($this->data[$name]))
 			return null;
 			
-		return App::load($this->data[$name], $this->dbh);
+		return User::load($this->data[$name], $this->dbh);
 		
 	}
 	
@@ -44,13 +43,13 @@ class Apps extends ConfigIterator {
 		
 		if (isset($this->data[$name])) {
 			
-			App::load($this->data[$name], $this->dbh)->delete();
+			User::load($this->data[$name], $this->dbh)->delete();
 			
 			unset($this->data[$name]);
 			
 		}
-        
-        return $this;
+		
+		return $this;
 		
 	}
 	
@@ -58,7 +57,7 @@ class Apps extends ConfigIterator {
 		
 		$this->data = array();
 		
-		$query = "SELECT * FROM comodojo_apps ORDER BY name";
+		$query = "SELECT * FROM comodojo_users ORDER BY username";
 		       
         try {
             
@@ -71,10 +70,11 @@ class Apps extends ConfigIterator {
 
         }
         
-        $this->loadList($result, 'name');
+        $this->loadList($result, 'username');
         
         return $this;
 		
 	}
+	
 
 }

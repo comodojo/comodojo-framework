@@ -31,9 +31,9 @@ use \Exception;
 
 class RpcSignature {
 	
-	private $ret    = "";
+	protected $ret    = "";
 	
-	private $params = array();
+	protected $params = array();
 	
 	function __construct() {
 		

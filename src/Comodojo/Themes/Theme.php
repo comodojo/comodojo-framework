@@ -29,43 +29,9 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Theme implements \Serializable {
+class Theme extends ConfigElement {
 	
-	private $id   = 0;
-	
-	private $name = "";
-	
-	private $pack = "";
-	
-	private $desc = "";
-	
-	private $dbh  = null;
-	
-	function __construct(Database $dbh) {
-		
-		$this->dbh  = $dbh;
-		
-	}
-	
-	public function getID() {
-		
-		return $this->id;
-		
-	}
-	
-	public function getName() {
-		
-		return $this->name;
-		
-	}
-	
-	public function setName($name) {
-		
-		$this->name = $name;
-		
-		return $this;
-		
-	}
+	protected $desc = "";
 	
 	public function getDescription() {
 		
@@ -81,21 +47,7 @@ class Theme implements \Serializable {
 		
 	}
 	
-	public function getPackageName() {
-		
-		return $this->pack;
-		
-	}
-	
-	public function setPackageName($name) {
-		
-		$this->pack = $name;
-		
-		return $this;
-		
-	}
-	
-	public static function loadTheme($id, $dbh) {
+	public static function load($id, $dbh) {
 		
 		$query = sprintf("SELECT * FROM comodojo_themes WHERE id = %d",
 			$id
@@ -116,18 +68,86 @@ class Theme implements \Serializable {
         
         	$data = $result->getData();
         	
-        	$data = $data[0];
+        	$data = array_values($data[0]);
         	
         	$theme = new Theme($dbh);
         	
-        	$theme->id   = $data['id'];
-        	$theme->name = $data['name'];
-        	$theme->desc = $data['description'];
-        	$theme->pack = $data['package'];
+        	$theme->setData($data);
         	
         	return $theme;
         	
         }
+		
+	}
+	
+    protected function getData() {
+    	
+    	return array(
+            $this->id,
+            $this->name,
+            $this->desc,
+            $this->package
+        );
+        
+    }
+    
+    protected function setData($data) {
+    	
+    	$this->id      = intval($data[0]);
+    	$this->name    = $data[1];
+    	$this->desc    = $data[2];
+    	$this->package = $data[3];
+        
+        return $this;
+        
+    }
+	
+	protected function create() {
+		
+		$query = sprintf("INSERT INTO comodojo_themes VALUES (0, '%s', '%s', '%s')",
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->desc),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->package)
+		);
+		       
+        try {
+            
+            $result = $this->dbh->query($query);
+         
+
+        } catch (DatabaseException $de) {
+            
+            throw $de;
+
+        }
+        
+        $this->id = $result->getInsertId();
+        
+        return $this;
+		
+	}
+	
+	protected function update() {
+		
+		$query = sprintf("UPDATE comodojo_themes SET name = '%s', description = '%s', package = '%s' WHERE id = %d",
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->desc),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->package),
+			$this->id
+		);
+		       
+        try {
+            
+            $this->dbh->query($query);
+         
+
+        } catch (DatabaseException $de) {
+            
+            throw $de;
+
+        }
+        
+        return $this;
 		
 	}
 	
@@ -148,118 +168,10 @@ class Theme implements \Serializable {
 
         }
         
-        $this->id   = 0;
-        $this->name = "";
-        $this->desc = "";
-        $this->pack = "";
+        $this->setData(array(0, "", "", ""));
 		
 		return $this;
 		
 	}
-	
-	public function save() {
-		
-		if ($this->id == 0) {
-			
-			$this->createTheme();
-			
-		} else {
-			
-			$this->updateTheme($name);
-			
-		}
-		
-		return $this;
-		
-	}
-	
-	private function createTheme() {
-		
-		$query = sprintf("INSERT INTO comodojo_themes VALUES (0, '%s', '%s', '%s')",
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->desc),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->pack)
-		);
-		       
-        try {
-            
-            $result = $this->dbh->query($query);
-         
-
-        } catch (DatabaseException $de) {
-            
-            throw $de;
-
-        }
-        
-        $this->id = $result->getInsertId();
-        
-        return $this;
-		
-	}
-	
-	private function updateTheme() {
-		
-		$query = sprintf("UPDATE comodojo_themes SET name = '%s', description = '%s', package = '%s' WHERE id = %d",
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->desc),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->pack),
-			$this->id
-		);
-		       
-        try {
-            
-            $this->dbh->query($query);
-         
-
-        } catch (DatabaseException $de) {
-            
-            throw $de;
-
-        }
-        
-        return $this;
-		
-	}
-	
-    /**
-     * The following methods implement the Serializable interface
-     */
-	
-    /**
-     * Return the serialized data
-     *
-     * @return string $serialized
-     */
-    public function serialize() {
-    	
-    	return serialize(array(
-            $this->id,
-            $this->name,
-            $this->desc,
-            $this->pack
-        ));
-        
-    }
-	
-    /**
-     * Return the unserialized object
-     *
-     * @param string $data Serialized data
-     *
-     * @return Themes $this
-     */
-    public function unserialize($data) {
-    	
-    	$themeData = unserialize($data);
-    	
-    	$this->id   = intval($themeData[0]);
-    	$this->name = $themeData[1];
-    	$this->desc = $themeData[2];
-    	$this->pack = $themeData[3];
-        
-        return $this;
-        
-    }
 
 }

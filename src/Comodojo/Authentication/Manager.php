@@ -28,72 +28,34 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Manager implements \Iterator, \ArrayAccess, \Countable, \Serializable {
+class Manager extends \Comodojo\Configuration\ConfigIterator {
 	
-	private $auths    = array();
-	
-	private $current  = 0;
-	
-	private $dbh      = null;
-	
-	function __construct(Database $dbh) {
+	public function getElementByName($name) {
 		
-		$this->dbh = $dbh;
-		
-		$this->loadAuthentications();
+		if (!isset($this->data[$name]))
+			return null;
+			
+		return Authentication::load($this->data[$name], $this->dbh);
 		
 	}
 	
-	public function getAuthenticationByName($name) {
+	public function removeElementByName($name) {
 		
-		foreach ($this->auths as $auth) {
-			if ($auth->getID() != 0 && $auth->getName() == $name) return $auth;
+		if (isset($this->data[$name])) {
+			
+			Authentication::load($this->data[$name], $this->dbh)->delete();
+			
+			unset($this->data[$name]);
+			
 		}
-		
-		return null;
-		
-	}
-	
-	public function getAuthenticationByID($id) {
-		
-		foreach ($this->auths as $auth) {
-			if ($auth->getID() != 0 && $auth->getID() == $id) return $auth;
-		}
-		
-		return null;
+        
+        return $this;
 		
 	}
 	
-	public function addAuthentication($name) {
+	protected function loadData() {
 		
-		$auth = new Authentication($this->dbh);
-		
-		$auth->setName($name)->save();
-		
-		array_push($this->auths, $auth);
-		
-		return $auth;
-		
-	}
-	
-	public function getAuthentications() {
-		
-		$auths = array();
-		
-		foreach ($this->auths as $auth) {
-			if ($auth->getID() != 0) 
-				array_push($auths, $auth->getName());
-		}
-		
-		sort($auths);
-		
-		return $auths;
-		
-	}
-	
-	private function loadAuthentications() {
-		
-		$this->settings = array();
+		$this->data = array();
 		
 		$query = "SELECT * FROM comodojo_auths ORDER BY name";
 		       
@@ -108,240 +70,10 @@ class Manager implements \Iterator, \ArrayAccess, \Countable, \Serializable {
 
         }
         
-        if ($result->getLength() > 0) {
-
-            $data = $result->getData();
-
-            foreach ($data as $row) {
-            	
-            	array_push($this->auths, Authentication::loadData($this->dbh, array_values($row)));
-            	
-            }
-        
-        }
+        $this->loadList($result, 'name');
         
         return $this;
 		
 	}
-	
-    /**
-     * The following methods implement the Iterator interface
-     */
-	
-    /**
-     * Reset the iterator
-     *
-     * @return Settings $this
-     */
-    public function rewind() {
-			
-		$this->current  = 0;
-    	
-    	return $this;
-        
-    }
-	
-    /**
-     * Return the current auth
-     *
-     * @return Authentication $value
-     */
-    public function current() {
-    	
-    	$auths = $this->getAuthentications();
-        
-    	return $this->getAuthenticationsByName($auths[$this->current]);
-        
-    }
-	
-    /**
-     * Return the current auth name
-     *
-     * @return string $name
-     */
-    public function key() {
-    	
-    	$auths = $this->getAuthentications();
-    	
-    	return $this->getAuthenticationsByName($auths[$this->current])->getID();
-        
-    }
-	
-    /**
-     * Fetch the iterator
-     *
-     * @return Settings $this
-     */
-    public function next() {
-    
-        $this->current++;
-    	
-    	return $this;
-        
-    }
-	
-    /**
-     * Check if there's a next value
-     *
-     * @return boolean $hasNext
-     */
-    public function valid() {
-    	
-    	$auths = $this->getAuthentications();
-    	
-    	return isset($auths[$this->current]);
-        
-    }
-	
-    /**
-     * The following methods implement the ArrayAccess interface
-     */
-	
-    /**
-     * Check if an offset exists
-     *
-     * @param int $id
-     *
-     * @return boolean $hasAuthentication
-     */
-    public function offsetExists($id) {
-    	
-    	$auth = $this->getAuthenticationByID($id);
-    	
-    	return !is_null($auth);
-        
-    }
-	
-    /**
-     * Get a auth
-     *
-     * @param int $id
-     *
-     * @return Authentication $auth
-     */
-    public function offsetGet($id) {
-    	
-        return $this->getAuthenticationByID($id);
-        
-    }
-	
-    /**
-     * Set a auth
-     *
-     * @param int  $id
-     * @param Authentication $value
-     *
-     * @return Manager $this
-     */
-    public function offsetSet($id, &$value) {
-    	
-    	$auth = $this->getAuthenticationByName($id);
-    	
-    	if (!is_null($auth)) {
-    		
-    		$auth->setName($value->getName())
-    			->setDescription($value->getDescription())
-    			->setClass($value->getClass())
-    			->setParameters($value->getParameters());
-    		
-    	} else {
-    		
-    		$auth = $this->addAuthentication($value->getName())
-    			->setDescription($value->getDescription())
-    			->setClass($value->getClass())
-    			->setParameters($value->getParameters());
-    		
-    	}
-    	
-        $value = $auth;
-        
-        return $this;
-        
-    }
-	
-    /**
-     * Remove a setting
-     *
-     * @param int  $id
-     *
-     * @return Manager $this
-     */
-    public function offsetUnset($id) {
-    	
-    	$auth = $this->getAuthenticationByName($id);
-    	
-    	if (!is_null($auth)) {
-    		
-    		$auth->delete();
-    		
-    	}
-    	
-        return $this;
-        
-    }
-	
-    /**
-     * The following methods implement the Countable interface
-     */
-	
-    /**
-     * Return the amount of auths loaded
-     *
-     * @return int $count
-     */
-    public function count() {
-    	
-    	$auths = $this->getAuthentications();
-    	
-    	return count($auths);
-        
-    }
-	
-    /**
-     * The following methods implement the Serializable interface
-     */
-	
-    /**
-     * Return the serialized data
-     *
-     * @return string $serialized
-     */
-    public function serialize() {
-    	
-    	$data = array();
-    	
-		foreach ($this->auths as $auth) {
-			if ($auth->getID() != 0) array_push($data, serialize($auth));
-		}
-    	
-    	return serialize(
-            $data
-        );
-        
-    }
-	
-    /**
-     * Return the unserialized object
-     *
-     * @param string $data Serialized data
-     *
-     * @return Manager $this
-     */
-    public function unserialize($data) {
-    	
-    	$data = unserialize($data);
-    	
-    	foreach ($data as $auth) {
-    		
-    		$auth = unserialize($auth);
-    		
-    		array_push($this->auths, Authentication::loadData($this->dbh, $auth));
-    		
-    	}
-        
-        return $this;
-        
-    }
-	
 
 }

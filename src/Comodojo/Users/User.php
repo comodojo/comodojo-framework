@@ -1,11 +1,7 @@
-<?php namespace Comodojo\Users;
+<?php namespace Comodojo\Configuration;
 
-use \Comodojo\Database\Database;
-use \Comodojo\Roles\Role;
-use \Comodojo\Roles\Manager as RolesManager;
 use \Comodojo\Authentication\Authentication;
-use \Comodojo\Authentication\Manager as AuthenticationManager;
-use \Comodojo\Configuration\PackageApp;
+use \Comodojo\Database\Database;
 use \Comodojo\Exception\DatabaseException;
 use \Exception;
 
@@ -33,51 +29,33 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class UserProfile implements \Serializable {
-	
-	private $id             = 0;
-	
-    private $username       = "";
+class User extends ConfigElement {
     
-    private $password       = "";
+    protected $password       = "";
     
-    private $displayname    = "";
+    protected $displayname    = "";
     
-    private $mail           = "";
+    protected $mail           = "";
     
-    private $birthdate      = "";
+    protected $birthdate      = "";
     
-    private $gender         = "";
+    protected $gender         = "";
     
-    private $enabled        = false;
+    protected $enabled        = false;
     
-    private $authentication = null;
+    protected $authentication = null;
     
-    private $primaryrole    = null;
-	
-	private $dbh            = null;
-	
-	function __construct(Database $dbh) {
-		
-		$this->dbh = $dbh;
-		
-	}
-	
-	public function getID() {
-		
-		return $this->id;
-		
-	}
+    protected $primaryrole    = null;
 	
 	public function getUsername() {
 		
-		return $this->username;
+		return $this->name;
 		
 	}
 	
 	public function setUsername($username) {
 		
-		$this->username = $username;
+		$this->name = $username;
 		
 		return $this;
 		
@@ -173,7 +151,10 @@ class UserProfile implements \Serializable {
 		
 	}
 	
-	public function setAuthentication(Authentication $authentication) {
+	public function setAuthentication($authentication) {
+		
+		if (is_numeric($app))
+			$authentication = Authentication::load(intval($authentication), $this->dbh);
 		
 		$this->authentication = $authentication;
 		
@@ -187,7 +168,10 @@ class UserProfile implements \Serializable {
 		
 	}
 	
-	public function setPrimaryRole(Role $primaryrole) {
+	public function setPrimaryRole($primaryrole) {
+		
+		if (is_numeric($app))
+			$primaryrole = Role::load(intval($primaryrole), $this->dbh);
 		
 		$this->primaryrole = $primaryrole;
 		
@@ -226,10 +210,8 @@ class UserProfile implements \Serializable {
         	$data = $result->getData();
         	
         	foreach ($data as $row) {
-			
-				$manager = new RolesManager($this->dbh);
         		
-        		array_push($roles, $manager->getRoleByID($row['id']));
+        		array_push($roles, Role::load(intval($row['id']), $this->dbh));
         		
         	}
 			
@@ -239,26 +221,83 @@ class UserProfile implements \Serializable {
 		
 	}
 	
-	public function save() {
+	public static function load($id, $dbh) {
 		
-		if ($this->id == 0) {
+		$query = sprintf("SELECT * FROM comodojo_users WHERE id = %d",
+			$id
+		);
+		       
+        try {
+            
+            $result = $dbh->query($query);
+         
+
+        } catch (DatabaseException $de) {
+            
+            throw $de;
+
+        }
+        
+        if ($result->getLength() > 0) {
+        	
+        	$data = $result->getData();
+        	
+        	$data = array_values($data[0]);
+        	
+        	$user = new User($dbh);
+        	
+        	$user->setData($data);
+        	
+        	return $user;
 			
-			$this->create();
-			
-		} else {
-			
-			$this->update();
-			
-		}
+        }
+		
+	}
+	
+    protected function getData() {
+    	
+    	$data = array(
+			$this->id,
+	    	$this->username,
+	    	$this->password,
+	    	$this->displayname,
+	    	$this->mail,
+	    	$this->birthdate,
+	    	$this->gender,
+	    	($this->enabled)?1:0
+    	);
+    	
+    	if 	(!is_null($this->authentication) && $this->authentication->getID() !== 0)
+    		array_push($data, $this->authentication->getID());
+    		
+    	if 	(!is_null($this->primaryrole) && $this->primaryrole->getID() !== 0)
+    		array_push($data, $this->primaryrole->getID());
+    	
+    	return $data;
+        
+    }
+	
+	protected function setData($data) {
+        
+		$this->id             = $data[0];
+    	$this->name           = $data[1];
+    	$this->password       = $data[2];
+    	$this->displayname    = $data[3];
+    	$this->mail           = $data[4];
+    	$this->birthdate      = $data[5];
+    	$this->gender         = $data[6];
+    	$this->enabled        = ($data[7] == 1);
+    	$this->setAuthentication($data[8]);
+    	$this->setPrimaryRole($data[9]);
         
         return $this;
 		
 	}
 	
-	private function create() {
+	protected function create() {
 		
 		$query = sprintf("INSERT INTO comodojo_users VALUES (0, '%s', '%s', '%s', '%s', '%s', '%s', %d, %s, %s)",
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->username),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->password),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->displayname),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->mail),
@@ -286,7 +325,7 @@ class UserProfile implements \Serializable {
 		
 	}
 	
-	private function update() {
+	protected function update() {
 		
 		$query = sprintf("UPDATE comodojo_users SET 
 			`username` = '%s',
@@ -299,7 +338,7 @@ class UserProfile implements \Serializable {
 			`authentication` = %s,
 			`primaryrole` = %s
 		WHERE id = %d",
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->username),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->password),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->displayname),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->mail),
@@ -308,7 +347,7 @@ class UserProfile implements \Serializable {
 			(($this->getEnabled())?1:0),
 			(is_null($this->app) || $this->authentication->getID() == 0)?'NULL':$this->authentication->getID(),
 			(is_null($this->app) || $this->primaryrole->getID() == 0)?'NULL':$this->primaryrole->getID(),
-			$this->settings[$name]['id']
+			$this->id
 		);
 		       
         try {
@@ -343,166 +382,11 @@ class UserProfile implements \Serializable {
 
         }
         
-		$this->id             = 0;
-    	$this->username       = "";
-    	$this->password       = "";
-    	$this->displayname    = "";
-    	$this->mail           = "";
-    	$this->birthdate      = "";
-    	$this->gender         = "";
-    	$this->enabled        = false;
-    	$this->authentication = null;
-    	$this->primaryrole    = null;
+        
+        $this->setData(array(0, "", "", "", "", "", "", false));
 		
 		return $this;
 		
 	}
-	
-    public function getData() {
-    	
-    	$data = array(
-			$this->id,
-	    	$this->username,
-	    	$this->password,
-	    	$this->displayname,
-	    	$this->mail,
-	    	$this->birthdate,
-	    	$this->gender,
-	    	($this->enabled)?1:0
-    	);
-    	
-    	if 	(!is_null($this->authentication) && $this->authentication->getID() !== 0)
-    		array_push($data, $this->authentication->getID());
-    		
-    	if 	(!is_null($this->primaryrole) && $this->primaryrole->getID() !== 0)
-    		array_push($data, $this->primaryrole->getID());
-    	
-    	return $data;
-        
-    }
-	
-	public static function loadData($dbh, $data) {
-		
-		$user = new UserProfile($dbh);
-        
-		$user->id             = $data[0];
-    	$user->username       = $data[1];
-    	$user->password       = $data[2];
-    	$user->displayname    = $data[3];
-    	$user->mail           = $data[4];
-    	$user->birthdate      = $data[5];
-    	$user->gender         = $data[6];
-    	$user->enabled        = ($data[7] == 1);
-		
-		if (!isset($data[8]) && is_numeric($data[8])) {
-			
-			$manager = new AuthenticationManager($this->dbh);
-			
-			$user->authentication = $manager->getAuthenticationByID($data[8]);
-			
-		}
-		
-		if (!isset($data[9]) && is_numeric($data[9])) {
-			
-			$manager = new RolesManager($this->dbh);
-			
-			$user->primaryrole = $manager->getRoleByID($data[9]);
-			
-		}
-        
-        return $user;
-		
-	}
-	
-	public static function loadUser($id, $dbh) {
-		
-		$query = sprintf("SELECT * FROM comodojo_users WHERE id = %d",
-			$id
-		);
-		       
-        try {
-            
-            $result = $dbh->query($query);
-         
-
-        } catch (DatabaseException $de) {
-            
-            throw $de;
-
-        }
-        
-        if ($result->getLength() > 0) {
-        	
-        	$data = $result->getData();
-        	
-        	$data = array_values($data[0]);
-        	
-			return self::loadData($dbh, $data);
-			
-        }
-        
-        return null;
-		
-	}
-	
-    /**
-     * The following methods implement the Serializable interface
-     */
-	
-    /**
-     * Return the serialized data
-     *
-     * @return string $serialized
-     */
-    public function serialize() {
-    	
-    	$data = $this->getData();
-    	
-    	return serialize(
-            $data
-        );
-        
-    }
-	
-    /**
-     * Return the unserialized object
-     *
-     * @param string $data Serialized data
-     *
-     * @return Manager $this
-     */
-    public function unserialize($data) {
-    	
-    	$data = unserialize($data);
-        
-		$this->id             = $data[0];
-    	$this->username       = $data[1];
-    	$this->password       = $data[2];
-    	$this->displayname    = $data[3];
-    	$this->mail           = $data[4];
-    	$this->birthdate      = $data[5];
-    	$this->gender         = $data[6];
-    	$this->enabled        = ($data[7] == 1);
-		
-		if (!isset($data[8]) && is_numeric($data[8])) {
-			
-			$manager = new AuthenticationManager($this->dbh);
-			
-			$this->authentication = $manager->getAuthenticationByID($data[8]);
-			
-		}
-		
-		if (!isset($data[9]) && is_numeric($data[9])) {
-			
-			$manager = new RolesManager($this->dbh);
-			
-			$this->primaryrole = $manager->getRoleByID($data[9]);
-			
-		}
-        
-        return $this;
-        
-    }
-	
 
 }

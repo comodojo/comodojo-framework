@@ -29,28 +29,28 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Plugins extends ConfigIterator implements \Serializable {
+class Settings extends ConfigIterator implements \Serializable {
 	
-	protected $fw = array();
+	protected $packages = array();
 	
 	public function getElementByName($name) {
 		
 		if (!isset($this->data[$name]))
 			return null;
 			
-		return Plugin::load($this->data[$name], $this->dbh);
+		return Setting::load($this->data[$name], $this->dbh);
 		
 	}
 	
-	public function getSupportedFrameworks() {
+	public function getPackages() {
 		
-		return array_keys($this->fw);
+		return array_keys($this->packages);
 		
 	}
 	
-	public function getListByFramework($fw) {
+	public function getListByPackage($package) {
 		
-		return $this->fw[$fw];
+		return $this->packages[$package];
 		
 	}
 	
@@ -58,15 +58,15 @@ class Plugins extends ConfigIterator implements \Serializable {
 		
 		if (isset($this->data[$name])) {
 			
-			$plugin    = Setting::load($this->data[$name], $this->dbh);
+			$setting = Setting::load($this->data[$name], $this->dbh);
 			
-			$framework = $this->getListByFramework($setting->getFramework());
+			$package = $this->getListByPackage($setting->getPackageName());
 			
-			$index     = array_search($name, $framework);
+			$index   = array_search($name, $package);
 			
-			array_splice($this->fw[$setting->getFramework()], $index, 1);
+			array_splice($this->packages[$setting->getPackageName()], $index, 1);
 			
-			$plugin->delete();
+			$setting->delete();
 			
 			unset($this->data[$name]);
 			
@@ -80,7 +80,7 @@ class Plugins extends ConfigIterator implements \Serializable {
 		
 		$this->data = array();
 		
-		$query = "SELECT * FROM comodojo_plugins ORDER BY name";
+		$query = "SELECT * FROM comodojo_settings ORDER BY name";
 		       
         try {
             
@@ -95,13 +95,13 @@ class Plugins extends ConfigIterator implements \Serializable {
             
         $this->loadList($result, 'name');
             
-        $this->loadFrameworks($result);
+        $this->loadPackages($result);
         
         return $this;
 		
 	}
 	
-	protected function loadFrameworks($data) {
+	protected function loadPackages($data) {
         
         if ($data->getLength() > 0) {
 
@@ -109,18 +109,18 @@ class Plugins extends ConfigIterator implements \Serializable {
 
             foreach ($data as $row) {
                 
-                if (!isset($this->fw[$row['framework']]))
-                	$this->fw[$row['framework']] = array();
+                if (!isset($this->packages[$row['package']]))
+                	$this->packages[$row['package']] = array();
                 	
-                array_push($this->fw[$row['framework']], $row['name']);
+                array_push($this->packages[$row['package']], $row['name']);
             
             }
         
         }
         
-        foreach ($this->fw as $fw => $list) {
+        foreach ($this->packages as $package => $list) {
         	
-        	$this->fw[$fw] = sort($list);
+        	$this->packages[$package] = sort($list);
         	
         }
 		
@@ -141,7 +141,7 @@ class Plugins extends ConfigIterator implements \Serializable {
     	
     	return serialize(array(
             json_encode($this->data),
-            json_encode($this->fw)
+            json_encode($this->packages)
         ));
         
     }
@@ -157,8 +157,8 @@ class Plugins extends ConfigIterator implements \Serializable {
     	
     	$data = unserialize($data);
     	
-    	$this->data = json_decode($data[0], true);
-    	$this->fw   = json_decode($data[1], true);
+    	$this->data     = json_decode($data[0], true);
+    	$this->packages = json_decode($data[1], true);
         
         return $this;
         

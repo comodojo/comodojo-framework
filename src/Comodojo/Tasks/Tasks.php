@@ -29,44 +29,24 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Tasks implements \Iterator, \ArrayAccess, \Countable, \Serializable {
+class Tasks extends ConfigIterator {
 	
-	private $tasks    = array();
-	
-	private $current  = 0;
-	
-	private $dbh      = null;
-	
-	function __construct(Database $dbh) {
+	public function getElementByName($name) {
 		
-		$this->dbh  = $dbh;
-		
-		$this->loadTasks();
-		
-	}
-	
-	public function getTask($name) {
-		
-		if (!isset($this->tasks[$name]))
+		if (!isset($this->data[$name]))
 			return null;
 			
-		return Task::loadTask($this->tasks[$name], $this->dbh);
+		return Task::load($this->data[$name], $this->dbh);
 		
 	}
 	
-	public function getTasks() {
+	public function removeElementByName($name) {
 		
-		return array_keys($this->tasks);
-		
-	}
-	
-	public function removeTask($name) {
-		
-		if (isset($this->tasks[$name])) {
+		if (isset($this->data[$name])) {
 			
-			unset($this->tasks[$name]);
+			Task::load($this->data[$name], $this->dbh)->delete();
 			
-			Task::loadTask($this->tasks[$name], $this->dbh)->delete();
+			unset($this->data[$name]);
 			
 		}
 		
@@ -74,9 +54,9 @@ class Tasks implements \Iterator, \ArrayAccess, \Countable, \Serializable {
 		
 	}
 	
-	private function loadTasks() {
+	protected function loadData() {
 		
-		$this->tasks = array();
+		$this->data = array();
 		
 		$query = "SELECT * FROM comodojo_tasks ORDER BY name";
 		       
@@ -91,199 +71,10 @@ class Tasks implements \Iterator, \ArrayAccess, \Countable, \Serializable {
 
         }
         
-        if ($result->getLength() > 0) {
-
-            $data = $result->getData();
-
-            foreach ($data as $row) {
-            
-                $this->tasks[$row['name']] = intval($row['id']);
-            
-            }
-        
-        }
+        $this->loadList($result, 'name');
         
         return $this;
 		
 	}
-	
-    /**
-     * The following methods implement the Iterator interface
-     */
-	
-    /**
-     * Reset the iterator
-     *
-     * @return Tasks $this
-     */
-    public function rewind() {
-			
-		$this->current  = 0;
-    	
-    	return $this;
-        
-    }
-	
-    /**
-     * Return the current task description
-     *
-     * @return string $description
-     */
-    public function current() {
-    	
-    	$tasks = $this->getTasks();
-        
-    	return $this->getTask($tasks[$this->current]);
-        
-    }
-	
-    /**
-     * Return the current task name
-     *
-     * @return string $name
-     */
-    public function key() {
-    	
-    	$tasks = $this->getTasks();
-    	
-    	return $tasks[$this->current];
-        
-    }
-	
-    /**
-     * Fetch the iterator
-     *
-     * @return Tasks $this
-     */
-    public function next() {
-    
-        $this->current++;
-    	
-    	return $this;
-        
-    }
-	
-    /**
-     * Check if there's a next description
-     *
-     * @return boolean $hasNext
-     */
-    public function valid() {
-    	
-    	$tasks = $this->getTasks();
-    	
-    	return isset($tasks[$this->current]);
-        
-    }
-	
-    /**
-     * The following methods implement the ArrayAccess interface
-     */
-	
-    /**
-     * Check if an offset exists
-     *
-     * @param string $name
-     *
-     * @return boolean $hasTask
-     */
-    public function offsetExists($name) {
-    	
-    	return isset($this->tasks[$name]);
-        
-    }
-	
-    /**
-     * Get a task description
-     *
-     * @param string $name
-     *
-     * @return string $description
-     */
-    public function offsetGet($name) {
-    	
-        return $this->getTask($name);
-        
-    }
-	
-    /**
-     * Set a task
-     *
-     * @param string $name
-     * @param Task $task
-     *
-     * @return Tasks $this
-     */
-    public function offsetSet($name, $task) {
-    	
-    	$task->setName($name)->save();
-    	
-    	$this->tasks[$name] = $task->getID();
-        
-        return $this;
-        
-    }
-	
-    /**
-     * Remove a task
-     *
-     * @param string $name
-     *
-     * @return Tasks $this
-     */
-    public function offsetUnset($name) {
-        
-        return $this->removeTask($name);
-        
-    }
-	
-    /**
-     * The following methods implement the Countable interface
-     */
-	
-    /**
-     * Return the amount of tasks loaded
-     *
-     * @return int $count
-     */
-    public function count() {
-    	
-    	$tasks = $this->getTasks();
-    	
-    	return count($tasks);
-        
-    }
-	
-    /**
-     * The following methods implement the Serializable interface
-     */
-	
-    /**
-     * Return the serialized data
-     *
-     * @return string $serialized
-     */
-    public function serialize() {
-    	
-    	return serialize(
-            $this->tasks
-        );
-        
-    }
-	
-    /**
-     * Return the unserialized object
-     *
-     * @param string $data Serialized data
-     *
-     * @return Tasks $this
-     */
-    public function unserialize($data) {
-    	
-    	$this->tasks = unserialize($data);
-        
-        return $this;
-        
-    }
 
 }

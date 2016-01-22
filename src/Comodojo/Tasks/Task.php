@@ -29,45 +29,11 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Task implements \Serializable {
+class Task extends ConfigElement {
 	
-	private $id   = 0;
+	protected $cls  = "";
 	
-	private $name = "";
-	
-	private $cls  = "";
-	
-	private $pack = "";
-	
-	private $desc = "";
-	
-	private $dbh  = null;
-	
-	function __construct(Database $dbh) {
-		
-		$this->dbh  = $dbh;
-		
-	}
-	
-	public function getID() {
-		
-		return $this->id;
-		
-	}
-	
-	public function getName() {
-		
-		return $this->name;
-		
-	}
-	
-	public function setName($name) {
-		
-		$this->name = $name;
-		
-		return $this;
-		
-	}
+	protected $desc = "";
 	
 	public function getClass() {
 		
@@ -108,21 +74,7 @@ class Task implements \Serializable {
 		
 	}
 	
-	public function getPackageName() {
-		
-		return $this->pack;
-		
-	}
-	
-	public function setPackageName($name) {
-		
-		$this->pack = $name;
-		
-		return $this;
-		
-	}
-	
-	public static function loadTask($id, $dbh) {
+	public static function load($id, $dbh) {
 		
 		$query = sprintf("SELECT * FROM comodojo_tasks WHERE id = %d",
 			$id
@@ -143,19 +95,90 @@ class Task implements \Serializable {
         
         	$data = $result->getData();
         	
-        	$data = $data[0];
+        	$data = array_values($data[0]);
         	
         	$task = new Task($dbh);
         	
-        	$task->id   = $data['id'];
-        	$task->name = $data['name'];
-        	$task->cls  = $data['class'];
-        	$task->desc = $data['description'];
-        	$task->pack = $data['package'];
+        	$task->setData($data);
         	
         	return $task;
         	
         }
+		
+	}
+	
+    protected function getData() {
+    	
+    	return array(
+            $this->id,
+            $this->name,
+            $this->cls,
+            $this->desc,
+            $this->package
+        );
+        
+    }
+	
+    protected function setData($data) {
+    	
+    	$this->id      = intval($data[0]);
+    	$this->name    = $data[1];
+    	$this->cls     = $data[2];
+    	$this->desc    = $data[3];
+    	$this->package = $data[4];
+        
+        return $this;
+        
+    }
+	
+	protected function create() {
+		
+		$query = sprintf("INSERT INTO comodojo_tasks VALUES (0, '%s', '%s', '%s', '%s')",
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->cls),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->desc),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->package)
+		);
+		       
+        try {
+            
+            $result = $this->dbh->query($query);
+         
+
+        } catch (DatabaseException $de) {
+            
+            throw $de;
+
+        }
+        
+        $this->id = $result->getInsertId();
+        
+        return $this;
+		
+	}
+	
+	protected function update() {
+		
+		$query = sprintf("UPDATE comodojo_tasks SET name = '%s', class = '%s', description = '%s', package = '%s' WHERE id = %d",
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->cls),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->desc),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->package),
+			$this->id
+		);
+		       
+        try {
+            
+            $this->dbh->query($query);
+         
+
+        } catch (DatabaseException $de) {
+            
+            throw $de;
+
+        }
+        
+        return $this;
 		
 	}
 	
@@ -176,123 +199,10 @@ class Task implements \Serializable {
 
         }
         
-        $this->id   = 0;
-        $this->name = "";
-        $this->cls  = "";
-        $this->desc = "";
-        $this->pack = "";
+        $this->setData(array(0, "", "", "", ""));
 		
 		return $this;
 		
 	}
-	
-	public function save() {
-		
-		if ($this->id == 0) {
-			
-			$this->createTask();
-			
-		} else {
-			
-			$this->updateTask($name);
-			
-		}
-		
-		return $this;
-		
-	}
-	
-	private function createTask() {
-		
-		$query = sprintf("INSERT INTO comodojo_tasks VALUES (0, '%s', '%s', '%s', '%s')",
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->cls),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->desc),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->pack)
-		);
-		       
-        try {
-            
-            $result = $this->dbh->query($query);
-         
-
-        } catch (DatabaseException $de) {
-            
-            throw $de;
-
-        }
-        
-        $this->id = $result->getInsertId();
-        
-        return $this;
-		
-	}
-	
-	private function updateTask() {
-		
-		$query = sprintf("UPDATE comodojo_tasks SET name = '%s', class = '%s', description = '%s', package = '%s' WHERE id = %d",
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->cls),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->desc),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->pack),
-			$this->id
-		);
-		       
-        try {
-            
-            $this->dbh->query($query);
-         
-
-        } catch (DatabaseException $de) {
-            
-            throw $de;
-
-        }
-        
-        return $this;
-		
-	}
-	
-    /**
-     * The following methods implement the Serializable interface
-     */
-	
-    /**
-     * Return the serialized data
-     *
-     * @return string $serialized
-     */
-    public function serialize() {
-    	
-    	return serialize(array(
-            $this->id,
-            $this->name,
-            $this->cls,
-            $this->desc,
-            $this->pack
-        ));
-        
-    }
-	
-    /**
-     * Return the unserialized object
-     *
-     * @param string $data Serialized data
-     *
-     * @return Tasks $this
-     */
-    public function unserialize($data) {
-    	
-    	$taskData = unserialize($data);
-    	
-    	$this->id   = intval($taskData[0]);
-    	$this->name = $taskData[1];
-    	$this->cls  = $taskData[2];
-    	$this->desc = $taskData[3];
-    	$this->pack = $taskData[4];
-        
-        return $this;
-        
-    }
 
 }

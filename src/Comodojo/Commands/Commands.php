@@ -29,44 +29,24 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Commands implements \Iterator, \ArrayAccess, \Countable, \Serializable {
+class Commands extends ConfigIterator {
 	
-	private $commands  = array();
-	
-	private $current  = 0;
-	
-	private $dbh      = null;
-	
-	function __construct(Database $dbh) {
+	public function getElementByName($name) {
 		
-		$this->dbh  = $dbh;
-		
-		$this->loadCommands();
-		
-	}
-	
-	public function getCommand($name) {
-		
-		if (!isset($this->commands[$name]))
+		if (!isset($this->data[$name]))
 			return null;
 			
-		return Command::loadCommand($this->commands[$name], $this->dbh);
+		return Command::load($this->data[$name], $this->dbh);
 		
 	}
 	
-	public function getCommands() {
+	public function removeElementByName($name) {
 		
-		return array_keys($this->commands);
-		
-	}
-	
-	public function removeCommand($name) {
-		
-		if (isset($this->commands[$name])) {
+		if (isset($this->data[$name])) {
 			
-			unset($this->commands[$name]);
+			Command::load($this->data[$name], $this->dbh)->delete();
 			
-			Command::loadCommand($this->commands[$name], $this->dbh)->delete();
+			unset($this->data[$name]);
 			
 		}
 		
@@ -74,9 +54,9 @@ class Commands implements \Iterator, \ArrayAccess, \Countable, \Serializable {
 		
 	}
 	
-	private function loadCommands() {
+	protected function loadData() {
 		
-		$this->commands = array();
+		$this->data = array();
 		
 		$query = "SELECT * FROM comodojo_commands ORDER BY command";
 		       
@@ -91,199 +71,10 @@ class Commands implements \Iterator, \ArrayAccess, \Countable, \Serializable {
 
         }
         
-        if ($result->getLength() > 0) {
-
-            $data = $result->getData();
-
-            foreach ($data as $row) {
-            
-                $this->commands[$row['command']] = intval($row['id']);
-            
-            }
-        
-        }
+        $this->loadList($result, 'command');
         
         return $this;
 		
 	}
-	
-    /**
-     * The following methods implement the Iterator interface
-     */
-	
-    /**
-     * Reset the iterator
-     *
-     * @return Commands $this
-     */
-    public function rewind() {
-			
-		$this->current  = 0;
-    	
-    	return $this;
-        
-    }
-	
-    /**
-     * Return the current command description
-     *
-     * @return string $description
-     */
-    public function current() {
-    	
-    	$commands = $this->getCommands();
-        
-    	return $this->getCommand($commands[$this->current]);
-        
-    }
-	
-    /**
-     * Return the current command name
-     *
-     * @return string $name
-     */
-    public function key() {
-    	
-    	$commands = $this->getCommands();
-    	
-    	return $commands[$this->current];
-        
-    }
-	
-    /**
-     * Fetch the iterator
-     *
-     * @return Commands $this
-     */
-    public function next() {
-    
-        $this->current++;
-    	
-    	return $this;
-        
-    }
-	
-    /**
-     * Check if there's a next description
-     *
-     * @return boolean $hasNext
-     */
-    public function valid() {
-    	
-    	$commands = $this->getCommands();
-    	
-    	return isset($commands[$this->current]);
-        
-    }
-	
-    /**
-     * The following methods implement the ArrayAccess interface
-     */
-	
-    /**
-     * Check if an offset exists
-     *
-     * @param string $name
-     *
-     * @return boolean $hasCommand
-     */
-    public function offsetExists($name) {
-    	
-    	return isset($this->commands[$name]);
-        
-    }
-	
-    /**
-     * Get a command description
-     *
-     * @param string $name
-     *
-     * @return string $description
-     */
-    public function offsetGet($name) {
-    	
-        return $this->getCommand($name);
-        
-    }
-	
-    /**
-     * Set a command
-     *
-     * @param string $name
-     * @param Command $command
-     *
-     * @return Commands $this
-     */
-    public function offsetSet($name, $command) {
-    	
-    	$command->setName($name)->save();
-    	
-    	$this->commands[$name] = $command->getID();
-        
-        return $this;
-        
-    }
-	
-    /**
-     * Remove a command
-     *
-     * @param string $name
-     *
-     * @return Commands $this
-     */
-    public function offsetUnset($name) {
-        
-        return $this->removeCommand($name);
-        
-    }
-	
-    /**
-     * The following methods implement the Countable interface
-     */
-	
-    /**
-     * Return the amount of commands loaded
-     *
-     * @return int $count
-     */
-    public function count() {
-    	
-    	$commands = $this->getCommands();
-    	
-    	return count($commands);
-        
-    }
-	
-    /**
-     * The following methods implement the Serializable interface
-     */
-	
-    /**
-     * Return the serialized data
-     *
-     * @return string $serialized
-     */
-    public function serialize() {
-    	
-    	return serialize(
-    		$this->commands
-    	);
-        
-    }
-	
-    /**
-     * Return the unserialized object
-     *
-     * @param string $data Serialized data
-     *
-     * @return Commands $this
-     */
-    public function unserialize($data) {
-    	
-    	$this->commands = unserialize($data);
-        
-        return $this;
-        
-    }
 
 }

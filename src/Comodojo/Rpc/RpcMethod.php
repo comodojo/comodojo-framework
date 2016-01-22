@@ -29,49 +29,15 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class RpcMethod implements \Serializable {
+class RpcMethod extends ConfigElement {
 	
-	private $id         = 0;
+	protected $callback   = "";
 	
-	private $name       = "";
+	protected $method     = "";
 	
-	private $callback   = "";
+	protected $desc       = "";
 	
-	private $method     = "";
-	
-	private $desc       = "";
-	
-	private $signatures = array();
-	
-	private $pack       = "";
-	
-	private $dbh        = null;
-	
-	function __construct(Database $dbh) {
-		
-		$this->dbh  = $dbh;
-		
-	}
-	
-	public function getID() {
-		
-		return $this->id;
-		
-	}
-	
-	public function getName() {
-		
-		return $this->name;
-		
-	}
-	
-	public function setName($name) {
-		
-		$this->name = $name;
-		
-		return $this;
-		
-	}
+	protected $signatures = array();
 	
 	public function getCallback() {
 		
@@ -115,21 +81,112 @@ class RpcMethod implements \Serializable {
 		
 	}
 	
-	public function getPackageName() {
+	public function getSignature($index) {
+			
+		if (isset($this->signatures[$index])) {
+			
+			return $this->signatures[$index];
+			
+		}
 		
-		return $this->pack;
+		return null;
 		
 	}
 	
-	public function setPackageName($name) {
+	public function getSignatures() {
 		
-		$this->pack = $name;
+		return $this->signatures;
+		
+	}
+	
+	public function setSignatures($signatures) {
+		
+		$this->signatures = $signatures;
 		
 		return $this;
 		
 	}
 	
-	public static function loadRpcMethod($id, $dbh) {
+	public function getRawSignatures() {
+		
+		$signatures = array();
+		
+		foreach ($this->signatures as $sig) {
+			
+			array_push(
+				$signatures,
+				array(
+					'returnType' => $sig->getReturnType(),
+					'parameters' => $sig->getRawParameters()
+				)
+			);
+			
+		}
+		
+		return $signatures;
+		
+	}
+	
+	public function setRawSignatures($signatures) {
+		
+		foreach ($signatures as $sig) {
+			
+			$signature = new RpcSignature();
+			
+			$signature->setReturnType($sig['returnType']);
+			$signature->setRawParameters($sig['parameters']);
+			
+			array_push(
+				$this->signatures,
+				$signature
+			);
+			
+		}
+		
+		return $this;
+		
+	}
+	
+	public function addSignature($signature) {
+			
+		array_push(
+			$this->signatures,
+			$signature
+		);
+		
+		return $this;
+		
+	}
+	
+	public function addRawSignature($rawSignature) {
+		
+		$signature = new RpcSignature();
+		
+		$signature->setReturnType($rawSignature['returnType']);
+		$signature->setRawParameters($rawSignature['parameters']);
+			
+		array_push(
+			$this->signatures,
+			$signature
+		);
+		
+		return $this;
+		
+	}
+	
+	public function removeSignature($index) {
+			
+		if (isset($this->signatures[$index])) {
+			
+			array_splice($this->signatures, $index, 1);
+			
+		}
+		
+		return $this;
+		
+	}
+	
+	public static function load($id, $dbh) {
 		
 		$query = sprintf("SELECT * FROM comodojo_rpc WHERE id = %d",
 			$id
@@ -150,21 +207,98 @@ class RpcMethod implements \Serializable {
         
         	$data = $result->getData();
         	
-        	$data = $data[0];
+        	$data = array_values($data[0]);
         	
         	$rpc = new Rpc($dbh);
         	
-        	$rpc->id         = $data['id'];
-	    	$rpc->name       = $data['name'];
-	        $rpc->pack       = $data['package'];
-	        $rpc->callback   = $data['callback'];
-	        $rpc->method     = $data['method'];
-	        $rpc->desc       = $data['ddescription'];
-	        $rpc->signatures = json_decode($data['signatures'], true);
+        	$rpc->setData($data);
         	
         	return $rpc;
         	
         }
+		
+	}
+	
+    protected function getData() {
+    	
+    	return array(
+            $this->id,
+	    	$this->name,
+	        $this->callback,
+	        $this->method,
+	        $this->desc,
+	        json_encode($this->getRawSignatures()),
+	        $this->package
+        );
+        
+    }
+    
+    protected function setData($data) {
+    	
+    	$this->id         = intval($data[0]);
+    	$this->name       = $data[1];
+        $this->callback   = $data[2];
+        $this->method     = $data[3];
+        $this->desc       = $data[4];
+        $this->setRawSignatures(json_decode($data[5], true));
+        $this->package    = $data[6];
+        
+        return $this;
+        
+    }
+	
+	protected function create() {
+		
+		$query = sprintf("INSERT INTO comodojo_rpc VALUES (0, '%s', '%s', '%s', '%s', '%s', '%s')",
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->callback),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->method),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->desc),
+			mysqli_real_escape_string($this->dbh->getHandler(), json_encode($this->getRawSignatures())),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->package)
+		);
+		       
+        try {
+            
+            $result = $this->dbh->query($query);
+         
+
+        } catch (DatabaseException $de) {
+            
+            throw $de;
+
+        }
+        
+        $this->id = $result->getInsertId();
+        
+        return $this;
+		
+	}
+	
+	protected function update() {
+		
+		$query = sprintf("UPDATE comodojo_rpc SET name = '%s', callback = '%s', method = '%s', description = '%s', signatures = '%s', package = '%s' WHERE id = %d",
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->callback),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->method),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->desc),
+			mysqli_real_escape_string($this->dbh->getHandler(), json_encode($this->getRawSignatures())),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->pack),
+			$this->id
+		);
+		       
+        try {
+            
+            $this->dbh->query($query);
+         
+
+        } catch (DatabaseException $de) {
+            
+            throw $de;
+
+        }
+        
+        return $this;
 		
 	}
 	
@@ -185,134 +319,11 @@ class RpcMethod implements \Serializable {
 
         }
         
-        $this->id         = 0;
-    	$this->name       = "";
-        $this->pack       = "";
-        $this->callback   = "";
-        $this->method     = "";
-        $this->desc       = "";
-        $this->signatures = array();
+        $this->setData(array(0, "", "", "", "", "[]", ""));
 		
 		return $this;
 		
 	}
-	
-	public function save() {
-		
-		if ($this->id == 0) {
-			
-			$this->createRpcMethod();
-			
-		} else {
-			
-			$this->updateRpcMethod($name);
-			
-		}
-		
-		return $this;
-		
-	}
-	
-	private function createRpcMethod() {
-		
-		$query = sprintf("INSERT INTO comodojo_rpc VALUES (0, '%s', '%s', '%s', '%s', '%s', '%s')",
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->callback),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->method),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->desc),
-			mysqli_real_escape_string($this->dbh->getHandler(), json_encode($this->signatures)),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->pack)
-		);
-		       
-        try {
-            
-            $result = $this->dbh->query($query);
-         
-
-        } catch (DatabaseException $de) {
-            
-            throw $de;
-
-        }
-        
-        $this->id = $result->getInsertId();
-        
-        return $this;
-		
-	}
-	
-	private function updateRpcMethod() {
-		
-		$query = sprintf("UPDATE comodojo_rpc SET name = '%s', callback = '%s', method = '%s', description = '%s', signatures = '%s', package = '%s' WHERE id = %d",
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->callback),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->method),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->desc),
-			mysqli_real_escape_string($this->dbh->getHandler(), json_encode($this->signatures)),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->pack),
-			$this->id
-		);
-		       
-        try {
-            
-            $this->dbh->query($query);
-         
-
-        } catch (DatabaseException $de) {
-            
-            throw $de;
-
-        }
-        
-        return $this;
-		
-	}
-	
-    /**
-     * The following methods implement the Serializable interface
-     */
-	
-    /**
-     * Return the serialized data
-     *
-     * @return string $serialized
-     */
-    public function serialize() {
-    	
-    	return serialize(array(
-            $this->id,
-	    	$this->name,
-	        $this->pack,
-	        $this->callback,
-	        $this->method,
-	        $this->desc,
-	        json_encode($this->signatures)
-        ));
-        
-    }
-	
-    /**
-     * Return the unserialized object
-     *
-     * @param string $data Serialized data
-     *
-     * @return Rpc $this
-     */
-    public function unserialize($data) {
-    	
-    	$commandData = unserialize($data);
-    	
-    	$this->id         = intval($rpcData[0]);
-    	$this->name       = $rpcData[1];
-        $this->pack       = $rpcData[2];
-        $this->callback   = $rpcData[3];
-        $this->method     = $rpcData[4];
-        $this->desc       = $rpcData[5];
-        $this->signatures = json_decode($rpcData[6], true);
-        
-        return $this;
-        
-    }
 
 }
 

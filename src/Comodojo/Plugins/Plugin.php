@@ -29,50 +29,15 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Plugin implements \Serializable {
+class Plugin extends ConfigElement {
 	
-	private $id     = 0;
+	protected $cls    = "";
 	
-	private $name   = "";
+	protected $method = "";
 	
-	private $pack   = "";
+	protected $event  = "";
 	
-	private $cls    = "";
-	
-	private $method = "";
-	
-	private $event  = "";
-	
-	private $fw     = "";
-	
-	private $dbh    = null;
-	
-	function __construct($framework, Database $dbh) {
-		
-		$this->fw   = $framework;
-		$this->dbh  = $dbh;
-		
-	}
-	
-	public function getID() {
-		
-		return $this->id;
-		
-	}
-	
-	public function getName() {
-		
-		return $this->name;
-		
-	}
-	
-	public function setName($name) {
-		
-		$this->name = $name;
-		
-		return $this;
-		
-	}
+	protected $fw     = "";
 	
 	public function getClass() {
 		
@@ -161,21 +126,7 @@ class Plugin implements \Serializable {
 		
 	}
 	
-	public function getPackageName() {
-		
-		return $this->pack;
-		
-	}
-	
-	public function setPackageName($name) {
-		
-		$this->pack = $name;
-		
-		return $this;
-		
-	}
-	
-	public static function loadPlugin($id, $dbh) {
+	public static function load($id, $dbh) {
 		
 		$query = sprintf("SELECT * FROM comodojo_plugins WHERE id = %d",
 			$id
@@ -196,20 +147,98 @@ class Plugin implements \Serializable {
         
         	$data = $result->getData();
         	
-        	$data = $data[0];
+        	$data = array_values($data[0]);
         	
-        	$plugin = new Plugin($data['framework'], $dbh);
+        	$plugin = new Plugin($dbh);
         	
-        	$plugin->id     = $data['id'];
-        	$plugin->name   = $data['name'];
-        	$plugin->pack   = $data['package'];
-        	$plugin->cls    = $data['class'];
-        	$plugin->method = $data['method'];
-        	$plugin->event  = $data['event'];
+        	$plugin->setData($data);
         	
         	return $plugin;
         	
         }
+		
+	}
+	
+    protected function getData() {
+    	
+    	return array(
+            $this->id,
+	        $this->name,
+	        $this->cls,
+	        $this->method,
+	        $this->event,
+	        $this->fw,
+	        $this->package
+        );
+        
+    }
+    
+    protected function setData($data) {
+    	
+    	$this->id     = intval($data[0]);
+    	$this->name   = $data[1];
+        $this->cls    = $data[2];
+        $this->method = $data[3];
+        $this->event  = $data[4];
+        $this->fw     = $data[5];
+        $this->package= $data[6];
+        
+        return $this;
+        
+    }
+	
+	protected function create() {
+		
+		$query = sprintf("INSERT INTO comodojo_plugins VALUES (0, '%s', '%s', '%s', '%s', '%s', '%s')",
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->cls),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->method),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->event),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->fw),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->package)
+		);
+		       
+        try {
+            
+            $result = $this->dbh->query($query);
+         
+
+        } catch (DatabaseException $de) {
+            
+            throw $de;
+
+        }
+        
+        $this->id = $result->getInsertId();
+        
+        return $this;
+		
+	}
+	
+	protected function update() {
+		
+		$query = sprintf("UPDATE comodojo_plugins SET name = '%s', class = '%s', method = '%s', event = '%s', framework = '%s', package = '%s' WHERE id = %d",
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->cls),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->method),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->event),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->fw),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->package),
+			$this->id
+		);
+		       
+        try {
+            
+            $this->dbh->query($query);
+         
+
+        } catch (DatabaseException $de) {
+            
+            throw $de;
+
+        }
+        
+        return $this;
 		
 	}
 	
@@ -237,126 +266,11 @@ class Plugin implements \Serializable {
         $this->cls    = "";
         $this->method = "";
         $this->event  = "";
+        
+        $this->setData(array(0, "", "", "", "", "", ""));
 		
 		return $this;
 		
 	}
-	
-	public function save() {
-		
-		if ($this->id == 0) {
-			
-			$this->createPlugin();
-			
-		} else {
-			
-			$this->updatePlugin($name);
-			
-		}
-		
-		return $this;
-		
-	}
-	
-	private function createPlugin() {
-		
-		$query = sprintf("INSERT INTO comodojo_plugins VALUES (0, '%s', '%s', '%s', '%s', '%s', '%s')",
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->cls),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->method),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->event),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->fw),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->pack)
-		);
-		       
-        try {
-            
-            $result = $this->dbh->query($query);
-         
-
-        } catch (DatabaseException $de) {
-            
-            throw $de;
-
-        }
-        
-        $this->id = $result->getInsertId();
-        
-        return $this;
-		
-	}
-	
-	private function updatePlugin() {
-		
-		$query = sprintf("UPDATE comodojo_plugins SET name = '%s', class = '%s', method = '%s', event = '%s', framework = '%s', package = '%s' WHERE id = %d",
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->cls),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->method),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->event),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->fw),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->pack),
-			$this->id
-		);
-		       
-        try {
-            
-            $this->dbh->query($query);
-         
-
-        } catch (DatabaseException $de) {
-            
-            throw $de;
-
-        }
-        
-        return $this;
-		
-	}
-	
-    /**
-     * The following methods implement the Serializable interface
-     */
-	
-    /**
-     * Return the serialized data
-     *
-     * @return string $serialized
-     */
-    public function serialize() {
-    	
-    	return serialize(array(
-            $this->id,
-	        $this->name,
-	        $this->pack,
-	        $this->fw,
-	        $this->cls,
-	        $this->method,
-	        $this->event 
-        ));
-        
-    }
-	
-    /**
-     * Return the unserialized object
-     *
-     * @param string $data Serialized data
-     *
-     * @return Plugins $this
-     */
-    public function unserialize($data) {
-    	
-    	$pluginData = unserialize($data);
-    	
-    	$this->id     = intval($pluginData[0]);
-    	$this->name   = $pluginData[1];
-        $this->pack   = $pluginData[2];
-        $this->fw     = $pluginData[3];
-        $this->cls    = $pluginData[4];
-        $this->method = $pluginData[5];
-        $this->event  = $pluginData[6];
-        
-        return $this;
-        
-    }
 
 }

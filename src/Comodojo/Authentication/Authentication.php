@@ -28,47 +28,13 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Authentication implements \Serializable {
+class Authentication extends \Comodojo\Configuration\ConfigElement {
 	
-	private $id      = 0;
+	protected $desc    = "";
 	
-	private $name    = "";
+	protected $cls     = "";
 	
-	private $desc    = "";
-	
-	private $cls     = "";
-	
-	private $param   = array();
-	
-	private $package = "";
-	
-	private $dbh     = null;
-	
-	function __construct(Database $dbh) {
-		
-		$this->dbh = $dbh;
-		
-	}
-	
-	public function getID() {
-		
-		return $this->id;
-		
-	}
-	
-	public function getName() {
-		
-		return $this->name;
-		
-	}
-	
-	public function setName($name) {
-		
-		$this->name = $name;
-		
-		return $this;
-		
-	}
+	protected $param   = array();
 	
 	public function getDescription() {
 		
@@ -79,20 +45,6 @@ class Authentication implements \Serializable {
 	public function setDescription($desc) {
 		
 		$this->desc = $desc;
-		
-		return $this;
-		
-	}
-	
-	public function getPackage() {
-		
-		return $this->package;
-		
-	}
-	
-	public function setPackage($package) {
-		
-		$this->package = $package;
 		
 		return $this;
 		
@@ -152,27 +104,70 @@ class Authentication implements \Serializable {
 		
 	}
 	
-	public function save() {
+	public static function load($id, $dbh) {
 		
-		if ($this->id == 0) {
-			
-			$this->create();
-			
-		} else {
-			
-			$this->update();
-			
-		}
+		$query = sprintf("SELECT * FROM comodojo_authentication WHERE id = %d",
+			$id
+		);
+		       
+        try {
+            
+            $result = $dbh->query($query);
+         
+
+        } catch (DatabaseException $de) {
+            
+            throw $de;
+
+        }
         
-        return $this;
+        if ($result->getLength() > 0) {
+        
+        	$data = $result->getData();
+        	
+        	$data = array_values($data[0]);
+        	
+        	$auth = new Authentication($dbh);
+        	
+        	$auth->setData($data);
+        	
+        	return $auth;
+        	
+        }
 		
 	}
 	
-	private function create() {
+    protected function getData() {
+    	
+    	return array(
+    		$this->id,
+    		$this->name,
+    		$this->desc,
+    		$this->cls,
+    		json_encode($this->param),
+    		$this->package
+    	);
+        
+    }
+	
+	protected function setData($data) {
+    	
+		$auth->id      = $data[0];
+		$auth->name    = $data[1];
+		$auth->desc    = $data[2];
+		$auth->cls     = $data[3];
+		$auth->param   = json_decode($data[4]);
+		$auth->package = $data[5];
+        
+        return $this;
+        
+    }
+	
+	protected function create() {
 		
 		$query = sprintf("INSERT INTO comodojo_authentication VALUES (0, '%s', '%s', '%s', '%s', '%s')",
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->description),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->desc),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->cls),
 			mysqli_real_escape_string($this->dbh->getHandler(), json_encode($this->param)),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->package)
@@ -195,11 +190,11 @@ class Authentication implements \Serializable {
 		
 	}
 	
-	private function update() {
+	protected function update() {
 		
-		$query = sprintf("UPDATE comodojo_authentication SET name = '%s', value = '%s', class = '%s', parameters = '%s', package = '%s' WHERE id = %d",
+		$query = sprintf("UPDATE comodojo_authentication SET name = '%s', description = '%s', class = '%s', parameters = '%s', package = '%s' WHERE id = %d",
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->description),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->desc),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->cls),
 			mysqli_real_escape_string($this->dbh->getHandler(), json_encode($this->param)),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->package),
@@ -238,79 +233,11 @@ class Authentication implements \Serializable {
 
         }
         
-        $this->id      = 0;
-        $this->name    = "";
-        $this->desc    = "";
-        $this->cls     = "";
-        $this->param   = array();
-        $this->package = "";
+        $this->setData(array(0, "", "", "", "[]", ""));
 		
 		return $this;
 		
 	}
-	
-	public static function loadData($dbh, $data) {
-		
-		$auth = new Authentication($dbh);
-		
-		$auth->id      = $data[0];
-		$auth->name    = $data[1];
-		$auth->desc    = $data[2];
-		$auth->cls     = $data[3];
-		$auth->param   = json_decode($data[4]);
-		$auth->package = $data[5];
-        
-        return $auth;
-		
-	}
-	
-    /**
-     * The following methods implement the Serializable interface
-     */
-	
-    /**
-     * Return the serialized data
-     *
-     * @return string $serialized
-     */
-    public function serialize() {
-    	
-    	$data = array(
-    		$this->id,
-    		$this->name,
-    		$this->desc,
-    		$this->cls,
-    		json_encode($this->param),
-    		$this->package
-    	);
-    	
-    	return serialize(
-            $data
-        );
-        
-    }
-	
-    /**
-     * Return the unserialized object
-     *
-     * @param string $data Serialized data
-     *
-     * @return Manager $this
-     */
-    public function unserialize($data) {
-    	
-    	$data = unserialize($data);
-    	
-		$auth->id      = $data[0];
-		$auth->name    = $data[1];
-		$auth->desc    = $data[2];
-		$auth->cls     = $data[3];
-		$auth->param   = json_decode($data[4]);
-		$auth->package = $data[5];
-        
-        return $this;
-        
-    }
 	
 
 }

@@ -29,44 +29,9 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class App implements \Serializable {
+class App extends ConfigElement {
 	
-	private $id   = 0;
-	
-	private $name = "";
-	
-	private $pack = "";
-	
-	private $desc = "";
-	
-	private $dbh  = null;
-	
-	function __construct($package, Database $dbh) {
-		
-		$this->pack = $package;
-		$this->dbh  = $dbh;
-		
-	}
-	
-	public function getID() {
-		
-		return $this->id;
-		
-	}
-	
-	public function getName() {
-		
-		return $this->name;
-		
-	}
-	
-	public function setName($name) {
-		
-		$this->name = $name;
-		
-		return $this;
-		
-	}
+	protected $desc = "";
 	
 	public function getDescription() {
 		
@@ -77,20 +42,6 @@ class App implements \Serializable {
 	public function setDescription($description) {
 		
 		$this->description = $description;
-		
-		return $this;
-		
-	}
-	
-	public function getPackageName() {
-		
-		return $this->pack;
-		
-	}
-	
-	public function setPackageName($name) {
-		
-		$this->pack = $name;
 		
 		return $this;
 		
@@ -128,9 +79,7 @@ class App implements \Serializable {
         	
         	foreach ($data as $row) {
 			
-				$manager = new RolesManager($this->dbh);
-        		
-        		array_push($roles, $manager->getRoleByID($row['id']));
+        		array_push($roles, Role::load(intval($row['id']), $this->dbh));
         		
         	}
 			
@@ -140,7 +89,7 @@ class App implements \Serializable {
 		
 	}
 	
-	public static function loadApp($id, $dbh) {
+	public static function load($id, $dbh) {
 		
 		$query = sprintf("SELECT * FROM comodojo_apps WHERE id = %d",
 			$id
@@ -161,13 +110,11 @@ class App implements \Serializable {
         
         	$data = $result->getData();
         	
-        	$data = $data[0];
+        	$data = array_values($data[0]);
         	
-        	$app = new App($data['package'], $dbh);
+        	$app = new App($dbh);
         	
-        	$app->id   = $data['id'];
-        	$app->name = $data['name'];
-        	$app->desc = $data['description'];
+        	$app->setData($data);
         	
         	return $app;
         	
@@ -175,54 +122,34 @@ class App implements \Serializable {
 		
 	}
 	
-	public function delete() {
-		
-		$query = sprintf("DELETE FROM comodojo_apps WHERE id = %d",
-			$this->id
-		);
-		       
-        try {
-            
-            $this->dbh->query($query);
-         
-
-        } catch (DatabaseException $de) {
-            
-            throw $de;
-
-        }
+    protected function getData() {
+    	
+    	return array(
+            $this->id,
+            $this->name,
+            $this->desc,
+            $this->package
+        );
         
-        $this->id   = 0;
-        $this->name = "";
-        $this->desc = "";
-        $this->pack = "";
-		
-		return $this;
-		
-	}
+    }
 	
-	public function save() {
-		
-		if ($this->id == 0) {
-			
-			$this->createApp();
-			
-		} else {
-			
-			$this->updateApp($name);
-			
-		}
-		
-		return $this;
-		
-	}
+	protected function setData($data) {
+    	
+    	$this->id      = intval($data[0]);
+    	$this->name    = $data[1];
+    	$this->desc    = $data[2];
+    	$this->package = $data[3];
+        
+        return $this;
+        
+    }
 	
-	private function createApp() {
+	protected function create() {
 		
 		$query = sprintf("INSERT INTO comodojo_apps VALUES (0, '%s', '%s', '%s')",
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->desc),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->pack)
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->package)
 		);
 		       
         try {
@@ -242,12 +169,12 @@ class App implements \Serializable {
 		
 	}
 	
-	private function updateApp() {
+	protected function update() {
 		
 		$query = sprintf("UPDATE comodojo_apps SET name = '%s', description = '%s', package = '%s' WHERE id = %d",
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
 			mysqli_real_escape_string($this->dbh->getHandler(), $this->desc),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->pack),
+			mysqli_real_escape_string($this->dbh->getHandler(), $this->package),
 			$this->id
 		);
 		       
@@ -266,44 +193,27 @@ class App implements \Serializable {
 		
 	}
 	
-    /**
-     * The following methods implement the Serializable interface
-     */
-	
-    /**
-     * Return the serialized data
-     *
-     * @return string $serialized
-     */
-    public function serialize() {
-    	
-    	return serialize(array(
-            $this->id,
-            $this->name,
-            $this->desc,
-            $this->pack
-        ));
-        
-    }
-	
-    /**
-     * Return the unserialized object
-     *
-     * @param string $data Serialized data
-     *
-     * @return Apps $this
-     */
-    public function unserialize($data) {
-    	
-    	$appData = unserialize($data);
-    	
-    	$this->id   = intval($appData[0]);
-    	$this->name = $appData[1];
-    	$this->desc = $appData[2];
-    	$this->pack = $appData[3];
-        
-        return $this;
-        
-    }
+	public function delete() {
+		
+		$query = sprintf("DELETE FROM comodojo_apps WHERE id = %d",
+			$this->id
+		);
+		       
+        try {
+            
+            $this->dbh->query($query);
+         
+
+        } catch (DatabaseException $de) {
+            
+            throw $de;
+
+        }
+        	
+        $this->setData(array(0, "", "", ""));
+		
+		return $this;
+		
+	}
 
 }

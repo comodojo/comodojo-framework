@@ -29,44 +29,24 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Themes implements \Iterator, \ArrayAccess, \Countable, \Serializable {
+class Themes extends ConfigIterator {
 	
-	private $themes     = array();
-	
-	private $current  = 0;
-	
-	private $dbh      = null;
-	
-	function __construct(Database $dbh) {
+	public function getElementByName($name) {
 		
-		$this->dbh  = $dbh;
-		
-		$this->loadThemes();
-		
-	}
-	
-	public function getTheme($name) {
-		
-		if (!isset($this->themes[$name]))
+		if (!isset($this->data[$name]))
 			return null;
 			
-		return Theme::loadTheme($this->themes[$name], $this->dbh);
+		return Theme::load($this->data[$name], $this->dbh);
 		
 	}
 	
-	public function getThemes() {
+	public function removeElementByName($name) {
 		
-		return array_keys($this->themes);
-		
-	}
-	
-	public function removeTheme($name) {
-		
-		if (isset($this->themes[$name])) {
+		if (isset($this->data[$name])) {
 			
-			unset($this->themes[$name]);
+			Theme::load($this->data[$name], $this->dbh)->delete();
 			
-			Theme::loadTheme($this->themes[$name], $this->dbh)->delete();
+			unset($this->data[$name]);
 			
 		}
 		
@@ -74,9 +54,9 @@ class Themes implements \Iterator, \ArrayAccess, \Countable, \Serializable {
 		
 	}
 	
-	private function loadThemes() {
+	protected function loadData() {
 		
-		$this->themes = array();
+		$this->data = array();
 		
 		$query = "SELECT * FROM comodojo_themes ORDER BY name";
 		       
@@ -91,199 +71,10 @@ class Themes implements \Iterator, \ArrayAccess, \Countable, \Serializable {
 
         }
         
-        if ($result->getLength() > 0) {
-
-            $data = $result->getData();
-
-            foreach ($data as $row) {
-            
-                $this->themes[$row['name']] = intval($row['id']);
-            
-            }
-        
-        }
+        $this->loadList($result, 'name');
         
         return $this;
 		
 	}
-	
-    /**
-     * The following methods implement the Iterator interface
-     */
-	
-    /**
-     * Reset the iterator
-     *
-     * @return Themes $this
-     */
-    public function rewind() {
-			
-		$this->current  = 0;
-    	
-    	return $this;
-        
-    }
-	
-    /**
-     * Return the current theme description
-     *
-     * @return string $description
-     */
-    public function current() {
-    	
-    	$themes = $this->getThemes();
-        
-    	return $this->getTheme($themes[$this->current]);
-        
-    }
-	
-    /**
-     * Return the current theme name
-     *
-     * @return string $name
-     */
-    public function key() {
-    	
-    	$themes = $this->getThemes();
-    	
-    	return $themes[$this->current];
-        
-    }
-	
-    /**
-     * Fetch the iterator
-     *
-     * @return Themes $this
-     */
-    public function next() {
-    
-        $this->current++;
-    	
-    	return $this;
-        
-    }
-	
-    /**
-     * Check if there's a next description
-     *
-     * @return boolean $hasNext
-     */
-    public function valid() {
-    	
-    	$themes = $this->getThemes();
-    	
-    	return isset($themes[$this->current]);
-        
-    }
-	
-    /**
-     * The following methods implement the ArrayAccess interface
-     */
-	
-    /**
-     * Check if an offset exists
-     *
-     * @param string $name
-     *
-     * @return boolean $hasTheme
-     */
-    public function offsetExists($name) {
-    	
-    	return isset($this->themes[$name]);
-        
-    }
-	
-    /**
-     * Get a theme description
-     *
-     * @param string $name
-     *
-     * @return string $description
-     */
-    public function offsetGet($name) {
-    	
-        return $this->getTheme($name);
-        
-    }
-	
-    /**
-     * Set a theme
-     *
-     * @param string $name
-     * @param Theme $theme
-     *
-     * @return Themes $this
-     */
-    public function offsetSet($name, $theme) {
-    	
-    	$theme->setName($name)->save();
-    	
-    	$this->themes[$name] = $theme->getID();
-        
-        return $this;
-        
-    }
-	
-    /**
-     * Remove a theme
-     *
-     * @param string $name
-     *
-     * @return Themes $this
-     */
-    public function offsetUnset($name) {
-        
-        return $this->removeTheme($name);
-        
-    }
-	
-    /**
-     * The following methods implement the Countable interface
-     */
-	
-    /**
-     * Return the amount of themes loaded
-     *
-     * @return int $count
-     */
-    public function count() {
-    	
-    	$themes = $this->getThemes();
-    	
-    	return count($themes);
-        
-    }
-	
-    /**
-     * The following methods implement the Serializable interface
-     */
-	
-    /**
-     * Return the serialized data
-     *
-     * @return string $serialized
-     */
-    public function serialize() {
-    	
-    	return serialize(
-            $this->themes
-        );
-        
-    }
-	
-    /**
-     * Return the unserialized object
-     *
-     * @param string $data Serialized data
-     *
-     * @return Themes $this
-     */
-    public function unserialize($data) {
-    	
-    	$this->themes = unserialize($data);
-        
-        return $this;
-        
-    }
 
 }
