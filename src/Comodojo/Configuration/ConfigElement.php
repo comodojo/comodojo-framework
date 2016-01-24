@@ -30,100 +30,100 @@ use \Exception;
  */
 
 abstract class ConfigElement implements \Serializable {
-	
-	protected $id      = 0;
-	
-	protected $name    = "";
-	
-	protected $package = "";
-	
-	protected $dbh     = null;
-	
-	function __construct(Database $dbh) {
-		
-		$this->dbh  = $dbh;
-		
-	}
-	
-	public function getID() {
-		
-		return $this->id;
-		
-	}
-	
-	public function getName() {
-		
-		return $this->name;
-		
-	}
-	
-	public function setName($name) {
-		
-		$this->name = $name;
-		
-		return $this;
-		
-	}
-	
-	public function getPackageName() {
-		
-		return $this->package;
-		
-	}
-	
-	public function setPackageName($name) {
-		
-		$this->package = $name;
-		
-		return $this;
-		
-	}
-	
-	abstract public static function load($id, $dbh);
-	
-	public function save() {
-		
-		if ($this->id == 0) {
-			
-			$this->create();
-			
-		} else {
-			
-			$this->update();
-			
-		}
-		
-		return $this;
-		
-	}
-	
-	abstract protected function getData();
-	
-	abstract protected function setData($data);
-	
-	abstract protected function create();
-	
-	abstract protected function update();
-	
-	abstract public function delete();
-	
+
+    protected $id = 0;
+
+    protected $name = "";
+
+    protected $package = "";
+
+    protected $dbh;
+
+    public function __construct(Database $dbh) {
+
+        $this->dbh  = $dbh;
+
+    }
+
+    abstract public static function load($id, $dbh);
+
+    abstract protected function getData();
+
+    abstract protected function setData($data);
+
+    abstract protected function create();
+
+    abstract protected function update();
+
+    abstract public function delete();
+
+    public function getID() {
+
+        return $this->id;
+
+    }
+
+    public function getName() {
+
+        return $this->name;
+
+    }
+
+    public function setName($name) {
+
+        $this->name = $name;
+
+        return $this;
+
+    }
+
+    public function getPackageName() {
+
+        return $this->package;
+
+    }
+
+    public function setPackageName($name) {
+
+        $this->package = $name;
+
+        return $this;
+
+    }
+
+    public function save() {
+
+        if ($this->id == 0) {
+
+            $this->create();
+
+        } else {
+
+            $this->update();
+
+        }
+
+        return $this;
+
+    }
+
     /**
      * The following methods implement the Serializable interface
      */
-	
+
     /**
      * Return the serialized data
      *
      * @return string $serialized
      */
     public function serialize() {
-    	
-    	$data = $this->getData();
-    	
-    	return serialize($data);
-        
+
+        $data = $this->getData();
+
+        return serialize($data);
+
     }
-	
+
     /**
      * Return the unserialized object
      *
@@ -132,13 +132,13 @@ abstract class ConfigElement implements \Serializable {
      * @return Routes $this
      */
     public function unserialize($data) {
-    	
-    	$data = unserialize($data);
-    	
-    	$this->setData($data);
-        
+
+        $data = unserialize($data);
+
+        $this->setData($data);
+
         return $this;
-        
+
     }
 
 }

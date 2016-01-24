@@ -3,7 +3,7 @@ Install Comodojo
 
 .. _comodojo: https://github.com/comodojo/comodojo
 .. _composer: https://getcomposer.org/
-.. _comodojo/comodojo.installer: https://github.com/comodojo/comodojo.installer
+.. _comodojo/comodojo-installer: https://github.com/comodojo/comodojo-installer
 .. _comodojo/comodojo: https://github.com/comodojo/comodojo
 
 Comodojo can be installed via `composer`_, using `comodojo/comodojo`_ project's package.
@@ -18,8 +18,7 @@ Installing via composer
 
 .. warning:: This procedure is not complete, unstable, untested. In other words, there are no chances it will work.
 
-At the time of writing, the `comodojo/comodojo.installer`_ plugin should be installed
-first as global package, then a new comodojo/comodojo project can be created with:
+A new comodojo/comodojo project can be created with:
 
     composer create-project comodojo/comodojo myinstallationpath
 

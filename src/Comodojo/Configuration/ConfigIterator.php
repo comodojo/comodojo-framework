@@ -30,124 +30,124 @@ use \Exception;
  */
 
 abstract class ConfigIterator implements \Iterator, \ArrayAccess, \Countable, \Serializable {
-	
-	protected $data     = array();
-	
-	protected $current  = 0;
-	
-	protected $dbh      = null;
-	
-	function __construct(Database $dbh) {
-		
-		$this->dbh  = $dbh;
-		
-		$this->loadData();
-		
-	}
-	
-	public function getList() {
-		
-		return array_keys($this->data);
-		
-	}
-	
-	protected function loadList($data, $fieldName) {
-        
+
+    protected $data = array();
+
+    protected $current = 0;
+
+    protected $dbh;
+
+    public function __construct(Database $dbh) {
+
+        $this->dbh = $dbh;
+
+        $this->loadData();
+
+    }
+
+    abstract protected function loadData();
+
+    abstract public function getElementByName($name);
+
+    abstract public function removeElementByName($name);
+
+    public function getList() {
+
+        return array_keys($this->data);
+
+    }
+
+    public function addElement($name, $element) {
+
+        $element->setName($name)->save();
+
+        $this->data[$name] = $element->getID();
+
+    }
+
+    protected function loadList($data, $fieldName) {
+
         if ($data->getLength() > 0) {
 
             $data = $data->getData();
 
             foreach ($data as $row) {
-            
+
                 $this->data[$row[$fieldName]] = intval($row['id']);
-            
+
             }
-        
+
         }
-		
-	}
-	
-	abstract protected function loadData();
-	
-	public function addElement($name, $element) {
-		
-    	$element->setName($name)->save();
-    	
-    	$this->data[$name] = $element->getID();
-		
-	}
-	
-	abstract public function getElementByName($name);
-	
-	abstract public function removeElementByName($name);
-	
+
+    }
+
     /**
      * The following methods implement the Iterator interface
      */
-	
+
     /**
      * Reset the iterator
      *
      * @return Routes $this
      */
     public function rewind() {
-			
-		$this->current  = 0;
-    	
-    	return $this;
-        
+
+        $this->current  = 0;
+
+        return $this;
+
     }
-	
+
     /**
      * Return the current route description
      *
      * @return string $description
      */
     public function current() {
-        
-    	return $this->getElementByName($this->data[$this->current]);
-        
+
+        return $this->getElementByName($this->data[$this->current]);
+
     }
-	
+
     /**
      * Return the current route name
      *
      * @return string $name
      */
     public function key() {
-    	
-    	return $this->data[$this->current];
-        
+
+        return $this->data[$this->current];
+
     }
-	
+
     /**
      * Fetch the iterator
      *
      * @return Routes $this
      */
     public function next() {
-    
+
         $this->current++;
-    	
-    	return $this;
-        
+
+        return $this;
+
     }
-	
+
     /**
      * Check if there's a next description
      *
      * @return boolean $hasNext
      */
     public function valid() {
-    	
-    	return isset($this->data[$this->current]);
-        
+
+        return isset($this->data[$this->current]);
+
     }
-	
+
     /**
      * The following methods implement the ArrayAccess interface
      */
-	
+
     /**
      * Check if an offset exists
      *
@@ -156,11 +156,11 @@ abstract class ConfigIterator implements \Iterator, \ArrayAccess, \Countable, \S
      * @return boolean $hasRoute
      */
     public function offsetExists($name) {
-    	
-    	return isset($this->data[$name]);
-        
+
+        return isset($this->data[$name]);
+
     }
-	
+
     /**
      * Get a route description
      *
@@ -169,11 +169,11 @@ abstract class ConfigIterator implements \Iterator, \ArrayAccess, \Countable, \S
      * @return string $description
      */
     public function offsetGet($name) {
-    	
+
         return $this->getElementByName($name);
-        
+
     }
-	
+
     /**
      * Set a route
      *
@@ -183,13 +183,13 @@ abstract class ConfigIterator implements \Iterator, \ArrayAccess, \Countable, \S
      * @return ConfigIterator $this
      */
     public function offsetSet($name,  $element) {
-    	
-    	$this->addElement($name, $element);
-        
+
+        $this->addElement($name, $element);
+
         return $this;
-        
+
     }
-	
+
     /**
      * Remove a route
      *
@@ -198,43 +198,43 @@ abstract class ConfigIterator implements \Iterator, \ArrayAccess, \Countable, \S
      * @return ConfigIterator $this
      */
     public function offsetUnset($name) {
-        
+
         return $this->removeElementByName($name);
-        
+
     }
-	
+
     /**
      * The following methods implement the Countable interface
      */
-	
+
     /**
      * Return the amount of routes loaded
      *
      * @return int $count
      */
     public function count() {
-    	
-    	return count($this->data);
-        
+
+        return count($this->data);
+
     }
-	
+
     /**
      * The following methods implement the Serializable interface
      */
-	
+
     /**
      * Return the serialized data
      *
      * @return string $serialized
      */
     public function serialize() {
-    	
-    	return serialize(
+
+        return serialize(
             $this->data
         );
-        
+
     }
-	
+
     /**
      * Return the unserialized object
      *
@@ -243,11 +243,11 @@ abstract class ConfigIterator implements \Iterator, \ArrayAccess, \Countable, \S
      * @return Routes $this
      */
     public function unserialize($data) {
-    	
-    	$this->data = unserialize($data);
-        
+
+        $this->data = unserialize($data);
+
         return $this;
-        
+
     }
 
 }
