@@ -37,21 +37,41 @@ Application can be packed into bundles using special composer package type *como
                 }
             }
             "comodojo-configuration-register": {
-                "HELLOWORLD_DEFAULT_USER": "comodojo"
+                "HELLOWORLD_DEFAULT_USER": "Comodojo"
             }
             "comodojo-rpc-register": {
-
+                "myrpc.helloworld": {
+                    "callback": "\\My\\Rpc",
+                    "method": "helloworld",
+                    "description": "Rpc Helloworld",
+                    "signatures": [
+                        {
+                            "returnType": "string",
+                            "parameters": {
+                                "name": {
+                                    "type": "string",
+                                    "optional": true
+                                }
+                            }
+                        }
+                    ]
+                }
             }
             "comodojo-service-route": {
-
+                "helloworld": {
+                    "type": "route",
+                    "class": "\\My\\Helloworld",
+                    "parameters": {
+                        "cache": false
+                    }
+                }
             }
-            "comodojo-task-register": [
-                {
-	        		"name": "HelloWorld",
+            "comodojo-task-register": {
+                "HelloWorld": {
 	        		"class": "\\My\\Tasks\\HelloWorldTask",
 	        		"description": "Greetings from comodojo"
 	        	}
-            ],
+            },
             "comodojo-command-register": {
                 "helloworld": {
                     "class": "My\\App\\Command\\Helloworld",
