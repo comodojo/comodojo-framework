@@ -1,6 +1,7 @@
-<?php namespace Comodojo\Configuration;
+<?php namespace Comodojo\Rpc;
 
 use \Comodojo\Database\Database;
+use \Comodojo\Base\Iterator;
 use \Comodojo\Exception\DatabaseException;
 use \Comodojo\Exception\ConfigurationException;
 use \Exception;
@@ -29,52 +30,52 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Rpc extends ConfigIterator {
-	
-	public function getElementByName($name) {
-		
-		if (!isset($this->data[$name]))
-			return null;
-			
-		return Rpc::load($this->data[$name], $this->dbh);
-		
-	}
-	
-	public function removeElementByName($name) {
-		
-		if (isset($this->data[$name])) {
-			
-			Rpc::load($this->data[$name], $this->dbh)->delete();
-			
-			unset($this->data[$name]);
-			
-		}
-		
-		return $this;
-		
-	}
-	
-	protected function loadData() {
-		
-		$this->data = array();
-		
-		$query = "SELECT * FROM comodojo_rpc ORDER BY name";
-		       
+class Rpc extends Iterator {
+
+    public function getElementByName($name) {
+
+        if (!isset($this->data[$name]))
+            return null;
+
+        return Rpc::load($this->data[$name], $this->dbh);
+
+    }
+
+    public function removeElementByName($name) {
+
+        if (isset($this->data[$name])) {
+
+            Rpc::load($this->data[$name], $this->dbh)->delete();
+
+            unset($this->data[$name]);
+
+        }
+
+        return $this;
+
+    }
+
+    protected function loadData() {
+
+        $this->data = array();
+
+        $query = "SELECT * FROM comodojo_rpc ORDER BY name";
+
         try {
-            
+
             $result = $this->dbh->query($query);
-         
+
 
         } catch (DatabaseException $de) {
-            
+
             throw $de;
 
         }
-        
+
         $this->loadList($result, 'name');
-        
+
         return $this;
-		
-	}
+
+    }
 
 }

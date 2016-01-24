@@ -1,4 +1,4 @@
-<?php namespace Comodojo\Configuration;
+<?php namespace Comodojo\Base;
 
 use \Comodojo\Database\Database;
 use \Comodojo\Exception\DatabaseException;
@@ -29,7 +29,7 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-abstract class ConfigElement implements \Serializable {
+abstract class Element implements \Serializable {
 
     protected $id = 0;
 

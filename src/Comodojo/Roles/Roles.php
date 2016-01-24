@@ -1,6 +1,7 @@
-<?php namespace Comodojo\Configuration;
+<?php namespace Comodojo\Roles;
 
 use \Comodojo\Database\Database;
+use \Comodojo\Base\Iterator;
 use \Comodojo\Exception\DatabaseException;
 use \Exception;
 
@@ -28,53 +29,53 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Roles extends ConfigIterator {
-	
-	public function getElementByName($name) {
-		
-		if (!isset($this->data[$name]))
-			return null;
-			
-		return Role::load($this->data[$name], $this->dbh);
-		
-	}
-	
-	public function removeElementByName($name) {
-		
-		if (isset($this->data[$name])) {
-			
-			Role::load($this->data[$name], $this->dbh)->delete();
-			
-			unset($this->data[$name]);
-			
-		}
-		
-		return $this;
-		
-	}
-	
-	protected function loadData() {
-		
-		$this->data = array();
-		
-		$query = "SELECT * FROM comodojo_roles ORDER BY name";
-		       
+class Roles extends Iterator {
+
+    public function getElementByName($name) {
+
+        if (!isset($this->data[$name]))
+            return null;
+
+        return Role::load($this->data[$name], $this->dbh);
+
+    }
+
+    public function removeElementByName($name) {
+
+        if (isset($this->data[$name])) {
+
+            Role::load($this->data[$name], $this->dbh)->delete();
+
+            unset($this->data[$name]);
+
+        }
+
+        return $this;
+
+    }
+
+    protected function loadData() {
+
+        $this->data = array();
+
+        $query = "SELECT * FROM comodojo_roles ORDER BY name";
+
         try {
-            
+
             $result = $this->dbh->query($query);
-         
+
 
         } catch (DatabaseException $de) {
-            
+
             throw $de;
 
         }
-        
+
         $this->loadList($result, 'name');
-        
+
         return $this;
-		
-	}
-	
+
+    }
+
 
 }

@@ -1,4 +1,4 @@
-<?php namespace Comodojo\Configuration;
+<?php namespace Comodojo\Rpc;
 
 use \Comodojo\Database\Database;
 use \Comodojo\Exception\DatabaseException;
@@ -30,94 +30,93 @@ use \Exception;
  */
 
 class RpcSignature {
-	
-	protected $ret    = "";
-	
-	protected $params = array();
-	
-	function __construct() {
-		
-		$this->dbh  = $dbh;
-		
-	}
-	
-	public function getReturnType() {
-		
-		return $this->ret;
-		
-	}
-	
-	public function setReturnType($returnType) {
-		
-		$this->ret = $returnType;
-		
-		return $this;
-		
-	}
-	
-	public function getRawParameters() {
-		
-		return $this->params;
-		
-	}
-	
-	public function setRawParameters($params) {
-		
-		$this->params = $params;
-		
-		return $this;
-		
-	}
-	
-	public function getParameters() {
-		
-		return array_keys($this->params);
-		
-	}
-	
-	public function getParameterType($name) {
-		
-		if (isset($this->params[$name]))
-			return $this->params[$name]['type'];
-		
-		return null;
-		
-	}
-	
-	public function isParameterOptional($name) {
-		
-		if (isset($this->params[$name]))
-			return filter_var($this->params[$name]['optional'], FILTER_VALIDATE_BOOLEAN);
-		
-		return null;
-		
-	}
-	
-	public function hasParameter($name) {
-		
-		return (isset($this->params[$name]));
-		
-	}
-	
-	public function addParameter($name, $type, $optional = false) {
-		
-		$this->params[$name] = array(
-			"type"     => $type,
-			"optional" => filter_var($optional, FILTER_VALIDATE_BOOLEAN)
-		);
-		
-		return $this;
-		
-	}
-	
-	public function removeParameter($name) {
-		
-		if (isset($this->params[$name]))
-			unset($this->params[$name]);
-		
-		return $this;
-		
-	}
+
+    protected $ret = "";
+
+    protected $params = array();
+
+    function __construct() {
+
+        $this->dbh  = $dbh;
+
+    }
+
+    public function getReturnType() {
+
+        return $this->ret;
+
+    }
+
+    public function setReturnType($returnType) {
+
+        $this->ret = $returnType;
+
+        return $this;
+
+    }
+
+    public function getRawParameters() {
+
+        return $this->params;
+
+    }
+
+    public function setRawParameters($params) {
+
+        $this->params = $params;
+
+        return $this;
+
+    }
+
+    public function getParameters() {
+
+        return array_keys($this->params);
+
+    }
+
+    public function getParameterType($name) {
+
+        if (isset($this->params[$name]))
+            return $this->params[$name]['type'];
+
+        return null;
+
+    }
+
+    public function isParameterOptional($name) {
+
+        if (isset($this->params[$name]))
+            return filter_var($this->params[$name]['optional'], FILTER_VALIDATE_BOOLEAN);
+
+        return null;
+
+    }
+
+    public function hasParameter($name) {
+
+        return (isset($this->params[$name]));
+
+    }
+
+    public function addParameter($name, $type, $optional = false) {
+
+        $this->params[$name] = array(
+            "type"     => $type,
+            "optional" => filter_var($optional, FILTER_VALIDATE_BOOLEAN)
+        );
+
+        return $this;
+
+    }
+
+    public function removeParameter($name) {
+
+        if (isset($this->params[$name]))
+            unset($this->params[$name]);
+
+        return $this;
+
+    }
 
 }
-

@@ -1,7 +1,6 @@
-<?php namespace Comodojo\Themes;
+<?php namespace Comodojo\Configuration;
 
 use \Comodojo\Database\Database;
-use \Comodojo\Base\Iterator;
 use \Comodojo\Exception\DatabaseException;
 use \Comodojo\Exception\ConfigurationException;
 use \Exception;
@@ -30,51 +29,25 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Themes extends Iterator {
+abstract class AbstractConfiguration {
 
-    public function getElementByName($name) {
+    protected $dbh;
 
-        if (!isset($this->data[$name]))
-            return null;
+    public function __construct() {
 
-        return Theme::load($this->data[$name], $this->dbh);
-
-    }
-
-    public function removeElementByName($name) {
-
-        if (isset($this->data[$name])) {
-
-            Theme::load($this->data[$name], $this->dbh)->delete();
-
-            unset($this->data[$name]);
-
-        }
-
-        return $this;
+        $this->loadDatabase();
 
     }
 
-    protected function loadData() {
+    public function getDbh() {
 
-        $this->data = array();
+        return $this->dbh;
 
-        $query = "SELECT * FROM comodojo_themes ORDER BY name";
+    }
 
-        try {
+    private function loadDatabase() {
 
-            $result = $this->dbh->query($query);
-
-
-        } catch (DatabaseException $de) {
-
-            throw $de;
-
-        }
-
-        $this->loadList($result, 'name');
-
-        return $this;
+        // TO DO
 
     }
 

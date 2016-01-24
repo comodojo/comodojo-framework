@@ -1,6 +1,7 @@
-<?php namespace Comodojo\Configuration;
+<?php namespace Comodojo\Users;
 
 use \Comodojo\Database\Database;
+use \Comodojo\Base\Iterator;
 use \Comodojo\Exception\DatabaseException;
 use \Exception;
 
@@ -28,53 +29,53 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Users extends ConfigIterator {
-	
-	public function getElementByName($name) {
-		
-		if (!isset($this->data[$name]))
-			return null;
-			
-		return User::load($this->data[$name], $this->dbh);
-		
-	}
-	
-	public function removeElementByName($name) {
-		
-		if (isset($this->data[$name])) {
-			
-			User::load($this->data[$name], $this->dbh)->delete();
-			
-			unset($this->data[$name]);
-			
-		}
-		
-		return $this;
-		
-	}
-	
-	protected function loadData() {
-		
-		$this->data = array();
-		
-		$query = "SELECT * FROM comodojo_users ORDER BY username";
-		       
+class Users extends Iterator {
+
+    public function getElementByName($name) {
+
+        if (!isset($this->data[$name]))
+            return null;
+
+        return User::load($this->data[$name], $this->dbh);
+
+    }
+
+    public function removeElementByName($name) {
+
+        if (isset($this->data[$name])) {
+
+            User::load($this->data[$name], $this->dbh)->delete();
+
+            unset($this->data[$name]);
+
+        }
+
+        return $this;
+
+    }
+
+    protected function loadData() {
+
+        $this->data = array();
+
+        $query = "SELECT * FROM comodojo_users ORDER BY username";
+
         try {
-            
+
             $result = $this->dbh->query($query);
-         
+
 
         } catch (DatabaseException $de) {
-            
+
             throw $de;
 
         }
-        
+
         $this->loadList($result, 'username');
-        
+
         return $this;
-		
-	}
-	
+
+    }
+
 
 }

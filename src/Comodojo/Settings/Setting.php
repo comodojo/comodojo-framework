@@ -1,6 +1,7 @@
-<?php namespace Comodojo\Configuration;
+<?php namespace Comodojo\Settings;
 
 use \Comodojo\Database\Database;
+use \Comodojo\Base\Element;
 use \Comodojo\Exception\DatabaseException;
 use \Comodojo\Exception\ConfigurationException;
 use \Exception;
@@ -29,149 +30,149 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Setting extends ConfigElement {
-	
-	protected $value = "";
-	
-	public function getValue() {
-		
-		return $this->value;
-		
-	}
-	
-	public function setValue($value) {
-		
-		$this->value = $value;
-		
-		return $this;
-		
-	}
-	
-	public static function load($id, $dbh) {
-		
-		$query = sprintf("SELECT * FROM comodojo_settings WHERE id = %d",
-			$id
-		);
-		       
+class Setting extends Element {
+
+    protected $value = "";
+
+    public function getValue() {
+
+        return $this->value;
+
+    }
+
+    public function setValue($value) {
+
+        $this->value = $value;
+
+        return $this;
+
+    }
+
+    public static function load($id, $dbh) {
+
+        $query = sprintf("SELECT * FROM comodojo_settings WHERE id = %d",
+            $id
+        );
+
         try {
-            
+
             $result = $dbh->query($query);
-         
+
 
         } catch (DatabaseException $de) {
-            
+
             throw $de;
 
         }
-        
+
         if ($result->getLength() > 0) {
-        
-        	$data = $result->getData();
-        	
-        	$data = array_values($data[0]);
-        	
-        	$setting = new Setting($dbh);
-        	
-        	$setting->setData($data);
-        	
-        	return $setting;
-        	
+
+            $data = $result->getData();
+
+            $data = array_values($data[0]);
+
+            $setting = new Setting($dbh);
+
+            $setting->setData($data);
+
+            return $setting;
+
         }
-		
-	}
-	
+
+    }
+
     protected function getData() {
-    	
-    	return array(
+
+        return array(
             $this->id,
             $this->name,
             $this->value,
             $this->package
         );
-        
+
     }
-	
-	protected function setData($data) {
-    	
-    	$this->id      = intval($data[0]);
-    	$this->name    = $data[1];
-    	$this->value   = $data[2];
-    	$this->package = $data[3];
-        
+
+    protected function setData($data) {
+
+        $this->id      = intval($data[0]);
+        $this->name    = $data[1];
+        $this->value   = $data[2];
+        $this->package = $data[3];
+
         return $this;
-        
+
     }
-	
-	protected function create() {
-		
-		$query = sprintf("INSERT INTO comodojo_settings VALUES (0, '%s', '%s', '%s')",
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->value),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->package)
-		);
-		       
+
+    protected function create() {
+
+        $query = sprintf("INSERT INTO comodojo_settings VALUES (0, '%s', '%s', '%s')",
+            mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
+            mysqli_real_escape_string($this->dbh->getHandler(), $this->value),
+            mysqli_real_escape_string($this->dbh->getHandler(), $this->package)
+        );
+
         try {
-            
+
             $result = $this->dbh->query($query);
-         
+
 
         } catch (DatabaseException $de) {
-            
+
             throw $de;
 
         }
-        
+
         $this->id = $result->getInsertId();
-        
+
         return $this;
-		
-	}
-	
-	protected function update() {
-		
-		$query = sprintf("UPDATE comodojo_settings SET name = '%s', value = '%s', package = '%s' WHERE id = %d",
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->value),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->package),
-			$this->id
-		);
-		       
+
+    }
+
+    protected function update() {
+
+        $query = sprintf("UPDATE comodojo_settings SET name = '%s', value = '%s', package = '%s' WHERE id = %d",
+            mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
+            mysqli_real_escape_string($this->dbh->getHandler(), $this->value),
+            mysqli_real_escape_string($this->dbh->getHandler(), $this->package),
+            $this->id
+        );
+
         try {
-            
+
             $this->dbh->query($query);
-         
+
 
         } catch (DatabaseException $de) {
-            
+
             throw $de;
 
         }
-        
+
         return $this;
-		
-	}
-	
-	public function delete() {
-		
-		$query = sprintf("DELETE FROM comodojo_settings WHERE id = %d",
-			$this->id
-		);
-		       
+
+    }
+
+    public function delete() {
+
+        $query = sprintf("DELETE FROM comodojo_settings WHERE id = %d",
+            $this->id
+        );
+
         try {
-            
+
             $this->dbh->query($query);
-         
+
 
         } catch (DatabaseException $de) {
-            
+
             throw $de;
 
         }
-        	
+
         $this->setData(array(0, "", "", ""));
-		
-		return $this;
-		
-	}
+
+        return $this;
+
+    }
 
 }

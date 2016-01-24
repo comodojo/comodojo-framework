@@ -1,6 +1,7 @@
-<?php namespace Comodojo\Configuration;
+<?php namespace Comodojo\Routes;
 
 use \Comodojo\Database\Database;
+use \Comodojo\Base\Element;
 use \Comodojo\Exception\DatabaseException;
 use \Comodojo\Exception\ConfigurationException;
 use \Exception;
@@ -29,215 +30,215 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Route extends ConfigElement {
-	
-	protected $type    = "";
-	
-	protected $cls     = "";
-	
-	protected $params  = array();
-	
-	public function getType() {
-		
-		return $this->type;
-		
-	}
-	
-	public function setType($type) {
-		
-		$this->type = $type;
-		
-		return $this;
-		
-	}
-	
-	public function getClass() {
-		
-		return $this->cls;
-		
-	}
-	
-	public function getInstance() {
-		
-		$class = $this->cls;
-		
-		if (class_exists($class))
-			return new $class();
-		
-		return null;
-		
-	}
-	
-	public function setClass($class) {
-		
-		$this->cls = $class;
-		
-		return $this;
-		
-	}
-	
-	public function getParameters() {
-		
-		return array_keys($this->params);
-		
-	}
-	
-	public function getParameter($name) {
-		
-		return $this->params[$name];
-		
-	}
-	
-	public function setParameter($name, $value) {
-		
-		$this->params[$name] = $value;
-		
-		return $this;
-		
-	}
-	
-	public function unsetParameter($name) {
-		
-		if (isset($this->params[$name]))
-			unset($this->params[$name]);
-		
-		return $this;
-		
-	}
-	
-	public static function load($id, $dbh) {
-		
-		$query = sprintf("SELECT * FROM comodojo_routes WHERE id = %d",
-			$id
-		);
-		       
-        try {
-            
-            $result = $dbh->query($query);
-         
+class Route extends Element {
 
-        } catch (DatabaseException $de) {
-            
-            throw $de;
+    protected $type = "";
 
-        }
-        
-        if ($result->getLength() > 0) {
-        
-        	$data = $result->getData();
-        	
-        	$data = array_values($data[0]);
-        	
-        	$route = new Route($dbh);
-        	
-        	$route->setData($data);
-        	
-        	return $route;
-        	
-        }
-		
-	}
-	
-    protected function getData() {
-    	
-    	return array(
-            $this->id,
-	    	$this->name,
-	    	$this->type,
-	    	$this->cls,
-	    	json_encode($this->params),
-	    	$this->package
+    protected $cls = "";
+
+    protected $params = array();
+
+    public function getType() {
+
+        return $this->type;
+
+    }
+
+    public function setType($type) {
+
+        $this->type = $type;
+
+        return $this;
+
+    }
+
+    public function getClass() {
+
+        return $this->cls;
+
+    }
+
+    public function getInstance() {
+
+        $class = $this->cls;
+
+        if (class_exists($class))
+            return new $class();
+
+        return null;
+
+    }
+
+    public function setClass($class) {
+
+        $this->cls = $class;
+
+        return $this;
+
+    }
+
+    public function getParameters() {
+
+        return array_keys($this->params);
+
+    }
+
+    public function getParameter($name) {
+
+        return $this->params[$name];
+
+    }
+
+    public function setParameter($name, $value) {
+
+        $this->params[$name] = $value;
+
+        return $this;
+
+    }
+
+    public function unsetParameter($name) {
+
+        if (isset($this->params[$name]))
+            unset($this->params[$name]);
+
+        return $this;
+
+    }
+
+    public static function load($id, $dbh) {
+
+        $query = sprintf("SELECT * FROM comodojo_routes WHERE id = %d",
+            $id
         );
-        
+
+        try {
+
+            $result = $dbh->query($query);
+
+
+        } catch (DatabaseException $de) {
+
+            throw $de;
+
+        }
+
+        if ($result->getLength() > 0) {
+
+            $data = $result->getData();
+
+            $data = array_values($data[0]);
+
+            $route = new Route($dbh);
+
+            $route->setData($data);
+
+            return $route;
+
+        }
+
     }
-    
+
+    protected function getData() {
+
+        return array(
+            $this->id,
+            $this->name,
+            $this->type,
+            $this->cls,
+            json_encode($this->params),
+            $this->package
+        );
+
+    }
+
     protected function setData($data) {
-    	
-    	$this->id      = intval($data[0]);
-    	$this->name    = $data[1];
-    	$this->type    = $data[2];
-    	$this->cls     = $data[3];
-    	$this->params  = json_decode($data[4], true);
-    	$this->package = $data[5];
-        
+
+        $this->id      = intval($data[0]);
+        $this->name    = $data[1];
+        $this->type    = $data[2];
+        $this->cls     = $data[3];
+        $this->params  = json_decode($data[4], true);
+        $this->package = $data[5];
+
         return $this;
-        
+
     }
-	
-	protected function create() {
-		
-		$query = sprintf("INSERT INTO comodojo_routes VALUES (0, '%s', '%s', '%s', '%s', '%s')",
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->type),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->cls),
-			mysqli_real_escape_string($this->dbh->getHandler(), json_encode($this->params)),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->package)
-		);
-		       
+
+    protected function create() {
+
+        $query = sprintf("INSERT INTO comodojo_routes VALUES (0, '%s', '%s', '%s', '%s', '%s')",
+            mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
+            mysqli_real_escape_string($this->dbh->getHandler(), $this->type),
+            mysqli_real_escape_string($this->dbh->getHandler(), $this->cls),
+            mysqli_real_escape_string($this->dbh->getHandler(), json_encode($this->params)),
+            mysqli_real_escape_string($this->dbh->getHandler(), $this->package)
+        );
+
         try {
-            
+
             $result = $this->dbh->query($query);
-         
+
 
         } catch (DatabaseException $de) {
-            
+
             throw $de;
 
         }
-        
+
         $this->id = $result->getInsertId();
-        
+
         return $this;
-		
-	}
-	
-	protected function update() {
-		
-		$query = sprintf("UPDATE comodojo_routes SET `route` = '%s', `type` = '%s', `class` = '%s', `parameters` = '%s', `package` = '%s' WHERE id = %d",
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->type),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->cls),
-			mysqli_real_escape_string($this->dbh->getHandler(), json_encode($this->params)),
-			mysqli_real_escape_string($this->dbh->getHandler(), $this->package),
-			$this->id
-		);
-		       
+
+    }
+
+    protected function update() {
+
+        $query = sprintf("UPDATE comodojo_routes SET `route` = '%s', `type` = '%s', `class` = '%s', `parameters` = '%s', `package` = '%s' WHERE id = %d",
+            mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
+            mysqli_real_escape_string($this->dbh->getHandler(), $this->type),
+            mysqli_real_escape_string($this->dbh->getHandler(), $this->cls),
+            mysqli_real_escape_string($this->dbh->getHandler(), json_encode($this->params)),
+            mysqli_real_escape_string($this->dbh->getHandler(), $this->package),
+            $this->id
+        );
+
         try {
-            
+
             $this->dbh->query($query);
-         
+
 
         } catch (DatabaseException $de) {
-            
+
             throw $de;
 
         }
-        
+
         return $this;
-		
-	}
-	
-	public function delete() {
-		
-		$query = sprintf("DELETE FROM comodojo_routes WHERE id = %d",
-			$this->id
-		);
-		       
+
+    }
+
+    public function delete() {
+
+        $query = sprintf("DELETE FROM comodojo_routes WHERE id = %d",
+            $this->id
+        );
+
         try {
-            
+
             $this->dbh->query($query);
-         
+
 
         } catch (DatabaseException $de) {
-            
+
             throw $de;
 
         }
-        
+
         $this->setData(array(0, "", "", "", "[]", ""));
-		
-		return $this;
-		
-	}
+
+        return $this;
+
+    }
 
 }

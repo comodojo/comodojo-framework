@@ -1,6 +1,10 @@
-<?php namespace Comodojo\Configuration;
+<?php namespace Comodojo\Base;
 
 use \Comodojo\Database\Database;
+use \Iterator as PhpIterator;
+use \ArrayAccess;
+use \Countable;
+use \Serializable;
 use \Comodojo\Exception\DatabaseException;
 use \Comodojo\Exception\ConfigurationException;
 use \Exception;
@@ -29,7 +33,7 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-abstract class ConfigIterator implements \Iterator, \ArrayAccess, \Countable, \Serializable {
+abstract class Iterator implements PhpIterator, ArrayAccess, Countable, Serializable {
 
     protected $data = array();
 

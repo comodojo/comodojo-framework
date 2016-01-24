@@ -1,6 +1,7 @@
-<?php namespace Comodojo\Configuration;
+<?php namespace Comodojo\Plugins;
 
 use \Comodojo\Database\Database;
+use \Comodojo\Base\Iterator;
 use \Comodojo\Exception\DatabaseException;
 use \Comodojo\Exception\ConfigurationException;
 use \Exception;
@@ -29,123 +30,123 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Plugins extends ConfigIterator implements \Serializable {
-	
-	protected $fw = array();
-	
-	public function getElementByName($name) {
-		
-		if (!isset($this->data[$name]))
-			return null;
-			
-		return Plugin::load($this->data[$name], $this->dbh);
-		
-	}
-	
-	public function getSupportedFrameworks() {
-		
-		return array_keys($this->fw);
-		
-	}
-	
-	public function getListByFramework($fw) {
-		
-		return $this->fw[$fw];
-		
-	}
-	
-	public function removeElementByName($name) {
-		
-		if (isset($this->data[$name])) {
-			
-			$plugin    = Setting::load($this->data[$name], $this->dbh);
-			
-			$framework = $this->getListByFramework($setting->getFramework());
-			
-			$index     = array_search($name, $framework);
-			
-			array_splice($this->fw[$setting->getFramework()], $index, 1);
-			
-			$plugin->delete();
-			
-			unset($this->data[$name]);
-			
-		}
-		
-		return $this;
-		
-	}
-	
-	protected function loadData() {
-		
-		$this->data = array();
-		
-		$query = "SELECT * FROM comodojo_plugins ORDER BY name";
-		       
+class Plugins extends Iterator {
+
+    protected $fw = array();
+
+    public function getElementByName($name) {
+
+        if (!isset($this->data[$name]))
+            return null;
+
+        return Plugin::load($this->data[$name], $this->dbh);
+
+    }
+
+    public function getSupportedFrameworks() {
+
+        return array_keys($this->fw);
+
+    }
+
+    public function getListByFramework($fw) {
+
+        return $this->fw[$fw];
+
+    }
+
+    public function removeElementByName($name) {
+
+        if (isset($this->data[$name])) {
+
+            $plugin    = Setting::load($this->data[$name], $this->dbh);
+
+            $framework = $this->getListByFramework($setting->getFramework());
+
+            $index     = array_search($name, $framework);
+
+            array_splice($this->fw[$setting->getFramework()], $index, 1);
+
+            $plugin->delete();
+
+            unset($this->data[$name]);
+
+        }
+
+        return $this;
+
+    }
+
+    protected function loadData() {
+
+        $this->data = array();
+
+        $query = "SELECT * FROM comodojo_plugins ORDER BY name";
+
         try {
-            
+
             $result = $this->dbh->query($query);
-         
+
 
         } catch (DatabaseException $de) {
-            
+
             throw $de;
 
         }
-            
+
         $this->loadList($result, 'name');
-            
+
         $this->loadFrameworks($result);
-        
+
         return $this;
-		
-	}
-	
-	protected function loadFrameworks($data) {
-        
+
+    }
+
+    protected function loadFrameworks($data) {
+
         if ($data->getLength() > 0) {
 
             $data = $data->getData();
 
             foreach ($data as $row) {
-                
+
                 if (!isset($this->fw[$row['framework']]))
-                	$this->fw[$row['framework']] = array();
-                	
+                    $this->fw[$row['framework']] = array();
+
                 array_push($this->fw[$row['framework']], $row['name']);
-            
+
             }
-        
+
         }
-        
+
         foreach ($this->fw as $fw => $list) {
-        	
-        	$this->fw[$fw] = sort($list);
-        	
+
+            $this->fw[$fw] = sort($list);
+
         }
-		
-		return $this;
-		
-	}
-	
+
+        return $this;
+
+    }
+
     /**
      * The following methods implement the Serializable interface
      */
-	
+
     /**
      * Return the serialized data
      *
      * @return string $serialized
      */
     public function serialize() {
-    	
-    	return serialize(array(
+
+        return serialize(array(
             json_encode($this->data),
             json_encode($this->fw)
         ));
-        
+
     }
-	
+
     /**
      * Return the unserialized object
      *
@@ -154,14 +155,14 @@ class Plugins extends ConfigIterator implements \Serializable {
      * @return Plugins $this
      */
     public function unserialize($data) {
-    	
-    	$data = unserialize($data);
-    	
-    	$this->data = json_decode($data[0], true);
-    	$this->fw   = json_decode($data[1], true);
-        
+
+        $data = unserialize($data);
+
+        $this->data = json_decode($data[0], true);
+        $this->fw   = json_decode($data[1], true);
+
         return $this;
-        
+
     }
 
 }

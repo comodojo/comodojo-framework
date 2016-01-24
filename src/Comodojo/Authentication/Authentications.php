@@ -1,6 +1,7 @@
 <?php namespace Comodojo\Authentication;
 
 use \Comodojo\Database\Database;
+use \Comodojo\Base\Iterator;
 use \Comodojo\Exception\DatabaseException;
 use \Exception;
 
@@ -28,52 +29,52 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Manager extends \Comodojo\Configuration\ConfigIterator {
-	
-	public function getElementByName($name) {
-		
-		if (!isset($this->data[$name]))
-			return null;
-			
-		return Authentication::load($this->data[$name], $this->dbh);
-		
-	}
-	
-	public function removeElementByName($name) {
-		
-		if (isset($this->data[$name])) {
-			
-			Authentication::load($this->data[$name], $this->dbh)->delete();
-			
-			unset($this->data[$name]);
-			
-		}
+class Authentications extends Iterator {
+
+    public function getElementByName($name) {
+
+        if (!isset($this->data[$name]))
+            return null;
+
+        return Authentication::load($this->data[$name], $this->dbh);
+
+    }
+
+    public function removeElementByName($name) {
         
+        if (isset($this->data[$name])) {
+
+            Authentication::load($this->data[$name], $this->dbh)->delete();
+
+            unset($this->data[$name]);
+
+        }
+
         return $this;
-		
-	}
-	
-	protected function loadData() {
-		
-		$this->data = array();
-		
-		$query = "SELECT * FROM comodojo_auths ORDER BY name";
-		       
+
+    }
+
+    protected function loadData() {
+
+        $this->data = array();
+
+        $query = "SELECT * FROM comodojo_auths ORDER BY name";
+
         try {
-            
+
             $result = $this->dbh->query($query);
-         
+
 
         } catch (DatabaseException $de) {
-            
+
             throw $de;
 
         }
-        
+
         $this->loadList($result, 'name');
-        
+
         return $this;
-		
-	}
+
+    }
 
 }

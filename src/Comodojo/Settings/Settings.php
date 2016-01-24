@@ -1,6 +1,7 @@
-<?php namespace Comodojo\Configuration;
+<?php namespace Comodojo\Settings;
 
 use \Comodojo\Database\Database;
+use \Comodojo\Base\Iterator;
 use \Comodojo\Exception\DatabaseException;
 use \Comodojo\Exception\ConfigurationException;
 use \Exception;
@@ -29,123 +30,123 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Settings extends ConfigIterator implements \Serializable {
-	
-	protected $packages = array();
-	
-	public function getElementByName($name) {
-		
-		if (!isset($this->data[$name]))
-			return null;
-			
-		return Setting::load($this->data[$name], $this->dbh);
-		
-	}
-	
-	public function getPackages() {
-		
-		return array_keys($this->packages);
-		
-	}
-	
-	public function getListByPackage($package) {
-		
-		return $this->packages[$package];
-		
-	}
-	
-	public function removeElementByName($name) {
-		
-		if (isset($this->data[$name])) {
-			
-			$setting = Setting::load($this->data[$name], $this->dbh);
-			
-			$package = $this->getListByPackage($setting->getPackageName());
-			
-			$index   = array_search($name, $package);
-			
-			array_splice($this->packages[$setting->getPackageName()], $index, 1);
-			
-			$setting->delete();
-			
-			unset($this->data[$name]);
-			
-		}
-		
-		return $this;
-		
-	}
-	
-	protected function loadData() {
-		
-		$this->data = array();
-		
-		$query = "SELECT * FROM comodojo_settings ORDER BY name";
-		       
+class Settings extends Iterator {
+
+    protected $packages = array();
+
+    public function getElementByName($name) {
+
+        if (!isset($this->data[$name]))
+            return null;
+
+        return Setting::load($this->data[$name], $this->dbh);
+
+    }
+
+    public function getPackages() {
+
+        return array_keys($this->packages);
+
+    }
+
+    public function getListByPackage($package) {
+
+        return $this->packages[$package];
+
+    }
+
+    public function removeElementByName($name) {
+
+        if (isset($this->data[$name])) {
+
+            $setting = Setting::load($this->data[$name], $this->dbh);
+
+            $package = $this->getListByPackage($setting->getPackageName());
+
+            $index   = array_search($name, $package);
+
+            array_splice($this->packages[$setting->getPackageName()], $index, 1);
+
+            $setting->delete();
+
+            unset($this->data[$name]);
+
+        }
+
+        return $this;
+
+    }
+
+    protected function loadData() {
+
+        $this->data = array();
+
+        $query = "SELECT * FROM comodojo_settings ORDER BY name";
+
         try {
-            
+
             $result = $this->dbh->query($query);
-         
+
 
         } catch (DatabaseException $de) {
-            
+
             throw $de;
 
         }
-            
+
         $this->loadList($result, 'name');
-            
+
         $this->loadPackages($result);
-        
+
         return $this;
-		
-	}
-	
-	protected function loadPackages($data) {
-        
+
+    }
+
+    protected function loadPackages($data) {
+
         if ($data->getLength() > 0) {
 
             $data = $data->getData();
 
             foreach ($data as $row) {
-                
+
                 if (!isset($this->packages[$row['package']]))
-                	$this->packages[$row['package']] = array();
-                	
+                    $this->packages[$row['package']] = array();
+
                 array_push($this->packages[$row['package']], $row['name']);
-            
+
             }
-        
+
         }
-        
+
         foreach ($this->packages as $package => $list) {
-        	
-        	$this->packages[$package] = sort($list);
-        	
+
+            $this->packages[$package] = sort($list);
+
         }
-		
-		return $this;
-		
-	}
-	
+
+        return $this;
+
+    }
+
     /**
      * The following methods implement the Serializable interface
      */
-	
+
     /**
      * Return the serialized data
      *
      * @return string $serialized
      */
     public function serialize() {
-    	
-    	return serialize(array(
+
+        return serialize(array(
             json_encode($this->data),
             json_encode($this->packages)
         ));
-        
+
     }
-	
+
     /**
      * Return the unserialized object
      *
@@ -154,14 +155,14 @@ class Settings extends ConfigIterator implements \Serializable {
      * @return Plugins $this
      */
     public function unserialize($data) {
-    	
-    	$data = unserialize($data);
-    	
-    	$this->data     = json_decode($data[0], true);
-    	$this->packages = json_decode($data[1], true);
-        
+
+        $data = unserialize($data);
+
+        $this->data     = json_decode($data[0], true);
+        $this->packages = json_decode($data[1], true);
+
         return $this;
-        
+
     }
 
 }
