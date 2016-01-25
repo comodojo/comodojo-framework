@@ -34,14 +34,11 @@ class Plugins extends Iterator {
 
     protected $fw = array();
 
-    public function getElementByName($name) {
+	public function getElementByID($id) {
 
-        if (!isset($this->data[$name]))
-            return null;
+		return Plugin::load(intval($id), $this->dbh);
 
-        return Plugin::load($this->data[$name], $this->dbh);
-
-    }
+	}
 
     public function getSupportedFrameworks() {
 
@@ -59,17 +56,15 @@ class Plugins extends Iterator {
 
         if (isset($this->data[$name])) {
 
-            $plugin    = Setting::load($this->data[$name], $this->dbh);
+            $val       = Setting::load($this->data[$name], $this->dbh);
 
-            $framework = $this->getListByFramework($setting->getFramework());
+            $framework = $this->getListByFramework($val->getFramework());
 
             $index     = array_search($name, $framework);
 
-            array_splice($this->fw[$setting->getFramework()], $index, 1);
-
-            $plugin->delete();
-
-            unset($this->data[$name]);
+            array_splice($this->fw[$val->getFramework()], $index, 1);
+            
+            $this->removeElement($val);
 
         }
 
@@ -79,26 +74,7 @@ class Plugins extends Iterator {
 
     protected function loadData() {
 
-        $this->data = array();
-
-        $query = "SELECT * FROM comodojo_plugins ORDER BY name";
-
-        try {
-
-            $result = $this->dbh->query($query);
-
-
-        } catch (DatabaseException $de) {
-
-            throw $de;
-
-        }
-
-        $this->loadList($result, 'name');
-
-        $this->loadFrameworks($result);
-
-        return $this;
+        $this->loadFromDatabase("comodojo_plugins", "name");
 
     }
 
@@ -142,7 +118,9 @@ class Plugins extends Iterator {
 
         return serialize(array(
             json_encode($this->data),
-            json_encode($this->fw)
+            json_encode($this->packages),
+            json_encode($this->fw),
+            json_encode($this->current)
         ));
 
     }
@@ -158,8 +136,10 @@ class Plugins extends Iterator {
 
         $data = unserialize($data);
 
-        $this->data = json_decode($data[0], true);
-        $this->fw   = json_decode($data[1], true);
+        $this->data     = json_decode($data[0], true);
+        $this->packages = json_decode($data[1], true);
+        $this->fw       = json_decode($data[2], true);
+        $this->current  = json_decode($data[3], true);
 
         return $this;
 

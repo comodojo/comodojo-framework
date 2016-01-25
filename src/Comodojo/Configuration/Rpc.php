@@ -38,62 +38,39 @@ class Rpc extends AbstractConfiguration {
         return $return;
 
     }
-
-    public function getByName($name) {
-
-        $return = new FrameworkRpc($this->getDbh());
-
-        return $return->getElementByName($name);
-
+    
+    protected function parameters() {
+        
+        return array(
+            "package"     => null,
+            "name"        => null,
+            "callback"    => null,
+            "method"      => null,
+            "description" => "",
+            "signatures"  => array() 
+        );
+        
+        
     }
 
-    public function getById($id) {
-
-        return FrameworkRoutes::load($id, $this->getDbh());
-
-    }
-
-    public function add($package, $name, $callback, $method, $description = "", $signatures = array()) {
-
-        $return = new FrameworkRpcMethod($this->getDbh());
-
-        $return->setName($name)
-            ->setPackage($package)
-            ->setCallback($class)
-            ->setMethod($method)
-            ->setDescription($description)
-            ->setRawSignatures($signatures)
+    protected function save($params) {
+        
+        if ($params['id'] == 0)
+            $return = new FrameworkRpcMethod($this->getDbh());
+        else
+            $return = $this->getById($id);
+            
+        if (empty($return)) throw new ConfigurationException("Unable to load object");
+            
+        $return->setName($params['name'])
+            ->setPackage($params['package'])
+            ->setCallback($params['callback'])
+            ->setMethod($params['method'])
+            ->setDescription($params['description'])
+            ->setRawSignatures($params['signatures'])
             ->save();
 
         return $return;
-
-    }
-
-    public function update($id, $package, $name, $callback, $method, $description = "", $signatures = array()) {
-
-        $return = FrameworkRpcMethod::load($id, $this->getDbh());
-
-        if (empty($return)) throw new ConfigurationException("The specified ID doesn't exist");
-
-        $return->setName($name)
-            ->setPackage($package)
-            ->setCallback($class)
-            ->setMethod($method)
-            ->setDescription($description)
-            ->setRawSignatures($signatures)
-            ->save();
-
-        return $return;
-
-    }
-
-    public function delete($id) {
-
-        $return = FrameworkRpcMethod::load($id, $this->getDbh());
-
-        if (empty($return)) throw new ConfigurationException("The specified ID doesn't exist");
-
-        return $return->delete();
 
     }
 

@@ -32,49 +32,15 @@ use \Exception;
 
 class Commands extends Iterator {
 
-    public function getElementByName($name) {
+	public function getElementByID($id) {
 
-        if (!isset($this->data[$name]))
-            return null;
+		return Command::load(intval($id), $this->dbh);
 
-        return Command::load($this->data[$name], $this->dbh);
-
-    }
-
-    public function removeElementByName($name) {
-
-        if (isset($this->data[$name])) {
-
-            Command::load($this->data[$name], $this->dbh)->delete();
-
-            unset($this->data[$name]);
-
-        }
-
-        return $this;
-
-    }
+	}
 
     protected function loadData() {
 
-        $this->data = array();
-
-        $query = "SELECT * FROM comodojo_commands ORDER BY command";
-
-        try {
-
-            $result = $this->dbh->query($query);
-
-
-        } catch (DatabaseException $de) {
-
-            throw $de;
-
-        }
-
-        $this->loadList($result, 'command');
-
-        return $this;
+        $this->loadFromDatabase("comodojo_commands", "command");
 
     }
 

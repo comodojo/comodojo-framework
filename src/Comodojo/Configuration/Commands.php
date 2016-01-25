@@ -38,64 +38,41 @@ class Commands extends AbstractConfiguration {
         return $return;
 
     }
-
-    public function getByName($name) {
-
-        $return = new FrameworkCommands($this->getDbh());
-
-        return $return->getElementByName($name);
-
+    
+    protected function parameters() {
+        
+        return array(
+            "package"     => null,
+            "name"        => null,
+            "class"       => null,
+            "description" => "",
+            "aliases"     => array(),
+            "options"     => array(),
+            "arguments"   => array()  
+        );
+        
+        
     }
 
-    public function getById($id) {
-
-        return FrameworkCommand::load($id, $this->getDbh());
-
-    }
-
-    public function add($package, $name, $class, $description = "", $aliases = array(), $options = array(), $arguments = array()) {
-
-        $return = new FrameworkCommand($this->getDbh());
-
-        $return->setName($name)
-            ->setPackage($package)
-            ->setClass($class)
-            ->setDescription($description)
-            ->setAliases($aliases)
-            ->setRawOptions($options)
-            ->setRawArguments($arguments)
+    protected function save($params) {
+        
+        if ($params['id'] == 0)
+            $return = new FrameworkCommand($this->getDbh());
+        else
+            $return = $this->getById($id);
+            
+        if (empty($return)) throw new ConfigurationException("Unable to load object");
+            
+        $return->setName($params['name'])
+            ->setPackage($params['package'])
+            ->setClass($params['class'])
+            ->setDescription($params['description'])
+            ->setAliases($params['aliases'])
+            ->setRawOptions($params['options'])
+            ->setRawArguments($params['arguments'])
             ->save();
 
         return $return;
-
-    }
-
-    public function update($id, $package, $name, $class, $description = "", $aliases = array(), $options = array(), $arguments = array()) {
-
-        $return = FrameworkCommand::load($id, $this->getDbh());
-
-        if ( empty($return) ) throw new ConfigurationException("The specified ID doesn't exist");
-
-        $return->setName($name)
-            ->setPackage($package)
-            ->setClass($class)
-            ->setDescription($description)
-            ->setAliases($aliases)
-            ->setRawOptions($options)
-            ->setRawArguments($arguments)
-            ->save();
-
-        return $return;
-
-    }
-
-    public function delete($id) {
-
-        $return = FrameworkCommand::load($id, $this->getDbh());
-
-        if ( empty($return) ) throw new ConfigurationException("The specified ID doesn't exist");
-
-        return $return->delete();
 
     }
 

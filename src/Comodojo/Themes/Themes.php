@@ -32,49 +32,15 @@ use \Exception;
 
 class Themes extends Iterator {
 
-    public function getElementByName($name) {
+	public function getElementByID($id) {
 
-        if (!isset($this->data[$name]))
-            return null;
+		return Theme::load(intval($id), $this->dbh);
 
-        return Theme::load($this->data[$name], $this->dbh);
-
-    }
-
-    public function removeElementByName($name) {
-
-        if (isset($this->data[$name])) {
-
-            Theme::load($this->data[$name], $this->dbh)->delete();
-
-            unset($this->data[$name]);
-
-        }
-
-        return $this;
-
-    }
+	}
 
     protected function loadData() {
 
-        $this->data = array();
-
-        $query = "SELECT * FROM comodojo_themes ORDER BY name";
-
-        try {
-
-            $result = $this->dbh->query($query);
-
-
-        } catch (DatabaseException $de) {
-
-            throw $de;
-
-        }
-
-        $this->loadList($result, 'name');
-
-        return $this;
+        $this->loadFromDatabase("comodojo_themes", "name");
 
     }
 

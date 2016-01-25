@@ -1,10 +1,4 @@
-<?php namespace Comodojo\Routes;
-
-use \Comodojo\Database\Database;
-use \Comodojo\Base\Iterator;
-use \Comodojo\Exception\DatabaseException;
-use \Comodojo\Exception\ConfigurationException;
-use \Exception;
+<?php namespace Comodojo\Configuration;
 
 /**
  *
@@ -30,18 +24,30 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Routes extends Iterator {
+interface ConfigurationInterface {
+    
+    // These methods must be implemented by the final classes
+    
+    public function get();
+    
+    protected function save($params);
+    
+    protected function parameters();
+    
+    // Editing methods
+    
+    public function add();
+    
+    public function update();
 
-	public function getElementByID($id) {
+    public function delete($id);
+    
+    // Retriving methods
 
-		return Route::load(intval($id), $this->dbh);
+    public function getByName($name);
 
-	}
+    public function getById($id);
 
-    protected function loadData() {
-
-        $this->loadFromDatabase("comodojo_routes", "route");
-
-    }
+    public function getByPackage($package);
 
 }

@@ -38,78 +38,39 @@ class Settings extends AbstractConfiguration {
         return $return;
 
     }
-
-    public function getByName($name) {
-
-        $return = new FrameworkSettings($this->getDbh());
-
-        return $return->getElementByName($name);
-
+    
+    protected function parameters() {
+        
+        return array(
+            "package"     => null,
+            "name"        => null,
+            "value"       => null,
+            "constant"    => false,
+            "type"        => "STRING",
+            "validate"    => ""
+        );
+        
+        
     }
 
-    public function getById($id) {
-
-        return FrameworkSetting::load($id, $this->getDbh());
-
-    }
-
-    public function getByPackage($package) {
-
-        $return = array();
-
-        $settings = new FrameworkSettings($this->dbh);
-
-        $list = $settings->getListByPackage($package);
-
-        if (!empty($list)) {
-
-            foreach ($list as $name) {
-
-                array_push($return, $settings->getElementByName($name));
-
-            }
-
-        }
-
-        return $return;
-
-    }
-
-    public function add($package, $name, $value) {
-
-        $return = new FrameworkSetting($this->getDbh());
-
-        $return->setName($name)
-            ->setPackage($package)
-            ->setValue($value)
+    protected function save($params) {
+        
+        if ($params['id'] == 0)
+            $return = new FrameworkSetting($this->getDbh());
+        else
+            $return = $this->getById($id);
+            
+        if (empty($return)) throw new ConfigurationException("Unable to load object");
+            
+        $return->setName($params['name'])
+            ->setPackage($params['package'])
+            ->setConstant($params['constant'])
+            ->setType($params['type'])
+            ->setValidation($params['validate'])
+            ->setValue($params['value'])
             ->save();
 
         return $return;
-
-    }
-
-    public function update($id, $package, $name, $value) {
-
-        $return = FrameworkSetting::load($id, $this->getDbh());
-
-        if (empty($return)) throw new ConfigurationException("The specified ID doesn't exist");
-
-        $return->setName($name)
-            ->setPackage($package)
-            ->setValue($value)
-            ->save();
-
-        return $return;
-
-    }
-
-    public function delete($id) {
-
-        $return = FrameworkSetting::load($id, $this->getDbh());
-
-        if ( empty($return) ) throw new ConfigurationException("The specified ID doesn't exist");
-
-        return $return->delete();
 
     }
 

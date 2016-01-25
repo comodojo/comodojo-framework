@@ -39,27 +39,13 @@ class Plugins extends AbstractConfiguration {
 
     }
 
-    public function getByName($name) {
-
-        $return = new FrameworkPlugins($this->getDbh());
-
-        return $return->getElementByName($name);
-
-    }
-
-    public function getById($id) {
-
-        return FrameworkPlugin::load($id, $this->getDbh());
-
-    }
-
     public function getByFramework($framework) {
 
-        $return = array();
+        $return  = array();
 
-        $plugins = new FrameworkPlugins($this->dbh);
+        $plugins = $this->get();
 
-        $list = $plugins->getListByFramework($framework);
+        $list    = $plugins->getListByFramework($framework);
 
         if (!empty($list)) {
 
@@ -74,48 +60,39 @@ class Plugins extends AbstractConfiguration {
         return $return;
 
     }
+    
+    protected function parameters() {
+        
+        return array(
+            "package"     => null,
+            "framework"   => null,
+            "name"        => null,
+            "class"       => null,
+            "method"      => "",
+            "event"       => "" 
+        );
+        
+        
+    }
 
-    public function add($package, $framework, $name, $class, $method = "", $event = "") {
-
-        $return = new FrameworkPlugin($this->getDbh());
-
-        $return->setName($name)
-            ->setPackage($package)
-            ->setFramework($framework)
-            ->setClass($class)
-            ->setMethod($method)
-            ->setEvent($event)
+    protected function save($params) {
+        
+        if ($params['id'] == 0)
+            $return = new FrameworkPlugin($this->getDbh());
+        else
+            $return = $this->getById($id);
+            
+        if (empty($return)) throw new ConfigurationException("Unable to load object");
+            
+        $return->setName($params['name'])
+            ->setPackage($params['package'])
+            ->setFramework($params['framework'])
+            ->setClass($params['class'])
+            ->setMethod($params['method'])
+            ->setEvent($params['event'])
             ->save();
 
         return $return;
-
-    }
-
-    public function update($id, $package, $framework, $name, $class, $method = "", $event = "") {
-
-        $return = FrameworkPlugin::load($id, $this->getDbh());
-
-        if (empty($return)) throw new ConfigurationException("The specified ID doesn't exist");
-
-        $return->setName($name)
-            ->setPackage($package)
-            ->setFramework($framework)
-            ->setClass($class)
-            ->setMethod($method)
-            ->setEvent($event)
-            ->save();
-
-        return $return;
-
-    }
-
-    public function delete($id) {
-
-        $return = FrameworkPlugin::load($id, $this->getDbh());
-
-        if (empty($return)) throw new ConfigurationException("The specified ID doesn't exist");
-
-        return $return->delete();
 
     }
 

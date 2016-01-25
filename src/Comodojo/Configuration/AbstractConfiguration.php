@@ -29,13 +29,106 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-abstract class AbstractConfiguration {
+abstract class AbstractConfiguration implements ConfigurationInterface {
 
     protected $dbh;
 
-    public function __construct() {
+    public function __construct($dbh = null) {
+		
+		$this->dbh = $dbh;
+		
+		if (empty($this->dbh))
+        	$this->loadDatabase();
 
-        $this->loadDatabase();
+    }
+    
+    public function add() {
+        
+        $params = func_get_args();
+        
+        array_unshift($params, 0);
+        
+        $this->save($this->loadParameters($params));
+        
+    }
+    
+    public function update() {
+        
+        $params = func_get_args();
+        
+        $this->save($this->loadParameters($params));
+        
+    }
+    
+    protected function loadParameters($params) {
+        
+        $elaborated = array( "id" => array_shift($params) );
+        
+        $list = $this->parameters();
+        
+        $par = 0;
+        
+        foreach ($list as $name => $default) {
+            
+            if (!isset($params[$par]) && is_null($default)) {
+                
+                throw new ConfigurationException("Parameter '$name' must be specified!");
+                
+            }
+            
+            $value = (!isset($params[$par]))?$default:$params[$par];
+            
+            $elaborated[$name] = $value;
+            
+            $par++;
+            
+        }
+        
+        return $elaborated;
+        
+    }
+
+    public function getByName($name) {
+
+        return $this->get()->getElementByName($name);
+
+    }
+
+    public function getById($id) {
+
+        return $this->get()->getElementByID($id);
+
+    }
+
+    public function getByPackage($package) {
+
+        $return = array();
+
+        $iter   = $this->get();
+
+        $list   = $iter->getListByPackage($package);
+
+        if (!empty($list)) {
+
+            foreach ($list as $name) {
+
+                array_push($return, $iter->getElementByName($name));
+
+            }
+
+        }
+
+        return $return;
+
+    }
+
+    public function delete($id) {
+
+        $return = $this->getById($id);
+
+        if ( empty($return) ) throw new ConfigurationException("The specified ID doesn't exist");
+        
+        return $this->get()->removeElementByID($id);
 
     }
 

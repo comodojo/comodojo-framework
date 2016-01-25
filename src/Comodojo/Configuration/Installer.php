@@ -55,23 +55,23 @@ class Installer {
 
         $this->dbh = self::loadDatabase();
 
-        $this->apps = new Apps();
+        $this->apps = new Apps($this->dbh);
 
-        $this->authentication = new Authentication();
+        $this->authentication = new Authentication($this->dbh);
 
-        $this->commands = new Commands();
+        $this->commands = new Commands($this->dbh);
 
-        $this->plugins = new Plugins();
+        $this->plugins = new Plugins($this->dbh);
 
-        $this->routes = new Routes();
+        $this->routes = new Routes($this->dbh);
 
-        $this->rpc = new Rpc();
+        $this->rpc = new Rpc($this->dbh);
 
-        $this->settings = new Settings();
+        $this->settings = new Settings($this->dbh);
 
-        $this->tasks = new Tasks();
+        $this->tasks = new Tasks($this->dbh);
 
-        $this->themes = new Themes();
+        $this->themes = new Themes($this->dbh);
 
     }
 

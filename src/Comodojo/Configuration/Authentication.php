@@ -38,58 +38,35 @@ class Authentication extends AbstractConfiguration {
         return $return;
 
     }
-
-    public function getByName($name) {
-
-        $return = new FrameworkAuthentications($this->getDbh());
-
-        return $return->getElementByName($name);
-
+    
+    protected function parameters() {
+        
+        return array(
+            "package"     => null,
+            "name"        => null,
+            "class"       => null,
+            "description" => ""  
+        );
+        
+        
     }
 
-    public function getById($id) {
-
-        return FrameworkAuthentication::load($id, $this->getDbh());
-
-    }
-
-    public function add($package, $name, $class, $description = "") {
-
-        $return = new FrameworkAuthentication($this->getDbh());
-
-        $return->setName($name)
-            ->setPackage($package)
-            ->setClass($class)
-            ->setDescription($description)
+    protected function save($params) {
+        
+        if ($params['id'] == 0)
+            $return = new FrameworkAuthentication($this->getDbh());
+        else
+            $return = $this->getById($id);
+            
+        if (empty($return)) throw new ConfigurationException("Unable to load object");
+            
+        $return->setName($params['name'])
+            ->setPackage($params['package'])
+            ->setClass($params['class'])
+            ->setDescription($params['description'])
             ->save();
 
         return $return;
-
-    }
-
-    public function update($id, $package, $name, $class, $description = "") {
-
-        $return = FrameworkAuthentication::load($id, $this->getDbh());
-
-        if ( empty($return) ) throw new ConfigurationException("The specified ID doesn't exist");
-
-        $return->setName($name)
-            ->setPackage($package)
-            ->setClass($class)
-            ->setDescription($description)
-            ->save();
-
-        return $return;
-
-    }
-
-    public function delete($id) {
-
-        $return = FrameworkAuthentication::load($id, $this->getDbh());
-
-        if ( empty($return) ) throw new ConfigurationException("The specified ID doesn't exist");
-
-        return $return->delete();
 
     }
 

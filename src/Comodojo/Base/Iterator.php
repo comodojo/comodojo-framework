@@ -35,9 +35,11 @@ use \Exception;
 
 abstract class Iterator implements PhpIterator, ArrayAccess, Countable, Serializable {
 
-    protected $data = array();
+    protected $data     = array();
 
-    protected $current = 0;
+    protected $packages = array();
+
+    protected $current  = 0;
 
     protected $dbh;
 
@@ -49,11 +51,30 @@ abstract class Iterator implements PhpIterator, ArrayAccess, Countable, Serializ
 
     }
 
+    public function getPackages() {
+
+        return array_keys($this->packages);
+
+    }
+
+    public function getListByPackage($package) {
+
+        return $this->packages[$package];
+
+    }
+
     abstract protected function loadData();
 
-    abstract public function getElementByName($name);
+    abstract public function getElementByID($id);
 
-    abstract public function removeElementByName($name);
+	public function getElementByName($name) {
+
+		if (!isset($this->data[$name]))
+			throw new ConfigurationException("Value identified by $name does not exist");
+
+		return $this->getElementByID($this->data[$name], $this->dbh);
+
+	}
 
     public function getList() {
 
@@ -69,6 +90,83 @@ abstract class Iterator implements PhpIterator, ArrayAccess, Countable, Serializ
 
     }
 
+    public function removeElementByName($name) {
+
+        if (isset($this->data[$name])) {
+
+            $val = $this->getElementByName($name);
+            
+            $this->removeElement($val);
+
+        }
+
+        return $this;
+
+    }
+
+    public function removeElementByID($id) {
+
+        if (in_array($id, array_values($this->data))) {
+
+            $val = $this->getElementByID($id);
+            
+            $this->removeElement($val);
+
+        }
+
+        return $this;
+
+    }
+    
+    protected function removeElement($element) {
+        
+        $name    = $element->getName();
+        
+        $package = $this->getListByPackage($element->getPackageName());
+
+        $index   = array_search($name, $package);
+        
+        if ($index >= 0) {
+
+            array_splice($this->packages[$element->getPackageName()], $index, 1);
+
+            $element->delete();
+
+            unset($this->data[$name]);
+        
+        } else {
+            
+            throw new ConfigurationException("Unable to remove object");
+            
+        }
+        
+    }
+    
+    protected function loadFromDatabase($table, $fieldName) {
+
+        $this->data = array();
+
+        $query = sprintf("SELECT * FROM %s ORDER BY %s", $table, $fieldName);
+
+        try {
+
+            $result = $this->dbh->query($query);
+
+
+        } catch (DatabaseException $de) {
+
+            throw $de;
+
+        }
+
+        $this->loadList($result, $fieldName);
+
+        $this->loadPackages($result, $fieldName);
+
+        return $this;
+        
+    }
+
     protected function loadList($data, $fieldName) {
 
         if ($data->getLength() > 0) {
@@ -82,6 +180,33 @@ abstract class Iterator implements PhpIterator, ArrayAccess, Countable, Serializ
             }
 
         }
+
+    }
+
+    protected function loadPackages($data, $fieldName) {
+
+        if ($data->getLength() > 0) {
+
+            $data = $data->getData();
+
+            foreach ($data as $row) {
+
+                if (!isset($this->packages[$row['package']]))
+                    $this->packages[$row['package']] = array();
+
+                array_push($this->packages[$row['package']], $row[$fieldName]);
+
+            }
+
+        }
+
+        foreach ($this->packages as $package => $list) {
+
+            $this->packages[$package] = sort($list);
+
+        }
+
+        return $this;
 
     }
 
@@ -233,9 +358,11 @@ abstract class Iterator implements PhpIterator, ArrayAccess, Countable, Serializ
      */
     public function serialize() {
 
-        return serialize(
-            $this->data
-        );
+        return serialize(array(
+            json_encode($this->data),
+            json_encode($this->packages),
+            json_encode($this->current)
+        ));
 
     }
 
@@ -244,11 +371,15 @@ abstract class Iterator implements PhpIterator, ArrayAccess, Countable, Serializ
      *
      * @param string $data Serialized data
      *
-     * @return Routes $this
+     * @return Plugins $this
      */
     public function unserialize($data) {
 
-        $this->data = unserialize($data);
+        $data = unserialize($data);
+
+        $this->data     = json_decode($data[0], true);
+        $this->packages = json_decode($data[1], true);
+        $this->current  = json_decode($data[2], true);
 
         return $this;
 

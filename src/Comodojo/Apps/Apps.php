@@ -32,49 +32,15 @@ use \Exception;
 
 class Apps extends Iterator {
 
-	public function getElementByName($name) {
+	public function getElementByID($id) {
 
-		if (!isset($this->data[$name]))
-			return null;
-
-		return App::load($this->data[$name], $this->dbh);
-
-	}
-
-	public function removeElementByName($name) {
-
-		if (isset($this->data[$name])) {
-
-			App::load($this->data[$name], $this->dbh)->delete();
-
-			unset($this->data[$name]);
-
-		}
-
-        return $this;
+		return App::load(intval($id), $this->dbh);
 
 	}
 
 	protected function loadData() {
 
-		$this->data = array();
-
-		$query = "SELECT * FROM comodojo_apps ORDER BY name";
-
-        try {
-
-            $result = $this->dbh->query($query);
-
-
-        } catch (DatabaseException $de) {
-
-            throw $de;
-
-        }
-
-        $this->loadList($result, 'name');
-
-        return $this;
+        $this->loadFromDatabase("comodojo_apps", "name");
 
 	}
 

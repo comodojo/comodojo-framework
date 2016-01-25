@@ -31,14 +31,11 @@ use \Exception;
 
 class Users extends Iterator {
 
-    public function getElementByName($name) {
+	public function getElementByID($id) {
 
-        if (!isset($this->data[$name]))
-            return null;
+		return User::load(intval($id), $this->dbh);
 
-        return User::load($this->data[$name], $this->dbh);
-
-    }
+	}
 
     public function removeElementByName($name) {
 

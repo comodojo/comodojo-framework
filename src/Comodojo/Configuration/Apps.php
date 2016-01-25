@@ -38,56 +38,33 @@ class Apps extends AbstractConfiguration {
         return $return;
 
     }
-
-    public function getByName($name) {
-
-        $return = new FrameworkApps($this->getDbh());
-
-        return $return->getElementByName($name);
-
+    
+    protected function parameters() {
+        
+        return array(
+            "package"     => null,
+            "name"        => null,
+            "description" => ""  
+        );
+        
+        
     }
 
-    public function getById($id) {
-
-        return FrameworkApp::load($id, $this->getDbh());
-
-    }
-
-    public function add($package, $name, $description = "") {
-
-        $return = new FrameworkApp($this->getDbh());
-
-        $return->setName($name)
-            ->setPackage($package)
-            ->setDescription($description)
+    protected function save($params) {
+        
+        if ($params['id'] == 0)
+            $return = new FrameworkApp($this->getDbh());
+        else
+            $return = $this->getById($id);
+            
+        if (empty($return)) throw new ConfigurationException("Unable to load object");
+            
+        $return->setName($params['name'])
+            ->setPackage($params['package'])
+            ->setDescription($params['description'])
             ->save();
 
         return $return;
-
-    }
-
-    public function update($id, $package, $name, $description = "") {
-
-        $return = FrameworkApp::load($id, $this->getDbh());
-
-        if (empty($return)) throw new ConfigurationException("The specified ID doesn't exist");
-
-        $return->setName($name)
-            ->setPackage($package)
-            ->setDescription($description)
-            ->save();
-
-        return $return;
-
-    }
-
-    public function delete($id) {
-
-        $return = FrameworkApp::load($id, $this->getDbh());
-
-        if (empty($return)) throw new ConfigurationException("The specified ID doesn't exist");
-
-        return $return->delete();
 
     }
 

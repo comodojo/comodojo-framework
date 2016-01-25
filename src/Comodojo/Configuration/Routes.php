@@ -38,50 +38,33 @@ class Routes extends AbstractConfiguration {
         return $return;
 
     }
-
-    public function getByName($name) {
-
-        $return = new FrameworkRoutes($this->getDbh());
-
-        return $return->getElementByName($name);
-
+    
+    protected function parameters() {
+        
+        return array(
+            "package"     => null,
+            "name"        => null,
+            "class"       => null,
+            "type"        => null,
+            "parameters"  => array() 
+        );
+        
+        
     }
 
-    public function getById($id) {
-
-        return FrameworkRoute::load($id, $this->getDbh());
-
-    }
-
-    public function add($package, $name, $class, $type, $parameters = array()) {
-
-        $return = new FrameworkRoute($this->getDbh());
-
-        $return->setName($name)
-            ->setPackage($package)
-            ->setClass($class)
-            ->setType($type);
-
-        foreach ($parameters as $key => $value) {
-
-            $return->setParameter($key, $value);
-
-        }
-
-        return $return->save();
-
-    }
-
-    public function update($id, $package, $name, $class, $type, $paramseters = array()) {
-
-        $return = FrameworkRoute::load($id, $this->getDbh());
-
-        if (empty($return)) throw new ConfigurationException("The specified ID doesn't exist");
-
-        $return->setName($name)
-            ->setPackage($package)
-            ->setClass($class)
-            ->setType($type);
+    protected function save($params) {
+        
+        if ($params['id'] == 0)
+            $return = new FrameworkRoute($this->getDbh());
+        else
+            $return = $this->getById($id);
+            
+        if (empty($return)) throw new ConfigurationException("Unable to load object");
+            
+        $return->setName($params['name'])
+            ->setPackage($params['package'])
+            ->setClass($params['class'])
+            ->setType($params['type']);
 
         foreach ( $return->getParameters() as $param ) {
 
@@ -89,7 +72,7 @@ class Routes extends AbstractConfiguration {
 
         }
 
-        foreach ($paramseters as $key => $value) {
+        foreach ($params['parameters'] as $key => $value) {
 
             $return->setParameter($key, $value);
 
@@ -98,15 +81,4 @@ class Routes extends AbstractConfiguration {
         return $return->save();
 
     }
-
-    public function delete($id) {
-
-        $return = FrameworkRoute::load($id, $this->getDbh());
-
-        if (empty($return)) throw new ConfigurationException("The specified ID doesn't exist");
-
-        return $return->delete();
-
-    }
-
 }

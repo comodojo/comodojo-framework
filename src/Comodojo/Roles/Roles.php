@@ -31,14 +31,11 @@ use \Exception;
 
 class Roles extends Iterator {
 
-    public function getElementByName($name) {
+	public function getElementByID($id) {
 
-        if (!isset($this->data[$name]))
-            return null;
+		return Role::load(intval($id), $this->dbh);
 
-        return Role::load($this->data[$name], $this->dbh);
-
-    }
+	}
 
     public function removeElementByName($name) {
 
