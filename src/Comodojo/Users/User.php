@@ -184,7 +184,6 @@ class User extends Element {
 
         $roles = array();
 
-
         $query = sprintf("SELECT comodojo_roles.id as id
         FROM
             comodojo_roles,

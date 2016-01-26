@@ -33,6 +33,7 @@ Contents:
    applications
    usersandroles
    authentication
+   themes
    appendix_a_installer
 
 Indices and tables

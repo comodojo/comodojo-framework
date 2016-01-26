@@ -26,29 +26,14 @@ use \Comodojo\Users\User;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class LocalProvider implements AuthenticationProviderInterface {
+interface AuthenticationProviderInterface {
 
-    private $user;
-
-    public function __construct(User $user) {
-        
-        $this->user = $user;
-        
-    }
+    public function __construct(User $user);
     
-    public function authenticate($password) {
-        
-        return password_verify($password, $user->getPassword);
-        
-    }
+    public function authenticate($password);
     
-    public function profile() {
-        
-        return array(
-            "primaryrole" => $this->user->getPrimaryRole(),
-            "roles" => $this->user->getRoles()
-        );
-        
-    }
+    public function chpasswd($old_password, $new_password);
+    
+    public function profile();
 
 }
