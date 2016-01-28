@@ -32,7 +32,11 @@ use \Exception;
 
 class User extends Element {
 
-    protected $password = "";
+    private $oldpwd = "";
+    
+    private $password = "";
+    
+    private $isPwdChanged = false;
 
     protected $displayname = "";
 
@@ -69,8 +73,13 @@ class User extends Element {
     }
 
     public function setPassword($password) {
+        
+        if (empty($this->oldpwd))
+            $this->oldpwd = $this->password;
 
         $this->password = $password;
+        
+        $this->isPwdChanged = true;
 
         return $this;
 
@@ -154,7 +163,7 @@ class User extends Element {
 
     public function setAuthentication($authentication) {
 
-        if (is_numeric($app))
+        if (!empty($authentication) && is_numeric($authentication))
             $authentication = Authentication::load(intval($authentication), $this->dbh);
 
         $this->authentication = $authentication;
@@ -171,7 +180,7 @@ class User extends Element {
 
     public function setPrimaryRole($primaryrole) {
 
-        if (is_numeric($app))
+        if (!empty($primaryrole) && is_numeric($primaryrole))
             $primaryrole = Role::load(intval($primaryrole), $this->dbh);
 
         $this->primaryrole = $primaryrole;
@@ -267,10 +276,10 @@ class User extends Element {
             ($this->enabled)?1:0
         );
 
-        if     (!is_null($this->authentication) && $this->authentication->getID() !== 0)
+        if (!is_null($this->authentication) && $this->authentication->getID() !== 0)
             array_push($data, $this->authentication->getID());
 
-        if     (!is_null($this->primaryrole) && $this->primaryrole->getID() !== 0)
+        if (!is_null($this->primaryrole) && $this->primaryrole->getID() !== 0)
             array_push($data, $this->primaryrole->getID());
 
         return $data;
@@ -296,16 +305,15 @@ class User extends Element {
 
     protected function create() {
 
-        $query = sprintf("INSERT INTO comodojo_users VALUES (0, '%s', '%s', '%s', '%s', '%s', '%s', %d, %s, %s)",
+        $query = sprintf("INSERT INTO comodojo_users VALUES (0, '%s', '', '%s', '%s', '%s', '%s', %d, %s, %s)",
             mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->password),
             mysqli_real_escape_string($this->dbh->getHandler(), $this->displayname),
             mysqli_real_escape_string($this->dbh->getHandler(), $this->mail),
             mysqli_real_escape_string($this->dbh->getHandler(), $this->birthdate),
             mysqli_real_escape_string($this->dbh->getHandler(), $this->gender),
             (($this->getEnabled())?1:0),
-            (is_null($this->app) || $this->authentication->getID() == 0)?'NULL':$this->authentication->getID(),
-            (is_null($this->app) || $this->primaryrole->getID() == 0)?'NULL':$this->primaryrole->getID()
+            (is_null($this->authentication) || $this->authentication->getID() == 0)?'NULL':$this->authentication->getID(),
+            (is_null($this->primaryrole) || $this->primaryrole->getID() == 0)?'NULL':$this->primaryrole->getID()
         );
 
         try {
@@ -326,10 +334,15 @@ class User extends Element {
     }
 
     protected function update() {
+        
+        if ($this->isPwdChanged && !is_null($this->authentication)) {
+            
+            $this->authentication->getInstance()->chpasswd($this->oldpwd, $this->password);
+            
+        }
 
         $query = sprintf("UPDATE comodojo_users SET
             `username` = '%s',
-            `password` = '%s',
             `displayname` = '%s',
             `mail` = '%s',
             `birthdate` = '%s',
@@ -339,14 +352,13 @@ class User extends Element {
             `primaryrole` = %s
         WHERE id = %d",
             mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->password),
             mysqli_real_escape_string($this->dbh->getHandler(), $this->displayname),
             mysqli_real_escape_string($this->dbh->getHandler(), $this->mail),
             mysqli_real_escape_string($this->dbh->getHandler(), $this->birthdate),
             mysqli_real_escape_string($this->dbh->getHandler(), $this->gender),
             (($this->getEnabled())?1:0),
-            (is_null($this->app) || $this->authentication->getID() == 0)?'NULL':$this->authentication->getID(),
-            (is_null($this->app) || $this->primaryrole->getID() == 0)?'NULL':$this->primaryrole->getID(),
+            (is_null($this->authentication) || $this->authentication->getID() == 0)?'NULL':$this->authentication->getID(),
+            (is_null($this->primaryrole) || $this->primaryrole->getID() == 0)?'NULL':$this->primaryrole->getID(),
             $this->id
         );
 
@@ -360,6 +372,9 @@ class User extends Element {
             throw $de;
 
         }
+        
+        $this->oldpwd = "";
+        $this->isPwdChanged = false;
 
         return $this;
 

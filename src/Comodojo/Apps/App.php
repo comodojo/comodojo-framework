@@ -90,6 +90,46 @@ class App extends Element {
 
     }
 
+    public function getRoutes() {
+
+        $routes = array();
+
+
+        $query = sprintf("SELECT id
+        FROM
+            comodojo_routes
+        WHERE
+            application = %d",
+            $this->id
+        );
+
+        try {
+
+            $result = $dbh->query($query);
+
+
+        } catch (DatabaseException $de) {
+
+            throw $de;
+
+        }
+
+        if ($result->getLength() > 0) {
+
+            $data = $result->getData();
+
+            foreach ($data as $row) {
+
+                array_push($routes, Route::load(intval($row['id']), $this->dbh));
+
+            }
+
+        }
+
+        return $routes;
+
+    }
+
     public static function load($id, $dbh) {
 
         $query = sprintf("SELECT * FROM comodojo_apps WHERE id = %d",

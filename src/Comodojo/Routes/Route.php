@@ -37,6 +37,8 @@ class Route extends Element {
     protected $cls = "";
 
     protected $params = array();
+    
+    protected $app = null;
 
     public function getType() {
 
@@ -47,6 +49,23 @@ class Route extends Element {
     public function setType($type) {
 
         $this->type = $type;
+
+        return $this;
+
+    }
+
+    public function getApp() {
+
+        return $this->app;
+
+    }
+
+    public function setApp($app) {
+        
+        if (!empty($app) && is_numeric($app))
+            $app = App::load(intval($app), $this->dbh);
+
+        $this->app = $app;
 
         return $this;
 
@@ -141,7 +160,7 @@ class Route extends Element {
 
     protected function getData() {
 
-        return array(
+        $data = array(
             $this->id,
             $this->name,
             $this->type,
@@ -149,6 +168,11 @@ class Route extends Element {
             json_encode($this->params),
             $this->package
         );
+        
+        if (!is_null($this->app) && $this->app->getID() !== 0)
+            array_push($data, $this->app->getID());
+            
+        return $data;
 
     }
 
@@ -160,6 +184,7 @@ class Route extends Element {
         $this->cls     = $data[3];
         $this->params  = json_decode($data[4], true);
         $this->package = $data[5];
+        $this->setApp($data[6]);
 
         return $this;
 
@@ -167,12 +192,13 @@ class Route extends Element {
 
     protected function create() {
 
-        $query = sprintf("INSERT INTO comodojo_routes VALUES (0, '%s', '%s', '%s', '%s', '%s')",
+        $query = sprintf("INSERT INTO comodojo_routes VALUES (0, '%s', '%s', '%s', '%s', '%s', %s)",
             mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
             mysqli_real_escape_string($this->dbh->getHandler(), $this->type),
             mysqli_real_escape_string($this->dbh->getHandler(), $this->cls),
             mysqli_real_escape_string($this->dbh->getHandler(), json_encode($this->params)),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->package)
+            mysqli_real_escape_string($this->dbh->getHandler(), $this->package),
+            (is_null($this->app) || $this->app->getID() == 0)?'NULL':$this->app->getID()
         );
 
         try {
@@ -194,12 +220,13 @@ class Route extends Element {
 
     protected function update() {
 
-        $query = sprintf("UPDATE comodojo_routes SET `route` = '%s', `type` = '%s', `class` = '%s', `parameters` = '%s', `package` = '%s' WHERE id = %d",
+        $query = sprintf("UPDATE comodojo_routes SET `route` = '%s', `type` = '%s', `class` = '%s', `parameters` = '%s', `package` = '%s' , `application` = %s WHERE id = %d",
             mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
             mysqli_real_escape_string($this->dbh->getHandler(), $this->type),
             mysqli_real_escape_string($this->dbh->getHandler(), $this->cls),
             mysqli_real_escape_string($this->dbh->getHandler(), json_encode($this->params)),
             mysqli_real_escape_string($this->dbh->getHandler(), $this->package),
+            (is_null($this->app) || $this->app->getID() == 0)?'NULL':$this->app->getID(),
             $this->id
         );
 
