@@ -1,6 +1,9 @@
 <?php namespace Comodojo\Authentication\Provider;
 
+use \Comodojo\Database\Database;
 use \Comodojo\Users\User;
+use \Comodojo\Exception\AuthenticationException;
+use \Comodojo\Exception\DatabaseException;
 
 /**
  *
@@ -29,25 +32,57 @@ use \Comodojo\Users\User;
 class LocalProvider implements AuthenticationProviderInterface {
 
     private $user;
+    
+    private $dbh;
 
-    public function __construct(User $user) {
+    public function __construct(User $user, Database $database) {
         
         $this->user = $user;
+        
+        $this->dbh = $database;
         
     }
     
     public function authenticate($password) {
         
-        return password_verify($password, $user->getPassword);
+        return password_verify($password, $user->getPassword());
         
     }
     
-    public function profile() {
+    public function passwd($password) {
         
-        return array(
-            "primaryrole" => $this->user->getPrimaryRole(),
-            "roles" => $this->user->getRoles()
+        $hash = password_hash($password, PASSWORD_DEFAULT);
+        
+        $query = sprintf("UPDATE comodojo_users SET `password` = %s WHERE id = %d",
+            mysqli_real_escape_string($this->dbh->getHandler(), $hash),
+            $this->user->getId()
         );
+
+        try {
+
+            $this->dbh->query($query);
+            
+        } catch (DatabaseException $de) {
+
+            throw $de;
+
+        }
+
+        return $this;
+
+    }
+    
+    public function chpasswd($old_password, $new_password) {
+        
+        if ( $this->authenticate($old_password) === false ) {
+            
+            throw new AuthenticationException('Previous password mismatch');
+            
+        }
+        
+        $this->passwd($new_password);
+        
+        return $this;
         
     }
 

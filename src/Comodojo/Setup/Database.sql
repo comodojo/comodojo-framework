@@ -4,6 +4,7 @@
 CREATE SCHEMA IF NOT EXISTS `mydb` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci ;
 USE `mydb` ;
 
+
 -- -----------------------------------------------------
 -- Table `mydb`.`comodojo_settings`
 -- -----------------------------------------------------
@@ -60,7 +61,6 @@ CREATE TABLE IF NOT EXISTS `mydb`.`comodojo_authentication` (
   `description` TEXT NULL DEFAULT NULL,
   `class` VARCHAR(256) NOT NULL,
   `parameters` TEXT NULL DEFAULT NULL,
-  `package` VARCHAR(256) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE INDEX `name_UNIQUE` (`name` ASC))
 ENGINE = InnoDB;
@@ -148,10 +148,17 @@ CREATE TABLE IF NOT EXISTS `mydb`.`comodojo_routes` (
   `route` VARCHAR(256) NOT NULL,
   `type` VARCHAR(16) NOT NULL DEFAULT 'ROUTE',
   `class` VARCHAR(256) NOT NULL,
-  `parameters` TEXT NULL DEFAULT NULL,
+  `parameters` TEXT NULL,
   `package` VARCHAR(256) NOT NULL,
+  `application` INT UNSIGNED NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE INDEX `route_UNIQUE` (`route` ASC))
+  UNIQUE INDEX `route_UNIQUE` (`route` ASC),
+  INDEX `application` (`application` ASC),
+  CONSTRAINT `application`
+    FOREIGN KEY (`application`)
+    REFERENCES `mydb`.`comodojo_apps` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
 
@@ -229,4 +236,5 @@ CREATE TABLE IF NOT EXISTS `mydb`.`comodojo_rpc` (
   PRIMARY KEY (`id`),
   UNIQUE INDEX `name_UNIQUE` (`name` ASC))
 ENGINE = InnoDB;
+
 

@@ -1,6 +1,7 @@
 <?php namespace Comodojo\Authentication\Provider;
 
 use \Comodojo\Users\User;
+use \Comodojo\Database\Database;
 
 /**
  *
@@ -28,12 +29,12 @@ use \Comodojo\Users\User;
 
 interface AuthenticationProviderInterface {
 
-    public function __construct(User $user);
+    public function __construct(User $user, Database $database);
     
     public function authenticate($password);
     
-    public function chpasswd($old_password, $new_password);
+    public function passwd($password);
     
-    public function profile();
+    public function chpasswd($old_password, $new_password);
 
 }

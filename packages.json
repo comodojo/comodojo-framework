@@ -1,0 +1,10 @@
+{
+    "package": {
+        "name": "comodojo/comodojo-framework",
+        "source": {
+          "url": "git@github.com:comodojo/comodojo-framework.git",
+          "type": "git",
+          "reference": "master"
+        }
+    }
+}
