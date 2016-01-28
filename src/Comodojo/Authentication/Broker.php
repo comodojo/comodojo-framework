@@ -50,6 +50,12 @@ class Broker {
         
         $user = $users->getElementByName($username);
         
+        if ( $user === null ) {
+            
+            throw new AuthenticationException("Unknown user or wrong password");
+            
+        }
+        
         if ( $user->getEnabled() === false ) {
             
             throw new AuthenticationException("Account locked, please contact administrator.");
@@ -89,6 +95,34 @@ class Broker {
         }
         
         return $user;
+        
+    }
+    
+    public function release($username) {
+        
+        $users = new Users();
+        
+        $user = $users->getElementByName($username);
+        
+        if ( $user === null ) {
+            
+            throw new AuthenticationException("Unknown user or wrong password");
+            
+        }
+        
+        if ( $user->getEnabled() === false ) {
+            
+            throw new AuthenticationException("Account locked, please contact administrator.");
+            
+        }
+        
+        if ( $user->getAuthentication()->getInstance()->release() !== true ) {
+            
+            throw new AuthenticationException("Unknown user or wrong password");
+            
+        }
+        
+        return true;
         
     }
     

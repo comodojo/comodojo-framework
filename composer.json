@@ -27,9 +27,7 @@
         "php": ">=5.6.0",
         "comodojo/dispatcher.framework": "^3.0",
         "comodojo/extender.framework": "^1.0",
-        "comodojo/httprequest": "^1.0",
         "comodojo/cookies": "1.1.*",
-        "comodojo/ldaph": "1.0.*",
         "comodojo/rpcserver": "^1.0",
         "comodojo/qotd": "^1.0",
         "lcobucci/jwt": "^3.1"

@@ -3,10 +3,15 @@
 use \Comodojo\Database\Database;
 use \Comodojo\Users\User;
 use \Comodojo\Cookies\Cookie;
-
+use \Comodojo\Base\Firestarter;
+use \Comodojo\Base\Error as StartupError;
+use \Comodojo\Settings\Settings;
+use \Comodojo\Dispatcher\Dispatcher;
+use \Comodojo\Dispatcher\Routes\RoutingTable;
 use \Comodojo\Exception\AuthenticationException;
 use \Comodojo\Exception\DatabaseException;
 use \Comodojo\Exception\CookieException;
+use \League\Event\Emitter;
 
 
 /**
@@ -35,9 +40,9 @@ use \Comodojo\Exception\CookieException;
 
 class Comodojo {
 
+    use Firestarter;
+
     private $configuration;
-    
-    private $dbh;
     
     private $logger;
     
@@ -45,13 +50,29 @@ class Comodojo {
     
     private $dispatcher;
     
+    private $events;
+    
+    private $startup_exception;
+    
     public function __construct() {
         
-    }
-    
-    public function dbh() {
+        $this->events = new Emitter();
         
-        return $this->dbh;
+        try {
+            
+            $this->database = self::getDatabase();
+            
+            $this->cache = CacheHandler::create();
+            
+            $this->logger = LogHandler::create();
+            
+            $this->configuration = $this->initEnvironment();
+            
+        } catch (Exception $e) {
+            
+            $this->startup_exception = $e;
+            
+        }
         
     }
     
@@ -75,6 +96,12 @@ class Comodojo {
     
     public function boot() {
         
+        if ( $this->startup_exception !== null ) {
+            
+            return StartupError::raise($e);
+            
+        }
+        
         try {
             
             $token = Cookie::retrieve('comodojo-auth-token');
@@ -83,17 +110,95 @@ class Comodojo {
             
             $user = $broker->validate($token);
             
-        } catch (AuthenticationException $ae) {
-            
-            $user = User::loadGuest();
-            
         } catch (CookieException $ce ) {
             
             $user = User::loadGuest();
             
+        } catch (AuthenticationException $ae) {
+            
+            $user = User::loadGuest();
+            
+        } catch (Exception $e) {
+            
+            return StartupError::raise($e);
+            
+        }
+        
+        try {
+            
+            $roles = $user->getRoles();
+            
+            $apps = array();
+            
+            foreach ($roles as $role ) {
+                
+                $apps[] = $role->getApplications();
+                
+            }
+            
+            $this->dispatcher = new Dispatcher($this->events, $this->cache, $this->logger);
+            
+            $this->dispatcher->extra()
+                ->set('database', $this->database)
+                ->set('configuration', $this->configuration);
+            
+            $this->dispatcher->router->add("/", "ROUTE", "\\Comodojo\\Services\\Landing");
+            
+            $this->dispatcher->router->add("/rpc", "ROUTE", "\\Comodojo\\Services\\Rpc");
+            
+            $this->dispatcher->router->add("/authentication", "ROUTE", "\\Comodojo\\Services\\Authentication");
+            
+            foreach ( $apps as $app ) {
+                
+                foreach ( $app->getRoutes() as $route ) {
+                 
+                    $this->dispatcher->router->add($route->getName(), $route->getType(), $route->getClass(), $route->getParameters());
+                    
+                }
+                
+            }
+            
+            $plugins = new Plugins($this->database);
+            
+            $plugins = $plugins->getByFramework('dispatcher');
+            
+            foreach ( $plugins as $plugin ) {
+                
+                $this->dispatcher->events()->addListener($plugin->getEvent(), $plugin->getCallable());
+                
+            }
+            
+        } catch (Exception $e) {
+            
+            return StartupError::raise($e);
+            
         }
         
         return $this->dispatcher()->dispatch();
+        
+    }
+
+    private function initEnvironment() {
+        
+        try {
+        
+            $settings = new Settings($this->database);
+            
+        } catch (DatabaseException $de) {
+            
+            throw $de;
+            
+        }
+        
+        foreach ($settings as $name => $value) {
+            
+            if ( !defined($name) ) {
+                
+                define($name, $value);
+                
+            }
+            
+        }
         
     }
 

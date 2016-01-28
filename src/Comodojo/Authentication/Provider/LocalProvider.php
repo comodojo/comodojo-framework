@@ -85,5 +85,11 @@ class LocalProvider implements AuthenticationProviderInterface {
         return $this;
         
     }
+    
+    public function release() {
+        
+        return true;
+        
+    }
 
 }

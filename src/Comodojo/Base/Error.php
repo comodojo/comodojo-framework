@@ -1,7 +1,7 @@
-<?php namespace Comodojo\Authentication\Provider;
+<?php namespace Comodojo\Base;
 
-use \Comodojo\Users\User;
-use \Comodojo\Database\Database;
+use \Comodojo\Qotd;
+use \Exception;
 
 /**
  *
@@ -27,16 +27,12 @@ use \Comodojo\Database\Database;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-interface AuthenticationProviderInterface {
+class Error {
 
-    public function __construct(User $user, Database $database);
+    public static function raise(Exception $exception) {
+        
+        return $exception->getMessage();
+        
+    }
     
-    public function authenticate($password);
-    
-    public function passwd($password);
-    
-    public function chpasswd($old_password, $new_password);
-    
-    public function release();
-
 }
