@@ -5,14 +5,13 @@ use \Comodojo\Users\User;
 use \Comodojo\Cookies\Cookie;
 use \Comodojo\Base\Firestarter;
 use \Comodojo\Base\Error as StartupError;
-use \Comodojo\Settings\Settings;
 use \Comodojo\Dispatcher\Dispatcher;
 use \Comodojo\Dispatcher\Routes\RoutingTable;
 use \Comodojo\Exception\AuthenticationException;
 use \Comodojo\Exception\DatabaseException;
 use \Comodojo\Exception\CookieException;
 use \League\Event\Emitter;
-
+use \Symfony\Component\Yaml\Yaml;
 
 /**
  *
@@ -54,7 +53,9 @@ class Comodojo {
     
     private $startup_exception;
     
-    public function __construct() {
+    public function __construct($configuration) {
+        
+        $static_configuration = self::parseStaticConfiguration($configuration);
         
         $this->events = new Emitter();
         
@@ -62,11 +63,11 @@ class Comodojo {
             
             $this->database = self::getDatabase();
             
-            $this->cache = CacheHandler::create();
+            $this->configuration = self::getConfiguration($this->database, $static_configuration);
             
-            $this->logger = LogHandler::create();
+            $this->cache = CacheHandler::create($this->configuration);
             
-            $this->configuration = $this->initEnvironment();
+            $this->logger = LogHandler::create($this->configuration);
             
         } catch (Exception $e) {
             
@@ -136,7 +137,7 @@ class Comodojo {
                 
             }
             
-            $this->dispatcher = new Dispatcher($this->events, $this->cache, $this->logger);
+            $this->dispatcher = new Dispatcher($this->configuration, $this->events, $this->cache, $this->logger);
             
             $this->dispatcher->extra()
                 ->set('database', $this->database)
@@ -178,27 +179,27 @@ class Comodojo {
         
     }
 
-    private function initEnvironment() {
+    private static function parseStaticConfiguration($configuration = null) {
         
-        try {
-        
-            $settings = new Settings($this->database);
+        if ( $configuration !== null ) {
             
-        } catch (DatabaseException $de) {
-            
-            throw $de;
-            
-        }
-        
-        foreach ($settings as $name => $value) {
-            
-            if ( !defined($name) ) {
+            try {
                 
-                define($name, $value);
+                $static_configuration = Yaml::parse($configuration);
                 
+            } catch (Exception $e) {
+            
+                //error_log('ERROR: Static configuration does not appear to be a valid yaml string');
+                
+                $static_configuration = array();
+            
             }
             
+            return $static_configuration;
+            
         }
+        
+        return array();
         
     }
 

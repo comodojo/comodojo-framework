@@ -1,7 +1,10 @@
 <?php namespace Comodojo\Base;
 
+use \Comodojo\Settings\Settings;
 use \Comodojo\Database\Database;
 use \Comodojo\Database\EnhancedDatabase;
+use \Comodojo\Dispatcher\Components\Configuration;
+use \Comodojo\Cache\FileCache;
 use \Comodojo\Exception\DatabaseException;
 use \Exception;
 
@@ -32,10 +35,18 @@ use \Exception;
 trait Firestarter {
 
     private $database;
+    
+    private $configuration;
 
     public function database() {
         
         return $this->database;
+        
+    }
+    
+    public function configuration() {
+        
+        return $this->configuration;
         
     }
 
@@ -114,16 +125,51 @@ trait Firestarter {
         
     }
     
-    private static function checkBasicConfiguration() {
+    protected static function getConfiguration(Database $database, $static_configuration = array()) {
         
-        return (
-            defined(COMODOJO_DATABASE_MODEL) &&
-            defined(COMODOJO_DATABASE_HOST) &&
-            defined(COMODOJO_DATABASE_PORT) &&
-            defined(COMODOJO_DATABASE_NAME) &&
-            defined(COMODOJO_DATABASE_USER) &&
-            defined(COMODOJO_DATABASE_PASS)
-        );
+        if (
+            isset( $static_configuration['comodojo-startup-cache'] ) &&
+            isset( $static_configuration['dispatcher-cache-folder'] ) &&
+            isset( $static_configuration['comodojo-startup-cache-ttl'] ) &&
+            $static_configuration['comodojo-startup-cache'] === true
+        ) {
+            
+            $cache = new FileCache($static_configuration['dispatcher-cache-folder']);
+            
+            $configuration = $cache->setNamespace('COMODOJOSTARTUP')->get('config');
+            
+            return $configuration;
+
+        }
+        
+        $configuration = new Configuration();
+        
+        $settings = new Settings($database);
+        
+        foreach ( $settings as $setting => $value ) {
+            
+            $configuration->set($setting, $value);
+            
+        }
+        
+        foreach ( $static_configuration as $setting => $value ) {
+            
+            $configuration->set($setting, $value);
+            
+        }
+        
+        if (
+            isset( $static_configuration['comodojo-startup-cache'] ) &&
+            isset( $static_configuration['dispatcher-cache-folder'] ) &&
+            isset( $static_configuration['comodojo-startup-cache-ttl'] ) &&
+            $static_configuration['comodojo-startup-cache'] === true
+        ) {
+            
+            $cache->setNamespace('COMODOJOSTARTUP')->set('config', $configuration, $static_configuration['comodojo-startup-cache-ttl']);
+
+        }
+        
+        return $configuration;
         
     }
     
