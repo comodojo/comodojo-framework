@@ -28,18 +28,18 @@ use \Comodojo\Base\PackagesTrait;
  */
 
 class Themes extends Iterator {
-    
+
     use PackagesTrait;
 
 	public function getByID($id) {
 
-		return Theme::load(intval($id), $this->database);
+		return Theme::load($this->database, intval($id));
 
 	}
 
     protected function loadData() {
 
-        $this->loadFromDatabase("comodojo_themes", "name");
+        $this->loadFromDatabase("themes", "name");
 
     }
 

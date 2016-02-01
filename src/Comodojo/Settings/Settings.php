@@ -28,18 +28,18 @@ use \Comodojo\Base\PackagesTrait;
  */
 
 class Settings extends Iterator {
-    
+
     use PackagesTrait;
 
 	public function getByID($id) {
 
-		return Setting::load(intval($id), $this->database);
+		return Setting::load($this->database, intval($id));
 
 	}
 
     protected function loadData() {
 
-        $this->loadFromDatabase("comodojo_settings", "name");
+        $this->loadFromDatabase("settings", "name");
 
     }
 

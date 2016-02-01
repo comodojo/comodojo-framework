@@ -30,14 +30,14 @@ class Roles extends Iterator {
 
 	public function getByID($id) {
 
-		return Role::load(intval($id), $this->database);
+		return Role::load($this->database, intval($id));
 
 	}
 
     protected function loadData() {
 
-        $this->loadFromDatabase("comodojo_roles", "name");
-        
+        $this->loadFromDatabase("roles", "name");
+
     }
 
 }

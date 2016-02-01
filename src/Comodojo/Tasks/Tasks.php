@@ -28,18 +28,18 @@ use \Comodojo\Base\PackagesTrait;
  */
 
 class Tasks extends Iterator {
-    
+
     use PackagesTrait;
 
 	public function getByID($id) {
 
-		return Task::load(intval($id), $this->database);
+		return Task::load($this->database, intval($id));
 
 	}
 
     protected function loadData() {
 
-        $this->loadFromDatabase("comodojo_tasks", "name");
+        $this->loadFromDatabase("tasks", "name");
 
     }
 

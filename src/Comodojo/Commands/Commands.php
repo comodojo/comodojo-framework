@@ -1,10 +1,7 @@
 <?php namespace Comodojo\Commands;
 
-use \Comodojo\Database\Database;
 use \Comodojo\Base\Iterator;
-use \Comodojo\Exception\DatabaseException;
-use \Comodojo\Exception\ConfigurationException;
-use \Exception;
+use \Comodojo\Base\PackagesTrait;
 
 /**
  *
@@ -32,15 +29,17 @@ use \Exception;
 
 class Commands extends Iterator {
 
-	public function getElementByID($id) {
+    use PackagesTrait;
 
-		return Command::load(intval($id), $this->dbh);
+	public function getByID($id) {
+
+		return Command::load($this->database, intval($id));
 
 	}
 
     protected function loadData() {
 
-        $this->loadFromDatabase("comodojo_commands", "command");
+        $this->loadFromDatabase("commands", "command");
 
     }
 

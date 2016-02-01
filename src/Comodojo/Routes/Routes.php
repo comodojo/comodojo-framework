@@ -28,18 +28,18 @@ use \Comodojo\Base\PackagesTrait;
  */
 
 class Routes extends Iterator {
-    
+
     use PackagesTrait;
 
 	public function getByID($id) {
 
-		return Route::load(intval($id), $this->database);
+		return Route::load($this->database, intval($id));
 
 	}
 
     protected function loadData() {
 
-        $this->loadFromDatabase("comodojo_routes", "route");
+        $this->loadFromDatabase("routes", "route");
 
     }
 

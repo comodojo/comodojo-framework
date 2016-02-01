@@ -28,12 +28,12 @@ use \Comodojo\Base\PackagesTrait;
  */
 
 class Authentications extends Iterator {
-    
+
     use PackagesTrait;
 
 	public function getByID($id) {
 
-		return Authentication::load(intval($id), $this->database);
+		return Authentication::load($this->database, intval($id));
 
 	}
 

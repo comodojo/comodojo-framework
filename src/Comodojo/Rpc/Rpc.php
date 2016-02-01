@@ -28,18 +28,18 @@ use \Comodojo\Base\PackagesTrait;
  */
 
 class Rpc extends Iterator {
-    
+
     use PackagesTrait;
 
 	public function getByID($id) {
 
-		return Rpc::load(intval($id), $this->database);
+		return Rpc::load($this->database, intval($id));
 
 	}
 
     protected function loadData() {
 
-        $this->loadFromDatabase("comodojo_rpc", "name");
+        $this->loadFromDatabase("rpc", "name");
 
     }
 

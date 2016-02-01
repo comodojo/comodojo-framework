@@ -32,19 +32,19 @@ use \Comodojo\Database\QueryResult;
 class Plugins extends Iterator {
 
     use PackagesTrait;
-    
+
     protected $frameworks = array();
-    
+
     public function getByID($id) {
 
-		return Plugin::load(intval($id), $this->database);
+		return Plugin::load($this->database, intval($id));
 
 	}
-	
+
 	protected function loadData() {
 
-        $data = $this->loadFromDatabase("comodojo_plugins", "name");
-        
+        $data = $this->loadFromDatabase("plugins", "name");
+
         $this->loadFrameworks($data);
 
     }
@@ -62,21 +62,21 @@ class Plugins extends Iterator {
     }
 
     protected function remove(Element $element) {
-        
+
         $name = $element->getName();
-        
+
         $framework = $this->getListByFramework($element->getFramework());
-        
+
         $index = array_search($name, $framework);
-        
+
         array_splice($this->frameworks[$val->getFramework()], $index, 1);
-        
+
         return parent::remove($element);
 
     }
 
     protected function loadFrameworks(QueryResult $resultset) {
-        
+
         if ( $resultset->getLength() > 0 ) {
 
             $data = $resultset->getData();
@@ -84,9 +84,9 @@ class Plugins extends Iterator {
             foreach ($data as $row) {
 
                 if ( !isset($this->frameworks[$row['framework']]) ) {
-                    
+
                     $this->frameworks[$row['framework']] = array();
-                    
+
                 }
 
                 array_push($this->frameworks[$row['framework']], $row['name']);

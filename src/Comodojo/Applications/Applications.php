@@ -28,7 +28,7 @@ use \Comodojo\Base\PackagesTrait;
  */
 
 class Applications extends Iterator {
-    
+
     use PackagesTrait;
 
 	public function getByID($id) {

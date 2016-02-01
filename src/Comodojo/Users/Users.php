@@ -30,13 +30,13 @@ class Users extends Iterator {
 
 	public function getByID($id) {
 
-		return User::load(intval($id), $this->database);
+		return User::load($this->database, intval($id));
 
 	}
 
     protected function loadData() {
-        
-        $this->loadFromDatabase("comodojo_users", "username");
+
+        $this->loadFromDatabase("users", "username");
 
     }
 
