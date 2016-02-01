@@ -1,10 +1,9 @@
 <?php namespace Comodojo\Plugins;
 
-use \Comodojo\Database\Database;
 use \Comodojo\Base\Iterator;
-use \Comodojo\Exception\DatabaseException;
-use \Comodojo\Exception\ConfigurationException;
-use \Exception;
+use \Comodojo\Base\PackagesTrait;
+use \Comodojo\Base\Element;
+use \Comodojo\Database\QueryResult;
 
 /**
  *
@@ -32,76 +31,75 @@ use \Exception;
 
 class Plugins extends Iterator {
 
-    protected $fw = array();
+    use PackagesTrait;
+    
+    protected $frameworks = array();
+    
+    public function getByID($id) {
 
-	public function getElementByID($id) {
-
-		return Plugin::load(intval($id), $this->dbh);
+		return Plugin::load(intval($id), $this->database);
 
 	}
+	
+	protected function loadData() {
+
+        $data = $this->loadFromDatabase("comodojo_plugins", "name");
+        
+        $this->loadFrameworks($data);
+
+    }
 
     public function getSupportedFrameworks() {
 
-        return array_keys($this->fw);
+        return array_keys($this->frameworks);
 
     }
 
-    public function getListByFramework($fw) {
+    public function getListByFramework($framework) {
 
-        return $this->fw[$fw];
-
-    }
-
-    public function removeElementByName($name) {
-
-        if (isset($this->data[$name])) {
-
-            $val       = Setting::load($this->data[$name], $this->dbh);
-
-            $framework = $this->getListByFramework($val->getFramework());
-
-            $index     = array_search($name, $framework);
-
-            array_splice($this->fw[$val->getFramework()], $index, 1);
-            
-            $this->removeElement($val);
-
-        }
-
-        return $this;
+        return $this->frameworks[$framework];
 
     }
 
-    protected function loadData() {
-
-        $this->loadFromDatabase("comodojo_plugins", "name");
+    protected function remove(Element $element) {
+        
+        $name = $element->getName();
+        
+        $framework = $this->getListByFramework($element->getFramework());
+        
+        $index = array_search($name, $framework);
+        
+        array_splice($this->frameworks[$val->getFramework()], $index, 1);
+        
+        return parent::remove($element);
 
     }
 
-    protected function loadFrameworks($data) {
+    protected function loadFrameworks(QueryResult $resultset) {
+        
+        if ( $resultset->getLength() > 0 ) {
 
-        if ($data->getLength() > 0) {
-
-            $data = $data->getData();
+            $data = $resultset->getData();
 
             foreach ($data as $row) {
 
-                if (!isset($this->fw[$row['framework']]))
-                    $this->fw[$row['framework']] = array();
+                if ( !isset($this->frameworks[$row['framework']]) ) {
+                    
+                    $this->frameworks[$row['framework']] = array();
+                    
+                }
 
-                array_push($this->fw[$row['framework']], $row['name']);
+                array_push($this->frameworks[$row['framework']], $row['name']);
 
             }
 
         }
 
-        foreach ($this->fw as $fw => $list) {
+        foreach ($this->frameworks as $fw => $list) {
 
-            $this->fw[$fw] = sort($list);
+            $this->frameworks[$fw] = sort($list);
 
         }
-
-        return $this;
 
     }
 
@@ -119,7 +117,7 @@ class Plugins extends Iterator {
         return serialize(array(
             json_encode($this->data),
             json_encode($this->packages),
-            json_encode($this->fw),
+            json_encode($this->frameworks),
             json_encode($this->current)
         ));
 
@@ -136,10 +134,10 @@ class Plugins extends Iterator {
 
         $data = unserialize($data);
 
-        $this->data     = json_decode($data[0], true);
+        $this->data = json_decode($data[0], true);
         $this->packages = json_decode($data[1], true);
-        $this->fw       = json_decode($data[2], true);
-        $this->current  = json_decode($data[3], true);
+        $this->frameworks = json_decode($data[2], true);
+        $this->current = json_decode($data[3], true);
 
         return $this;
 

@@ -1,9 +1,8 @@
 <?php namespace Comodojo\Themes;
 
-use \Comodojo\Database\Database;
+use \Comodojo\Database\EnhancedDatabase;
 use \Comodojo\Base\Element;
 use \Comodojo\Exception\DatabaseException;
-use \Comodojo\Exception\ConfigurationException;
 use \Exception;
 
 /**
@@ -32,7 +31,7 @@ use \Exception;
 
 class Theme extends Element {
 
-    protected $desc = "";
+    protected $description = "";
 
     public function getDescription() {
 
@@ -48,16 +47,11 @@ class Theme extends Element {
 
     }
 
-    public static function load($id, $dbh) {
-
-        $query = sprintf("SELECT * FROM comodojo_themes WHERE id = %d",
-            $id
-        );
+    public static function load(EnhancedDatabase $database, $id) {
 
         try {
-
-            $result = $dbh->query($query);
-
+            
+            $result = Model::load($database, $id);
 
         } catch (DatabaseException $de) {
 
@@ -65,19 +59,23 @@ class Theme extends Element {
 
         }
 
-        if ($result->getLength() > 0) {
+        if ( $result->getLength() > 0 ) {
 
             $data = $result->getData();
 
             $data = array_values($data[0]);
 
-            $theme = new Theme($dbh);
+            $theme = new Theme($database);
 
             $theme->setData($data);
 
-            return $theme;
-
+        } else {
+            
+            throw new Exception("Unable to load theme");
+            
         }
+        
+        return $theme;
 
     }
 
@@ -86,7 +84,7 @@ class Theme extends Element {
         return array(
             $this->id,
             $this->name,
-            $this->desc,
+            $this->description,
             $this->package
         );
 
@@ -94,9 +92,9 @@ class Theme extends Element {
 
     protected function setData($data) {
 
-        $this->id      = intval($data[0]);
-        $this->name    = $data[1];
-        $this->desc    = $data[2];
+        $this->id = intval($data[0]);
+        $this->name = $data[1];
+        $this->description = $data[2];
         $this->package = $data[3];
 
         return $this;
@@ -105,16 +103,9 @@ class Theme extends Element {
 
     protected function create() {
 
-        $query = sprintf("INSERT INTO comodojo_themes VALUES (0, '%s', '%s', '%s')",
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->desc),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->package)
-        );
-
         try {
-
-            $result = $this->dbh->query($query);
-
+            
+            $result = Model::create($this->database, $this->name, $this->description, $this->package);
 
         } catch (DatabaseException $de) {
 
@@ -130,17 +121,9 @@ class Theme extends Element {
 
     protected function update() {
 
-        $query = sprintf("UPDATE comodojo_themes SET name = '%s', description = '%s', package = '%s' WHERE id = %d",
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->desc),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->package),
-            $this->id
-        );
-
         try {
-
-            $this->dbh->query($query);
-
+            
+            $result = Model::update($this->database, $this->id, $this->name, $this->description, $this->package);
 
         } catch (DatabaseException $de) {
 
@@ -154,14 +137,9 @@ class Theme extends Element {
 
     public function delete() {
 
-        $query = sprintf("DELETE FROM comodojo_themes WHERE id = %d",
-            $this->id
-        );
-
         try {
-
-            $this->dbh->query($query);
-
+            
+            $result = Model::delete($this->database, $this->id);
 
         } catch (DatabaseException $de) {
 
@@ -169,7 +147,7 @@ class Theme extends Element {
 
         }
 
-        $this->setData(array(0, "", "", ""));
+        $this->setData( array(0, "", "", "") );
 
         return $this;
 

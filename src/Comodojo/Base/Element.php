@@ -1,6 +1,7 @@
 <?php namespace Comodojo\Base;
 
-use \Comodojo\Database\Database;
+use \Comodojo\Database\EnhancedDatabase;
+use \Comodojo\Dispatcher\Components\Configuration;
 use \Comodojo\Exception\DatabaseException;
 use \Comodojo\Exception\ConfigurationException;
 use \Exception;
@@ -37,15 +38,19 @@ abstract class Element implements \Serializable {
 
     protected $package = "";
 
-    protected $dbh;
+    protected $database;
+    
+    protected $configuration;
 
-    public function __construct(Database $dbh) {
+    public function __construct(EnhancedDatabase $database, Configuration $configuration) {
 
-        $this->dbh  = $dbh;
+        $this->database = $database;
+        
+        $this->configuration = $configuration;
 
     }
 
-    abstract public static function load($id, $dbh);
+    abstract public static function load($id, $database);
 
     abstract protected function getData();
 

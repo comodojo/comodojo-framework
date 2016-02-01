@@ -1,17 +1,20 @@
 <?php namespace Comodojo;
 
-use \Comodojo\Database\Database;
 use \Comodojo\Users\User;
+use \Comodojo\Cookies\CookieManager;
 use \Comodojo\Cookies\Cookie;
 use \Comodojo\Base\Firestarter;
 use \Comodojo\Base\Error as StartupError;
 use \Comodojo\Dispatcher\Dispatcher;
-use \Comodojo\Dispatcher\Routes\RoutingTable;
+use \League\Event\Emitter;
+use \Comodojo\Base\CacheHandler;
+use \Comodojo\Base\LogHandler;
+use \Comodojo\Base\AuditHandler;
 use \Comodojo\Exception\AuthenticationException;
 use \Comodojo\Exception\DatabaseException;
 use \Comodojo\Exception\CookieException;
-use \League\Event\Emitter;
-use \Symfony\Component\Yaml\Yaml;
+use \Exception;
+
 
 /**
  *
@@ -41,9 +44,9 @@ class Comodojo {
 
     use Firestarter;
 
-    private $configuration;
-    
     private $logger;
+    
+    private $audit;
     
     private $cache;
     
@@ -53,21 +56,46 @@ class Comodojo {
     
     private $startup_exception;
     
-    public function __construct($configuration) {
+    public function __construct( $configuration = array() ) {
         
-        $static_configuration = self::parseStaticConfiguration($configuration);
+        $this->getStaticConfiguration($configuration);
         
         $this->events = new Emitter();
         
         try {
             
-            $this->database = self::getDatabase();
+            $this->getDatabase();
             
-            $this->configuration = self::getConfiguration($this->database, $static_configuration);
+            $this->getConfiguration();
             
             $this->cache = CacheHandler::create($this->configuration);
             
             $this->logger = LogHandler::create($this->configuration);
+            
+            $this->audit = AuditHandler::create($this->configuration);
+            
+            $this->dispatcher = new Dispatcher($this->configuration, $this->events, $this->cache, $this->logger);
+            
+            $this->dispatcher->extra()
+                ->set( 'database', $this->database() )
+                ->set( 'configuration', $this->configuration() )
+                ->set( 'audit', $this->audit() );
+                
+            $this->dispatcher->router->add("/", "ROUTE", "\\Comodojo\\Services\\Landing");
+            
+            $this->dispatcher->router->add("/rpc", "ROUTE", "\\Comodojo\\Services\\Rpc");
+            
+            $this->dispatcher->router->add("/authentication", "ROUTE", "\\Comodojo\\Services\\Authentication");
+            
+            $plugins_handler = new Plugins($this->database, $this->configuration);
+            
+            $plugins = $plugins_handler->getByFramework('dispatcher');
+            
+            foreach ( $plugins as $plugin ) {
+                
+                $this->dispatcher->events()->addListener($plugin->getEvent(), $plugin->getCallable());
+                
+            }
             
         } catch (Exception $e) {
             
@@ -77,19 +105,25 @@ class Comodojo {
         
     }
     
-    public function logger() {
+    final public function logger() {
         
         return $this->logger;
         
     }
     
-    public function cache() {
+    final public function audit() {
+        
+        return $this->audit;
+        
+    }
+    
+    final public function cache() {
         
         return $this->cache;
         
     }
     
-    public function dispatcher() {
+    final public function dispatcher() {
         
         return $this->dispatcher;
         
@@ -105,19 +139,7 @@ class Comodojo {
         
         try {
             
-            $token = Cookie::retrieve('comodojo-auth-token');
-            
-            $broker = new Broker($this->dbh);
-            
-            $user = $broker->validate($token);
-            
-        } catch (CookieException $ce ) {
-            
-            $user = User::loadGuest();
-            
-        } catch (AuthenticationException $ae) {
-            
-            $user = User::loadGuest();
+            $user = self::getCurrentUser($this->configuration, $this->database);
             
         } catch (Exception $e) {
             
@@ -137,18 +159,6 @@ class Comodojo {
                 
             }
             
-            $this->dispatcher = new Dispatcher($this->configuration, $this->events, $this->cache, $this->logger);
-            
-            $this->dispatcher->extra()
-                ->set('database', $this->database)
-                ->set('configuration', $this->configuration);
-            
-            $this->dispatcher->router->add("/", "ROUTE", "\\Comodojo\\Services\\Landing");
-            
-            $this->dispatcher->router->add("/rpc", "ROUTE", "\\Comodojo\\Services\\Rpc");
-            
-            $this->dispatcher->router->add("/authentication", "ROUTE", "\\Comodojo\\Services\\Authentication");
-            
             foreach ( $apps as $app ) {
                 
                 foreach ( $app->getRoutes() as $route ) {
@@ -159,15 +169,7 @@ class Comodojo {
                 
             }
             
-            $plugins = new Plugins($this->database);
-            
-            $plugins = $plugins->getByFramework('dispatcher');
-            
-            foreach ( $plugins as $plugin ) {
-                
-                $this->dispatcher->events()->addListener($plugin->getEvent(), $plugin->getCallable());
-                
-            }
+            $return = $this->dispatcher()->dispatch();
             
         } catch (Exception $e) {
             
@@ -175,32 +177,50 @@ class Comodojo {
             
         }
         
-        return $this->dispatcher()->dispatch();
+        return $return;
         
     }
-
-    private static function parseStaticConfiguration($configuration = null) {
+    
+    private static function getCurrentUser(Configuration $configuration, EnhancedDatabase $database) {
         
-        if ( $configuration !== null ) {
+        $token_name = $configuration->get('auth-token');
+        
+        try {
             
-            try {
-                
-                $static_configuration = Yaml::parse($configuration);
-                
-            } catch (Exception $e) {
+            $token = Cookie::retrieve($token_name);
             
-                //error_log('ERROR: Static configuration does not appear to be a valid yaml string');
-                
-                $static_configuration = array();
+            $broker = new Broker($database);
             
-            }
+            $user = $broker->validate($token);
             
-            return $static_configuration;
+        } catch (CookieException $ce ) {
+            
+            $user = User::loadGuest();
+            
+        } catch (AuthenticationException $ae) {
+            
+            $user = User::loadGuest();
+            
+        } catch (Exception $e) {
+            
+            throw $e;
             
         }
         
-        return array();
+        return $user;
         
+    }
+    
+    private function getConfiguration() {
+        
+        $settings = new Settings( $this->database() );
+        
+        foreach ( $settings as $setting => $value ) {
+            
+            $this->configuration->set($setting, $value);
+            
+        }
+
     }
 
 }

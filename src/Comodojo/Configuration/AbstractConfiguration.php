@@ -1,6 +1,6 @@
 <?php namespace Comodojo\Configuration;
 
-use \Comodojo\Database\Database;
+use \Comodojo\Database\EnhancedDatabase;
 use \Comodojo\Exception\DatabaseException;
 use \Comodojo\Exception\ConfigurationException;
 use \Exception;
@@ -31,15 +31,12 @@ use \Exception;
 
 abstract class AbstractConfiguration implements ConfigurationInterface {
 
-    protected $dbh;
+    protected $database;
 
-    public function __construct($dbh = null) {
+    public function __construct( EnhancedDatabase $database ) {
 		
-		$this->dbh = $dbh;
+		$this->database = $database;
 		
-		if (empty($this->dbh))
-        	$this->loadDatabase();
-
     }
     
     public function add() {
@@ -135,12 +132,6 @@ abstract class AbstractConfiguration implements ConfigurationInterface {
     public function getDbh() {
 
         return $this->dbh;
-
-    }
-
-    private function loadDatabase() {
-
-        // TO DO
 
     }
 

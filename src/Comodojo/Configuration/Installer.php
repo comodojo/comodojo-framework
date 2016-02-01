@@ -1,8 +1,6 @@
 <?php namespace Comodojo\Configuration;
 
-use \Comodojo\Database\Database;
-use \Comodojo\Exception\DatabaseException;
-use \Comodojo\Exception\ConfigurationException;
+use \Comodojo\Base\Firestarter;
 use \Exception;
 
 /**
@@ -30,10 +28,10 @@ use \Exception;
  */
 
 class Installer {
+    
+    use Firestarter;
 
-    private $dbh;
-
-    private $apps;
+    private $applications;
 
     private $authentication;
 
@@ -51,39 +49,41 @@ class Installer {
 
     private $themes;
 
-    public function __construct() {
+    public function __construct( $configuration = array() ) {
+        
+        $this->getStaticConfiguration($configuration);
 
-        $this->dbh = self::loadDatabase();
+        $this->getDatabase();
 
-        $this->apps = new Apps($this->dbh);
+        $this->applications = new Applications($this->database);
 
-        $this->authentication = new Authentication($this->dbh);
+        $this->authentication = new Authentication($this->database);
 
-        $this->commands = new Commands($this->dbh);
+        $this->commands = new Commands($this->database);
 
-        $this->plugins = new Plugins($this->dbh);
+        $this->plugins = new Plugins($this->database);
 
-        $this->routes = new Routes($this->dbh);
+        $this->routes = new Routes($this->database);
 
-        $this->rpc = new Rpc($this->dbh);
+        $this->rpc = new Rpc($this->database);
 
-        $this->settings = new Settings($this->dbh);
+        $this->settings = new Settings($this->database);
 
-        $this->tasks = new Tasks($this->dbh);
+        $this->tasks = new Tasks($this->database);
 
-        $this->themes = new Themes($this->dbh);
-
-    }
-
-    final public function dbh() {
-
-        return $this->dbh;
+        $this->themes = new Themes($this->database);
 
     }
 
-    final public function apps() {
+    final public function database() {
 
-        return $this->apps;
+        return $this->database;
+
+    }
+
+    final public function applications() {
+
+        return $this->applications;
 
     }
 
@@ -134,14 +134,5 @@ class Installer {
         return $this->themes;
 
     }
-
-    /**
-     * @todo: complete this method!
-     */
-     private static function loadDatabase() {
-
-        // init a db instance
-
-    }
-
+    
 }

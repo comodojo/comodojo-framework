@@ -1,9 +1,6 @@
 <?php namespace Comodojo\Roles;
 
-use \Comodojo\Database\Database;
 use \Comodojo\Base\Iterator;
-use \Comodojo\Exception\DatabaseException;
-use \Exception;
 
 /**
  *
@@ -31,48 +28,16 @@ use \Exception;
 
 class Roles extends Iterator {
 
-	public function getElementByID($id) {
+	public function getByID($id) {
 
-		return Role::load(intval($id), $this->dbh);
+		return Role::load(intval($id), $this->database);
 
 	}
 
-    public function removeElementByName($name) {
-
-        if (isset($this->data[$name])) {
-
-            Role::load($this->data[$name], $this->dbh)->delete();
-
-            unset($this->data[$name]);
-
-        }
-
-        return $this;
-
-    }
-
     protected function loadData() {
 
-        $this->data = array();
-
-        $query = "SELECT * FROM comodojo_roles ORDER BY name";
-
-        try {
-
-            $result = $this->dbh->query($query);
-
-
-        } catch (DatabaseException $de) {
-
-            throw $de;
-
-        }
-
-        $this->loadList($result, 'name');
-
-        return $this;
-
+        $this->loadFromDatabase("comodojo_roles", "name");
+        
     }
-
 
 }

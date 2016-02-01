@@ -1,10 +1,7 @@
-<?php namespace Comodojo\Apps;
+<?php namespace Comodojo\Applications;
 
-use \Comodojo\Database\Database;
 use \Comodojo\Base\Iterator;
-use \Comodojo\Exception\DatabaseException;
-use \Comodojo\Exception\ConfigurationException;
-use \Exception;
+use \Comodojo\Base\PackagesTrait;
 
 /**
  *
@@ -30,17 +27,19 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Apps extends Iterator {
+class Applications extends Iterator {
+    
+    use PackagesTrait;
 
-	public function getElementByID($id) {
+	public function getByID($id) {
 
-		return App::load(intval($id), $this->dbh);
+		return Application::load($this->database, intval($id));
 
 	}
 
 	protected function loadData() {
 
-        $this->loadFromDatabase("comodojo_apps", "name");
+        $this->loadFromDatabase("applications", "name");
 
 	}
 

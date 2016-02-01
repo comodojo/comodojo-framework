@@ -1,10 +1,5 @@
 <?php namespace Comodojo\Rpc;
 
-use \Comodojo\Database\Database;
-use \Comodojo\Exception\DatabaseException;
-use \Comodojo\Exception\ConfigurationException;
-use \Exception;
-
 /**
  *
  *
@@ -31,25 +26,19 @@ use \Exception;
 
 class RpcSignature {
 
-    protected $ret = "";
+    protected $return_type = "";
 
-    protected $params = array();
-
-    function __construct() {
-
-        $this->dbh  = $dbh;
-
-    }
+    protected $parameters = array();
 
     public function getReturnType() {
 
-        return $this->ret;
+        return $this->return_type;
 
     }
 
-    public function setReturnType($returnType) {
+    public function setReturnType($return_type) {
 
-        $this->ret = $returnType;
+        $this->return_type = $return_type;
 
         return $this;
 
@@ -57,13 +46,13 @@ class RpcSignature {
 
     public function getRawParameters() {
 
-        return $this->params;
+        return $this->parameters;
 
     }
 
-    public function setRawParameters($params) {
+    public function setRawParameters($parameters) {
 
-        $this->params = $params;
+        $this->parameters = $parameters;
 
         return $this;
 
@@ -71,23 +60,29 @@ class RpcSignature {
 
     public function getParameters() {
 
-        return array_keys($this->params);
+        return array_keys($this->parameters);
 
     }
 
     public function getParameterType($name) {
 
-        if (isset($this->params[$name]))
-            return $this->params[$name]['type'];
-
+        if (isset($this->parameters[$name])) {
+            
+            return $this->parameters[$name]['type'];
+            
+        }
+            
         return null;
 
     }
 
     public function isParameterOptional($name) {
 
-        if (isset($this->params[$name]))
-            return filter_var($this->params[$name]['optional'], FILTER_VALIDATE_BOOLEAN);
+        if (isset($this->parameters[$name])) {
+            
+            return filter_var($this->parameters[$name]['optional'], FILTER_VALIDATE_BOOLEAN);
+            
+        }
 
         return null;
 
@@ -95,13 +90,13 @@ class RpcSignature {
 
     public function hasParameter($name) {
 
-        return (isset($this->params[$name]));
+        return isset($this->parameters[$name]);
 
     }
 
     public function addParameter($name, $type, $optional = false) {
 
-        $this->params[$name] = array(
+        $this->parameters[$name] = array(
             "type"     => $type,
             "optional" => filter_var($optional, FILTER_VALIDATE_BOOLEAN)
         );
@@ -112,9 +107,12 @@ class RpcSignature {
 
     public function removeParameter($name) {
 
-        if (isset($this->params[$name]))
-            unset($this->params[$name]);
-
+        if (isset($this->parameters[$name])) {
+            
+            unset($this->parameters[$name]);
+            
+        }
+            
         return $this;
 
     }

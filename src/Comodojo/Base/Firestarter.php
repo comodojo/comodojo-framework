@@ -4,7 +4,6 @@ use \Comodojo\Settings\Settings;
 use \Comodojo\Database\Database;
 use \Comodojo\Database\EnhancedDatabase;
 use \Comodojo\Dispatcher\Components\Configuration;
-use \Comodojo\Cache\FileCache;
 use \Comodojo\Exception\DatabaseException;
 use \Exception;
 
@@ -50,33 +49,30 @@ trait Firestarter {
         
     }
 
-    protected static function getDatabase() {
+    protected function getDatabase( ) {
         
-        if ( self::checkBasicConfiguration() === false ) {
-            
-            throw new Exception("Cannot read basic configuration file, aborting startup");
-            
-        }
+        $model = $this->configuration->get('database-model');
+        $host = $this->configuration->get('database-host');
+        $port = $this->configuration->get('database-port');
+        $name = $this->configuration->get('database-name');
+        $user = $this->configuration->get('database-user');
+        $password = $this->configuration->get('database-password');
+        $prefix = $this->configuration->get('database-prefix');
         
         try {
             
-            $db = new Database(
-                COMODOJO_DATABASE_MODEL,
-                COMODOJO_DATABASE_HOST,
-                COMODOJO_DATABASE_PORT,
-                COMODOJO_DATABASE_NAME,
-                COMODOJO_DATABASE_USER,
-                COMODOJO_DATABASE_PASS
+            $this->database = new EnhancedDatabase(
+                $model,
+                $host,
+                $port,
+                $name,
+                $user,
+                $password
             );
             
-            $db->tablePrefix(EXTENDER_DATABASE_PREFIX)->autoClean();
-            foreach ( $completed_processes as $process ) {
-                $db->table(EXTENDER_DATABASE_TABLE_JOBS)
-                    ->keys("lastrun")
-                    ->values($process[3])
-                    ->where('id', '=', $process[6])
-                    ->update();
-            }
+            $this->database->tablePrefix(COMODOJO_DATABASE_PREFIX);
+            
+            $this->database->autoClean();
             
         } catch (DatabaseException $de) {
             
@@ -84,92 +80,17 @@ trait Firestarter {
             
         }
         
-        return $db;
-        
     }
     
-    protected static function getEnhancedDatabase() {
+    protected function getStaticConfiguration( $static_configuration = array() ) {
         
-        if ( self::checkBasicConfiguration() === false ) {
-            
-            throw new Exception("Cannot read basic configuration file, aborting startup");
-            
-        }
-        
-        try {
-            
-            $db = new EnhancedDatabase(
-                COMODOJO_DATABASE_MODEL,
-                COMODOJO_DATABASE_HOST,
-                COMODOJO_DATABASE_PORT,
-                COMODOJO_DATABASE_NAME,
-                COMODOJO_DATABASE_USER,
-                COMODOJO_DATABASE_PASS
-            );
-            
-            if ( defined(COMODOJO_DATABASE_PREFIX) ) {
-                
-                $db->tablePrefix(COMODOJO_DATABASE_PREFIX);
-                
-            }
-            
-            $db->autoClean();
-            
-        } catch (DatabaseException $de) {
-            
-            throw $de;
-            
-        }
-        
-        return $db;
-        
-    }
-    
-    protected static function getConfiguration(Database $database, $static_configuration = array()) {
-        
-        if (
-            isset( $static_configuration['comodojo-startup-cache'] ) &&
-            isset( $static_configuration['dispatcher-cache-folder'] ) &&
-            isset( $static_configuration['comodojo-startup-cache-ttl'] ) &&
-            $static_configuration['comodojo-startup-cache'] === true
-        ) {
-            
-            $cache = new FileCache($static_configuration['dispatcher-cache-folder']);
-            
-            $configuration = $cache->setNamespace('COMODOJOSTARTUP')->get('config');
-            
-            return $configuration;
-
-        }
-        
-        $configuration = new Configuration();
-        
-        $settings = new Settings($database);
-        
-        foreach ( $settings as $setting => $value ) {
-            
-            $configuration->set($setting, $value);
-            
-        }
+        $this->configuration = new Configuration();
         
         foreach ( $static_configuration as $setting => $value ) {
             
-            $configuration->set($setting, $value);
+            $this->configuration->set($setting, $value);
             
         }
-        
-        if (
-            isset( $static_configuration['comodojo-startup-cache'] ) &&
-            isset( $static_configuration['dispatcher-cache-folder'] ) &&
-            isset( $static_configuration['comodojo-startup-cache-ttl'] ) &&
-            $static_configuration['comodojo-startup-cache'] === true
-        ) {
-            
-            $cache->setNamespace('COMODOJOSTARTUP')->set('config', $configuration, $static_configuration['comodojo-startup-cache-ttl']);
-
-        }
-        
-        return $configuration;
         
     }
     

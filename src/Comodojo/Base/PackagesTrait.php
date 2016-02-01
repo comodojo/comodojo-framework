@@ -1,6 +1,4 @@
-<?php namespace Comodojo\Users;
-
-use \Comodojo\Base\Iterator;
+<?php namespace Comodojo\Base;
 
 /**
  *
@@ -26,17 +24,49 @@ use \Comodojo\Base\Iterator;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Users extends Iterator {
+trait PackagesTrait {
 
-	public function getByID($id) {
+    protected $packages = array();
 
-		return User::load(intval($id), $this->database);
+    public function getPackages() {
 
-	}
+        return array_keys($this->packages);
 
-    protected function loadData() {
-        
-        $this->loadFromDatabase("comodojo_users", "username");
+    }
+
+    public function getListByPackage($package) {
+
+        return $this->packages[$package];
+
+    }
+
+    protected function loadPackages($data, $fieldName) {
+
+        if ($data->getLength() > 0) {
+
+            $data = $data->getData();
+
+            foreach ($data as $row) {
+
+                if (!isset($this->packages[$row['package']])) {
+                    
+                    $this->packages[$row['package']] = array();
+                    
+                }
+
+                array_push($this->packages[$row['package']], $row[$fieldName]);
+
+            }
+
+        }
+
+        foreach ($this->packages as $package => $list) {
+
+            $this->packages[$package] = sort($list);
+
+        }
+
+        return $this;
 
     }
 

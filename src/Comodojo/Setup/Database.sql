@@ -24,7 +24,7 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 -- Table `mydb`.`comodojo_apps`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `mydb`.`comodojo_apps` (
+CREATE TABLE IF NOT EXISTS `mydb`.`comodojo_applications` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(256) NOT NULL,
   `description` TEXT NULL DEFAULT NULL,

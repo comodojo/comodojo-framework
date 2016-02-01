@@ -1,7 +1,7 @@
 <?php namespace Comodojo\Configuration;
 
-use \Comodojo\Apps\App as FrameworkApp;
-use \Comodojo\Apps\Apps as FrameworkApps;
+use \Comodojo\Applications\Application as FrameworkApp;
+use \Comodojo\Applications\Applications as FrameworkApps;
 use \Comodojo\Exception\ConfigurationException;
 use \Exception;
 
@@ -29,7 +29,7 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Apps extends AbstractConfiguration {
+class Applications extends AbstractConfiguration {
 
     public function get() {
 

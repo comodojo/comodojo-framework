@@ -1,6 +1,8 @@
 <?php namespace Comodojo\Base;
 
-use \Comodojo\Database\Database;
+use \Comodojo\Database\EnhancedDatabase;
+use \Comodojo\Dispatcher\Components\Configuration;
+use \Comodojo\Base\Element;
 use \Iterator as PhpIterator;
 use \ArrayAccess;
 use \Countable;
@@ -35,44 +37,37 @@ use \Exception;
 
 abstract class Iterator implements PhpIterator, ArrayAccess, Countable, Serializable {
 
-    protected $data     = array();
+    protected $data = array();
 
-    protected $packages = array();
+    protected $current = 0;
 
-    protected $current  = 0;
+    protected $database;
+    
+    protected $configuration;
 
-    protected $dbh;
+    public function __construct(Database $database, Configuration $configuration) {
 
-    public function __construct(Database $dbh) {
-
-        $this->dbh = $dbh;
+        $this->database = $database;
+        
+        $this->configuration = $configuration;
 
         $this->loadData();
 
     }
 
-    public function getPackages() {
-
-        return array_keys($this->packages);
-
-    }
-
-    public function getListByPackage($package) {
-
-        return $this->packages[$package];
-
-    }
-
     abstract protected function loadData();
 
-    abstract public function getElementByID($id);
+    abstract public function getById($id);
 
-	public function getElementByName($name) {
+	public function getByName($name) {
 
-		if (!isset($this->data[$name]))
-			throw new ConfigurationException("Value identified by $name does not exist");
+		if ( !isset($this->data[$name]) ) {
+		    
+		    throw new ConfigurationException("Value identified by $name does not exist");
+		    
+		}
 
-		return $this->getElementByID($this->data[$name], $this->dbh);
+		return $this->getElementByID($this->data[$name]);
 
 	}
 
@@ -82,7 +77,7 @@ abstract class Iterator implements PhpIterator, ArrayAccess, Countable, Serializ
 
     }
 
-    public function addElement($name, $element) {
+    public function add($name, $element) {
 
         $element->setName($name)->save();
 
@@ -90,13 +85,13 @@ abstract class Iterator implements PhpIterator, ArrayAccess, Countable, Serializ
 
     }
 
-    public function removeElementByName($name) {
+    public function removeByName($name) {
 
         if (isset($this->data[$name])) {
 
-            $val = $this->getElementByName($name);
+            $val = $this->getByName($name);
             
-            $this->removeElement($val);
+            $this->remove($val);
 
         }
 
@@ -104,13 +99,13 @@ abstract class Iterator implements PhpIterator, ArrayAccess, Countable, Serializ
 
     }
 
-    public function removeElementByID($id) {
+    public function removeByID($id) {
 
         if (in_array($id, array_values($this->data))) {
 
-            $val = $this->getElementByID($id);
+            $val = $this->getById($id);
             
-            $this->removeElement($val);
+            $this->remove($val);
 
         }
 
@@ -118,25 +113,25 @@ abstract class Iterator implements PhpIterator, ArrayAccess, Countable, Serializ
 
     }
     
-    protected function removeElement($element) {
+    protected function remove(Element $element) {
         
-        $name    = $element->getName();
+        $name = $element->getName();
         
-        $package = $this->getListByPackage($element->getPackageName());
-
-        $index   = array_search($name, $package);
+        unset($this->data[$name]);
         
-        if ($index >= 0) {
-
-            array_splice($this->packages[$element->getPackageName()], $index, 1);
-
-            $element->delete();
-
-            unset($this->data[$name]);
+        $element->delete();
         
-        } else {
+        if ( isset( $this->packages ) ) {
             
-            throw new ConfigurationException("Unable to remove object");
+            $package = $this->getListByPackage($element->getPackageName());
+            
+            $index = array_search($name, $package);
+            
+            if ($index >= 0) {
+
+                array_splice($this->packages[$element->getPackageName()], $index, 1);
+        
+            }
             
         }
         
@@ -144,15 +139,17 @@ abstract class Iterator implements PhpIterator, ArrayAccess, Countable, Serializ
     
     protected function loadFromDatabase($table, $fieldName) {
 
+        // reset data object
         $this->data = array();
 
-        $query = sprintf("SELECT * FROM %s ORDER BY %s", $table, $fieldName);
-
         try {
-
-            $result = $this->dbh->query($query);
-
-
+            
+            $result = $this->database
+                ->table($table)
+                ->keys('*')
+                ->orderBy($fieldName)
+                ->get();
+            
         } catch (DatabaseException $de) {
 
             throw $de;
@@ -160,10 +157,14 @@ abstract class Iterator implements PhpIterator, ArrayAccess, Countable, Serializ
         }
 
         $this->loadList($result, $fieldName);
-
-        $this->loadPackages($result, $fieldName);
-
-        return $this;
+        
+        if ( isset( $this->packages ) ) {
+            
+            $this->loadPackages($result, $fieldName);
+            
+        }
+        
+        return $result;
         
     }
 
@@ -180,33 +181,6 @@ abstract class Iterator implements PhpIterator, ArrayAccess, Countable, Serializ
             }
 
         }
-
-    }
-
-    protected function loadPackages($data, $fieldName) {
-
-        if ($data->getLength() > 0) {
-
-            $data = $data->getData();
-
-            foreach ($data as $row) {
-
-                if (!isset($this->packages[$row['package']]))
-                    $this->packages[$row['package']] = array();
-
-                array_push($this->packages[$row['package']], $row[$fieldName]);
-
-            }
-
-        }
-
-        foreach ($this->packages as $package => $list) {
-
-            $this->packages[$package] = sort($list);
-
-        }
-
-        return $this;
 
     }
 
@@ -234,7 +208,7 @@ abstract class Iterator implements PhpIterator, ArrayAccess, Countable, Serializ
      */
     public function current() {
 
-        return $this->getElementByName($this->data[$this->current]);
+        return $this->byName($this->data[$this->current]);
 
     }
 
@@ -291,7 +265,7 @@ abstract class Iterator implements PhpIterator, ArrayAccess, Countable, Serializ
     }
 
     /**
-     * Get a route description
+     * 
      *
      * @param string $name
      *
@@ -299,12 +273,12 @@ abstract class Iterator implements PhpIterator, ArrayAccess, Countable, Serializ
      */
     public function offsetGet($name) {
 
-        return $this->getElementByName($name);
+        return $this->getByName($name);
 
     }
 
     /**
-     * Set a route
+     * 
      *
      * @param string $name
      * @param ConfigElement $element
@@ -313,7 +287,7 @@ abstract class Iterator implements PhpIterator, ArrayAccess, Countable, Serializ
      */
     public function offsetSet($name,  $element) {
 
-        $this->addElement($name, $element);
+        $this->add($name, $element);
 
         return $this;
 
@@ -328,7 +302,7 @@ abstract class Iterator implements PhpIterator, ArrayAccess, Countable, Serializ
      */
     public function offsetUnset($name) {
 
-        return $this->removeElementByName($name);
+        return $this->removeByName($name);
 
     }
 
@@ -360,7 +334,7 @@ abstract class Iterator implements PhpIterator, ArrayAccess, Countable, Serializ
 
         return serialize(array(
             json_encode($this->data),
-            json_encode($this->packages),
+            isset($this->packages) ? json_encode($this->packages) : null,
             json_encode($this->current)
         ));
 
@@ -378,7 +352,13 @@ abstract class Iterator implements PhpIterator, ArrayAccess, Countable, Serializ
         $data = unserialize($data);
 
         $this->data     = json_decode($data[0], true);
-        $this->packages = json_decode($data[1], true);
+        
+        if ( isset($this->packages) ) {
+            
+            $this->packages = json_decode($data[1], true);
+            
+        }
+    
         $this->current  = json_decode($data[2], true);
 
         return $this;

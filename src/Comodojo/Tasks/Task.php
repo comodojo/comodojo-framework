@@ -1,9 +1,8 @@
 <?php namespace Comodojo\Tasks;
 
-use \Comodojo\Database\Database;
+use \Comodojo\Database\EnhancedDatabase;
 use \Comodojo\Base\Element;
 use \Comodojo\Exception\DatabaseException;
-use \Comodojo\Exception\ConfigurationException;
 use \Exception;
 
 /**
@@ -32,9 +31,9 @@ use \Exception;
 
 class Task extends Element {
 
-    protected $cls = "";
+    protected $class = "";
 
-    protected $desc = "";
+    protected $description = "";
 
     public function getClass() {
 
@@ -44,10 +43,13 @@ class Task extends Element {
 
     public function getInstance() {
 
-        $class = $this->cls;
+        $class = $this->$class;
 
-        if (class_exists($class))
+        if (class_exists($class)) {
+            
             return new $class();
+            
+        }
 
         return null;
 
@@ -55,7 +57,7 @@ class Task extends Element {
 
     public function setClass($class) {
 
-        $this->cls = $class;
+        $this->class = $class;
 
         return $this;
 
@@ -75,16 +77,11 @@ class Task extends Element {
 
     }
 
-    public static function load($id, $dbh) {
-
-        $query = sprintf("SELECT * FROM comodojo_tasks WHERE id = %d",
-            $id
-        );
+    public static function load(EnhancedDatabase $database, $id) {
 
         try {
 
-            $result = $dbh->query($query);
-
+            $result = Model::load($database, $id);
 
         } catch (DatabaseException $de) {
 
@@ -102,9 +99,13 @@ class Task extends Element {
 
             $task->setData($data);
 
-            return $task;
-
+        } else {
+            
+            throw new Exception("Unable to load task");
+            
         }
+        
+        return $task;
 
     }
 
@@ -113,8 +114,8 @@ class Task extends Element {
         return array(
             $this->id,
             $this->name,
-            $this->cls,
-            $this->desc,
+            $this->class,
+            $this->description,
             $this->package
         );
 
@@ -122,10 +123,10 @@ class Task extends Element {
 
     protected function setData($data) {
 
-        $this->id      = intval($data[0]);
-        $this->name    = $data[1];
-        $this->cls     = $data[2];
-        $this->desc    = $data[3];
+        $this->id = intval($data[0]);
+        $this->name = $data[1];
+        $this->class = $data[2];
+        $this->description = $data[3];
         $this->package = $data[4];
 
         return $this;
@@ -134,17 +135,9 @@ class Task extends Element {
 
     protected function create() {
 
-        $query = sprintf("INSERT INTO comodojo_tasks VALUES (0, '%s', '%s', '%s', '%s')",
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->cls),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->desc),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->package)
-        );
-
         try {
 
-            $result = $this->dbh->query($query);
-
+            $result = Model::create($this->database, $this->name, $this->class, $this->description, $this->package);
 
         } catch (DatabaseException $de) {
 
@@ -160,18 +153,9 @@ class Task extends Element {
 
     protected function update() {
 
-        $query = sprintf("UPDATE comodojo_tasks SET name = '%s', class = '%s', description = '%s', package = '%s' WHERE id = %d",
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->cls),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->desc),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->package),
-            $this->id
-        );
-
         try {
 
-            $this->dbh->query($query);
-
+            $result = Model::update($this->database, $this->id, $this->name, $this->class, $this->description, $this->package);
 
         } catch (DatabaseException $de) {
 
@@ -185,14 +169,9 @@ class Task extends Element {
 
     public function delete() {
 
-        $query = sprintf("DELETE FROM comodojo_tasks WHERE id = %d",
-            $this->id
-        );
-
         try {
 
-            $this->dbh->query($query);
-
+            $result = Model::delete($this->database, $this->id);
 
         } catch (DatabaseException $de) {
 

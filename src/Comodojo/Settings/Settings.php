@@ -1,10 +1,7 @@
 <?php namespace Comodojo\Settings;
 
-use \Comodojo\Database\Database;
 use \Comodojo\Base\Iterator;
-use \Comodojo\Exception\DatabaseException;
-use \Comodojo\Exception\ConfigurationException;
-use \Exception;
+use \Comodojo\Base\PackagesTrait;
 
 /**
  *
@@ -31,10 +28,12 @@ use \Exception;
  */
 
 class Settings extends Iterator {
+    
+    use PackagesTrait;
 
-	public function getElementByID($id) {
+	public function getByID($id) {
 
-		return Setting::load(intval($id), $this->dbh);
+		return Setting::load(intval($id), $this->database);
 
 	}
 

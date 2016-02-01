@@ -1,9 +1,7 @@
 <?php namespace Comodojo\Authentication;
 
-use \Comodojo\Database\Database;
 use \Comodojo\Base\Iterator;
-use \Comodojo\Exception\DatabaseException;
-use \Exception;
+use \Comodojo\Base\PackagesTrait;
 
 /**
  *
@@ -30,16 +28,18 @@ use \Exception;
  */
 
 class Authentications extends Iterator {
+    
+    use PackagesTrait;
 
-	public function getElementByID($id) {
+	public function getByID($id) {
 
-		return Authentication::load(intval($id), $this->dbh);
+		return Authentication::load(intval($id), $this->database);
 
 	}
 
     protected function loadData() {
 
-        $this->loadFromDatabase("comodojo_auths", "name");
+        $this->loadFromDatabase("comodojo_authentication", "name");
 
     }
 

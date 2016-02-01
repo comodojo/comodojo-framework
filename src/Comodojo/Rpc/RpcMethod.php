@@ -1,9 +1,8 @@
 <?php namespace Comodojo\Rpc;
 
-use \Comodojo\Database\Database;
+use \Comodojo\Database\EnhancedDatabase;
 use \Comodojo\Base\Element;
 use \Comodojo\Exception\DatabaseException;
-use \Comodojo\Exception\ConfigurationException;
 use \Exception;
 
 /**
@@ -36,7 +35,7 @@ class RpcMethod extends Element {
 
     protected $method = "";
 
-    protected $desc = "";
+    protected $description = "";
 
     protected $signatures = array();
 
@@ -70,13 +69,13 @@ class RpcMethod extends Element {
 
     public function getDescription() {
 
-        return $this->desc;
+        return $this->description;
 
     }
 
     public function setDescription($description) {
 
-        $this->desc = $description;
+        $this->description = $description;
 
         return $this;
 
@@ -187,16 +186,11 @@ class RpcMethod extends Element {
 
     }
 
-    public static function load($id, $dbh) {
-
-        $query = sprintf("SELECT * FROM comodojo_rpc WHERE id = %d",
-            $id
-        );
+    public static function load(EnhancedDatabase $database, $id) {
 
         try {
 
-            $result = $dbh->query($query);
-
+            $result = Model::load($database, $id);
 
         } catch (DatabaseException $de) {
 
@@ -213,10 +207,14 @@ class RpcMethod extends Element {
             $rpc = new Rpc($dbh);
 
             $rpc->setData($data);
-
-            return $rpc;
-
+            
+        } else {
+            
+            throw new Exception("Unable to load task");
+            
         }
+        
+        return $rpc;
 
     }
 
@@ -227,7 +225,7 @@ class RpcMethod extends Element {
             $this->name,
             $this->callback,
             $this->method,
-            $this->desc,
+            $this->description,
             json_encode($this->getRawSignatures()),
             $this->package
         );
@@ -236,33 +234,31 @@ class RpcMethod extends Element {
 
     protected function setData($data) {
 
-        $this->id         = intval($data[0]);
-        $this->name       = $data[1];
-        $this->callback   = $data[2];
-        $this->method     = $data[3];
-        $this->desc       = $data[4];
+        $this->id = intval($data[0]);
+        $this->name = $data[1];
+        $this->callback = $data[2];
+        $this->method = $data[3];
+        $this->description = $data[4];
         $this->setRawSignatures(json_decode($data[5], true));
-        $this->package    = $data[6];
+        $this->package = $data[6];
 
         return $this;
 
     }
 
     protected function create() {
-
-        $query = sprintf("INSERT INTO comodojo_rpc VALUES (0, '%s', '%s', '%s', '%s', '%s', '%s')",
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->callback),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->method),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->desc),
-            mysqli_real_escape_string($this->dbh->getHandler(), json_encode($this->getRawSignatures())),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->package)
-        );
-
+        
         try {
 
-            $result = $this->dbh->query($query);
-
+            $result = Model::create(
+                $this->database,
+                $this->name,
+                $this->callback,
+                $this->method,
+                $this->description,
+                json_encode( $this->getRawSignatures() ),
+                $this->package
+            );
 
         } catch (DatabaseException $de) {
 
@@ -278,20 +274,18 @@ class RpcMethod extends Element {
 
     protected function update() {
 
-        $query = sprintf("UPDATE comodojo_rpc SET name = '%s', callback = '%s', method = '%s', description = '%s', signatures = '%s', package = '%s' WHERE id = %d",
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->callback),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->method),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->desc),
-            mysqli_real_escape_string($this->dbh->getHandler(), json_encode($this->getRawSignatures())),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->pack),
-            $this->id
-        );
-
         try {
 
-            $this->dbh->query($query);
-
+            $result = Model::update(
+                $this->database,
+                $this->id,
+                $this->name,
+                $this->callback,
+                $this->method,
+                $this->description,
+                json_encode( $this->getRawSignatures() ),
+                $this->package
+            );
 
         } catch (DatabaseException $de) {
 
@@ -305,14 +299,9 @@ class RpcMethod extends Element {
 
     public function delete() {
 
-        $query = sprintf("DELETE FROM comodojo_rpc WHERE id = %d",
-            $this->id
-        );
-
         try {
 
-            $this->dbh->query($query);
-
+            $result = Model::delete($this->database, $this->id);
 
         } catch (DatabaseException $de) {
 
@@ -320,7 +309,7 @@ class RpcMethod extends Element {
 
         }
 
-        $this->setData(array(0, "", "", "", "", "[]", ""));
+        $this->setData(array(0, "", "", "", "", [], ""));
 
         return $this;
 
