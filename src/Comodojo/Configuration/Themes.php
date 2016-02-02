@@ -33,7 +33,7 @@ class Themes extends AbstractConfiguration {
 
     public function get() {
 
-        $return = new FrameworkThemes($this->getDbh());
+        $return = new FrameworkThemes($this->database());
 
         return $return;
 
@@ -42,8 +42,8 @@ class Themes extends AbstractConfiguration {
     protected function parameters() {
         
         return array(
-            "package"     => null,
-            "name"        => null,
+            "package" => null,
+            "name" => null,
             "description" => ""
         );
         
@@ -53,7 +53,7 @@ class Themes extends AbstractConfiguration {
     protected function save($params) {
         
         if ($params['id'] == 0)
-            $return = new FrameworkTheme($this->getDbh());
+            $return = new FrameworkTheme($this->database());
         else
             $return = $this->getById($id);
             

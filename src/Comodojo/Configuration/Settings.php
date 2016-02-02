@@ -33,7 +33,7 @@ class Settings extends AbstractConfiguration {
 
     public function get() {
 
-        $return = new FrameworkSettings($this->getDbh());
+        $return = new FrameworkSettings($this->database());
 
         return $return;
 
@@ -42,12 +42,12 @@ class Settings extends AbstractConfiguration {
     protected function parameters() {
         
         return array(
-            "package"     => null,
-            "name"        => null,
-            "value"       => null,
-            "constant"    => false,
-            "type"        => "STRING",
-            "validate"    => ""
+            "package" => null,
+            "name" => null,
+            "value" => null,
+            "constant" => false,
+            "type" => "STRING",
+            "validate" => ""
         );
         
         
@@ -56,7 +56,7 @@ class Settings extends AbstractConfiguration {
     protected function save($params) {
         
         if ($params['id'] == 0)
-            $return = new FrameworkSetting($this->getDbh());
+            $return = new FrameworkSetting($this->database());
         else
             $return = $this->getById($id);
             

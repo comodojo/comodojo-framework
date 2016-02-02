@@ -87,13 +87,13 @@ abstract class AbstractConfiguration implements ConfigurationInterface {
 
     public function getByName($name) {
 
-        return $this->get()->getElementByName($name);
+        return $this->get()->getByName($name);
 
     }
 
     public function getById($id) {
 
-        return $this->get()->getElementByID($id);
+        return $this->get()->getByID($id);
 
     }
 
@@ -109,7 +109,7 @@ abstract class AbstractConfiguration implements ConfigurationInterface {
 
             foreach ($list as $name) {
 
-                array_push($return, $iter->getElementByName($name));
+                array_push($return, $iter->getByName($name));
 
             }
 
@@ -125,13 +125,13 @@ abstract class AbstractConfiguration implements ConfigurationInterface {
 
         if ( empty($return) ) throw new ConfigurationException("The specified ID doesn't exist");
         
-        return $this->get()->removeElementByID($id);
+        return $this->get()->removeByID($id);
 
     }
 
-    public function getDbh() {
+    public function database() {
 
-        return $this->dbh;
+        return $this->database;
 
     }
 

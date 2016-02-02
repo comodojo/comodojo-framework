@@ -1,9 +1,8 @@
 <?php namespace Comodojo\Plugins;
 
-use \Comodojo\Database\Database;
+use \Comodojo\Database\EnhancedDatabase;
 use \Comodojo\Base\Element;
 use \Comodojo\Exception\DatabaseException;
-use \Comodojo\Exception\ConfigurationException;
 use \Exception;
 
 /**
@@ -32,26 +31,25 @@ use \Exception;
 
 class Plugin extends Element {
 
-    protected $cls = "";
+    protected $classname = "";
 
     protected $method = "";
 
     protected $event = "";
 
-    protected $fw = "";
+    protected $framework = "";
 
     public function getClass() {
 
-        return $this->cls;
+        return $this->classname;
 
     }
 
     public function getInstance() {
 
-        $class = $this->cls;
+        $class = $this->classname;
 
-        if (class_exists($class))
-            return new $class();
+        if ( class_exists($class) ) return new $class();
 
         return null;
 
@@ -59,7 +57,7 @@ class Plugin extends Element {
 
     public function setClass($class) {
 
-        $this->cls = $class;
+        $this->classname = $class;
 
         return $this;
 
@@ -85,9 +83,9 @@ class Plugin extends Element {
 
         $params = func_get_args();
 
-        if (!is_null($obj)) {
+        if ( !is_null($obj) ) {
 
-            if (!empty($this->method) && method_exists($obj, $this->method)) {
+            if ( !empty($this->method) && method_exists($obj, $this->method) ) {
 
                 return call_user_func(array($obj, $this->method), $params);
 
@@ -99,13 +97,13 @@ class Plugin extends Element {
 
     }
 
-    public function getEventName() {
+    public function getEvent() {
 
         return $this->event;
 
     }
 
-    public function setEventName($name) {
+    public function setEvent($name) {
 
         $this->event = $name;
 
@@ -115,28 +113,23 @@ class Plugin extends Element {
 
     public function getFramework() {
 
-        return $this->fw;
+        return $this->framework;
 
     }
 
-    public function setFramework($name) {
+    public function setFramework($framework) {
 
-        $this->fw = $name;
+        $this->framework = $framework;
 
         return $this;
 
     }
 
-    public static function load($id, $dbh) {
-
-        $query = sprintf("SELECT * FROM comodojo_plugins WHERE id = %d",
-            $id
-        );
+    public static function load(EnhancedDatabase $database, $id) {
 
         try {
 
-            $result = $dbh->query($query);
-
+            $result = Model::load($database, $id);
 
         } catch (DatabaseException $de) {
 
@@ -154,9 +147,13 @@ class Plugin extends Element {
 
             $plugin->setData($data);
 
-            return $plugin;
-
+        } else {
+            
+            throw new Exception("Unable to load role");
+            
         }
+        
+        return $plugin;
 
     }
 
@@ -165,10 +162,10 @@ class Plugin extends Element {
         return array(
             $this->id,
             $this->name,
-            $this->cls,
+            $this->classname,
             $this->method,
             $this->event,
-            $this->fw,
+            $this->framework,
             $this->package
         );
 
@@ -176,13 +173,13 @@ class Plugin extends Element {
 
     protected function setData($data) {
 
-        $this->id     = intval($data[0]);
-        $this->name   = $data[1];
-        $this->cls    = $data[2];
+        $this->id = intval($data[0]);
+        $this->name = $data[1];
+        $this->classname = $data[2];
         $this->method = $data[3];
-        $this->event  = $data[4];
-        $this->fw     = $data[5];
-        $this->package= $data[6];
+        $this->event = $data[4];
+        $this->framework = $data[5];
+        $this->package = $data[6];
 
         return $this;
 
@@ -190,19 +187,17 @@ class Plugin extends Element {
 
     protected function create() {
 
-        $query = sprintf("INSERT INTO comodojo_plugins VALUES (0, '%s', '%s', '%s', '%s', '%s', '%s')",
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->cls),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->method),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->event),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->fw),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->package)
-        );
-
         try {
 
-            $result = $this->dbh->query($query);
-
+            $result = Model::create(
+                $this->database,
+                $this->name,
+                $this->classname,
+                $this->method,
+                $this->event,
+                $this->framework,
+                $this->package
+            );
 
         } catch (DatabaseException $de) {
 
@@ -218,20 +213,18 @@ class Plugin extends Element {
 
     protected function update() {
 
-        $query = sprintf("UPDATE comodojo_plugins SET name = '%s', class = '%s', method = '%s', event = '%s', framework = '%s', package = '%s' WHERE id = %d",
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->cls),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->method),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->event),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->fw),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->package),
-            $this->id
-        );
-
         try {
 
-            $this->dbh->query($query);
-
+            $result = Model::update(
+                $this->database,
+                $this->id,
+                $this->name,
+                $this->classname,
+                $this->method,
+                $this->event,
+                $this->framework,
+                $this->package
+            );
 
         } catch (DatabaseException $de) {
 
@@ -245,28 +238,15 @@ class Plugin extends Element {
 
     public function delete() {
 
-        $query = sprintf("DELETE FROM comodojo_plugins WHERE id = %d",
-            $this->id
-        );
-
         try {
 
-            $this->dbh->query($query);
-
+            $result = Model::update($this->database, $this->id);
 
         } catch (DatabaseException $de) {
 
             throw $de;
 
         }
-
-        $this->id     = 0;
-        $this->name   = "";
-        $this->pack   = "";
-        $this->fw     = "";
-        $this->cls    = "";
-        $this->method = "";
-        $this->event  = "";
 
         $this->setData(array(0, "", "", "", "", "", ""));
 

@@ -70,7 +70,7 @@ trait Firestarter {
                 $password
             );
             
-            $this->database->tablePrefix(COMODOJO_DATABASE_PREFIX);
+            $this->database->tablePrefix($prefix);
             
             $this->database->autoClean();
             

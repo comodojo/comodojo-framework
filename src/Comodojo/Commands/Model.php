@@ -1,4 +1,4 @@
-<?php namespace Comodojo\Applications;
+<?php namespace Comodojo\Commands;
 
 use \Comodojo\Database\EnhancedDatabase;
 use \Comodojo\Exception\DatabaseException;
@@ -34,7 +34,7 @@ class Model {
         try {
             
             $result = $database
-                ->table('applications')
+                ->table('commands')
                 ->keys('*')
                 ->where('id', '=', $id)
                 ->get();
@@ -52,16 +52,20 @@ class Model {
     public static function create(
         EnhancedDatabase $database,
         $name,
+        $class,
         $description,
+        $aliases,
+        $options,
+        $arguments,
         $package
     ) {
         
         try {
             
             $result = $database
-                ->table('applications')
-                ->keys(array('name', 'description', 'package'))
-                ->values(array($name, $description, $package))
+                ->table('commands')
+                ->keys(array('name', 'class', 'description', 'aliases', 'options', 'arguments', 'package'))
+                ->values(array($name, $class, $description, $aliases, $options, $arguments, $package))
                 ->store();
 
         } catch (DatabaseException $de) {
@@ -76,18 +80,22 @@ class Model {
     
     public static function update(
         EnhancedDatabase $database,
-        $id,
+        $id, 
         $name,
+        $class,
         $description,
+        $aliases,
+        $options,
+        $arguments,
         $package
     ) {
         
         try {
             
             $result = $database
-                ->table('applications')
-                ->keys(array('name', 'description', 'package'))
-                ->values(array($name, $description, $package))
+                ->table('commands')
+                ->keys(array('name', 'class', 'description', 'aliases', 'options', 'arguments', 'package'))
+                ->values(array($name, $class, $description, $aliases, $options, $arguments, $package))
                 ->where('id', '=', $id)
                 ->update();
 
@@ -106,7 +114,7 @@ class Model {
         try {
             
             $result = $database
-                ->table('applications')
+                ->table('commands')
                 ->where('id', '=', $id)
                 ->delete();
 

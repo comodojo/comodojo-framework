@@ -33,7 +33,7 @@ class Tasks extends AbstractConfiguration {
 
     public function get() {
 
-        $return = new FrameworkTasks($this->getDbh());
+        $return = new FrameworkTasks($this->database());
 
         return $return;
 
@@ -42,9 +42,9 @@ class Tasks extends AbstractConfiguration {
     protected function parameters() {
         
         return array(
-            "package"     => null,
-            "name"        => null,
-            "class"       => null,
+            "package" => null,
+            "name" => null,
+            "class" => null,
             "description" => ""
         );
         
@@ -54,7 +54,7 @@ class Tasks extends AbstractConfiguration {
     protected function save($params) {
         
         if ($params['id'] == 0)
-            $return = new FrameworkTask($this->getDbh());
+            $return = new FrameworkTask($this->database());
         else
             $return = $this->getById($id);
             

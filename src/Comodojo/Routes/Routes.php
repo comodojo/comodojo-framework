@@ -2,6 +2,9 @@
 
 use \Comodojo\Base\Iterator;
 use \Comodojo\Base\PackagesTrait;
+use \Comodojo\Applications\Application;
+use \Comodojo\Exception\DatabaseException;
+use \Exception;
 
 /**
  *
@@ -41,6 +44,68 @@ class Routes extends Iterator {
 
         $this->loadFromDatabase("routes", "route");
 
+    }
+    
+    public function loadByApplication($application_or_id) {
+	    
+	    if ( $application_or_id instanceof Application ) {
+	        
+	        $id = $application_or_id->getID();
+	        
+	    } else if ( is_int($application_or_id) ) {
+	        
+	        $id = $application_or_id;
+	        
+	    } else {
+	        
+	        throw new Exception("Invalid application object or id");
+	        
+	    }
+	    
+	    try {
+	        
+	        $return = $this->loadDataByApplication($id);    
+	        
+	    } catch (Exception $e) {
+	        
+	        throw $e;
+	        
+	    }
+	    
+	    return $return;
+	    
+	}
+	
+	protected function loadDataByApplication($id) {
+        
+        // reset data object
+        $this->data = array();
+
+        try {
+            
+            $result = $this->database
+                ->table('roles')
+                ->keys('*')
+                ->where('application', '=', $id)
+                ->orderBy('name')
+                ->get();
+                
+        } catch (DatabaseException $de) {
+
+            throw $de;
+
+        }
+
+        $this->loadList($result, 'name');
+        
+        if ( isset( $this->packages ) ) {
+            
+            $this->loadPackages($result, 'name');
+            
+        }
+        
+        return $result;
+        
     }
 
 }

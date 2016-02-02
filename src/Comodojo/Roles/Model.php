@@ -1,4 +1,4 @@
-<?php namespace Comodojo\Applications;
+<?php namespace Comodojo\Roles;
 
 use \Comodojo\Database\EnhancedDatabase;
 use \Comodojo\Exception\DatabaseException;
@@ -34,7 +34,7 @@ class Model {
         try {
             
             $result = $database
-                ->table('applications')
+                ->table('roles')
                 ->keys('*')
                 ->where('id', '=', $id)
                 ->get();
@@ -53,15 +53,15 @@ class Model {
         EnhancedDatabase $database,
         $name,
         $description,
-        $package
+        $landingapp
     ) {
         
         try {
             
             $result = $database
-                ->table('applications')
-                ->keys(array('name', 'description', 'package'))
-                ->values(array($name, $description, $package))
+                ->table('roles')
+                ->keys(array('name', 'description', 'landingapp'))
+                ->values(array($name, $description, $landingapp))
                 ->store();
 
         } catch (DatabaseException $de) {
@@ -76,18 +76,18 @@ class Model {
     
     public static function update(
         EnhancedDatabase $database,
-        $id,
+        $id, 
         $name,
         $description,
-        $package
+        $landingapp
     ) {
         
         try {
             
             $result = $database
-                ->table('applications')
-                ->keys(array('name', 'description', 'package'))
-                ->values(array($name, $description, $package))
+                ->table('roles')
+                ->keys(array('name', 'description', 'landingapp'))
+                ->values(array($name, $description, $landingapp))
                 ->where('id', '=', $id)
                 ->update();
 
@@ -106,7 +106,7 @@ class Model {
         try {
             
             $result = $database
-                ->table('applications')
+                ->table('roles')
                 ->where('id', '=', $id)
                 ->delete();
 

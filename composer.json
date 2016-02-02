@@ -23,6 +23,7 @@
             "Comodojo\\": "src/Comodojo/"
         }
     },
+    "minimum-stability": "dev",
     "require": {
         "php": ">=5.6.0",
         "comodojo/dispatcher.framework": "4.0.x-dev",

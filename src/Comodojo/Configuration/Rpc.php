@@ -33,7 +33,7 @@ class Rpc extends AbstractConfiguration {
 
     public function get() {
 
-        $return = new FrameworkRpc($this->getDbh());
+        $return = new FrameworkRpc($this->database());
 
         return $return;
 
@@ -42,12 +42,12 @@ class Rpc extends AbstractConfiguration {
     protected function parameters() {
         
         return array(
-            "package"     => null,
-            "name"        => null,
-            "callback"    => null,
-            "method"      => null,
+            "package" => null,
+            "name" => null,
+            "callback" => null,
+            "method" => null,
             "description" => "",
-            "signatures"  => array() 
+            "signatures" => array() 
         );
         
         
@@ -56,7 +56,7 @@ class Rpc extends AbstractConfiguration {
     protected function save($params) {
         
         if ($params['id'] == 0)
-            $return = new FrameworkRpcMethod($this->getDbh());
+            $return = new FrameworkRpcMethod($this->database());
         else
             $return = $this->getById($id);
             

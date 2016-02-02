@@ -1,4 +1,4 @@
-<?php namespace Comodojo\Applications;
+<?php namespace Comodojo\Authentication;
 
 use \Comodojo\Database\EnhancedDatabase;
 use \Comodojo\Exception\DatabaseException;
@@ -34,7 +34,7 @@ class Model {
         try {
             
             $result = $database
-                ->table('applications')
+                ->table('authentication')
                 ->keys('*')
                 ->where('id', '=', $id)
                 ->get();
@@ -53,15 +53,17 @@ class Model {
         EnhancedDatabase $database,
         $name,
         $description,
+        $class,
+        $parameters,
         $package
     ) {
         
         try {
             
             $result = $database
-                ->table('applications')
-                ->keys(array('name', 'description', 'package'))
-                ->values(array($name, $description, $package))
+                ->table('authentication')
+                ->keys(array('name', 'description', 'class', 'parameters', 'package'))
+                ->values(array($name, $description, $class, $parameters, $package))
                 ->store();
 
         } catch (DatabaseException $de) {
@@ -79,15 +81,17 @@ class Model {
         $id,
         $name,
         $description,
+        $class,
+        $parameters,
         $package
     ) {
         
         try {
             
             $result = $database
-                ->table('applications')
-                ->keys(array('name', 'description', 'package'))
-                ->values(array($name, $description, $package))
+                ->table('authentication')
+                ->keys(array('name', 'description', 'class', 'parameters', 'package'))
+                ->values(array($name, $description, $class, $parameters, $package))
                 ->where('id', '=', $id)
                 ->update();
 
@@ -106,7 +110,7 @@ class Model {
         try {
             
             $result = $database
-                ->table('applications')
+                ->table('authentication')
                 ->where('id', '=', $id)
                 ->delete();
 

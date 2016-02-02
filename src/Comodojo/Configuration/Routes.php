@@ -33,7 +33,7 @@ class Routes extends AbstractConfiguration {
 
     public function get() {
 
-        $return = new FrameworkRoutes($this->getDbh());
+        $return = new FrameworkRoutes($this->database());
 
         return $return;
 
@@ -42,20 +42,19 @@ class Routes extends AbstractConfiguration {
     protected function parameters() {
         
         return array(
-            "package"     => null,
-            "name"        => null,
-            "class"       => null,
-            "type"        => null,
-            "parameters"  => array() 
+            "package" => null,
+            "name" => null,
+            "class" => null,
+            "type" => null,
+            "parameters" => array() 
         );
-        
         
     }
 
     protected function save($params) {
         
         if ($params['id'] == 0)
-            $return = new FrameworkRoute($this->getDbh());
+            $return = new FrameworkRoute($this->database());
         else
             $return = $this->getById($id);
             

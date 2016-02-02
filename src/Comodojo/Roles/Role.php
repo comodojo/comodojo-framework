@@ -1,7 +1,11 @@
 <?php namespace Comodojo\Roles;
 
-use \Comodojo\Database\Database;
+use \Comodojo\Database\EnhancedDatabase;
 use \Comodojo\Base\Element;
+use \Comodojo\Applications\Application;
+use \Comodojo\Applications\Applications;
+use \Comodojo\Users\User;
+use \Comodojo\Users\Users;
 use \Comodojo\Exception\DatabaseException;
 use \Exception;
 
@@ -31,19 +35,19 @@ use \Exception;
 
 class Role extends Element {
 
-    protected $desc = "";
+    protected $description = "";
 
-    protected $app = null;
+    protected $landingapp;
 
     public function getDescription() {
 
-        return $this->desc;
+        return $this->description;
 
     }
 
-    public function setDescription($desc) {
+    public function setDescription($description) {
 
-        $this->desc = $desc;
+        $this->description = $description;
 
         return $this;
 
@@ -51,16 +55,21 @@ class Role extends Element {
 
     public function getLandingApp() {
 
-        return $this->app;
+        return $this->landingapp;
 
     }
 
-    public function setLandingApp($app) {
+    public function setLandingApp($landingapp) {
+        
+        $app = Application::load($this->database, intval($landingapp));
+        
+        if ( is_null($app) === false ) {
+            
+            throw new Exception("Invalid Landing Application");
+            
+        }
 
-        if (is_numeric($app))
-            $app = App::load(intval($app), $this->dbh);
-
-        $this->app = $app;
+        $this->landingapp = $app;
 
         return $this;
 
@@ -68,23 +77,11 @@ class Role extends Element {
 
     public function getUsers() {
 
-        $users = array();
-
-
-        $query = sprintf("SELECT comodojo_users.id as id
-        FROM
-            comodojo_users,
-            comodojo_users_to_roles
-        WHERE
-            comodojo_users.id = comodojo_users_to_roles.user AND
-            comodojo_users_to_roles.role = %d",
-            $this->id
-        );
-
         try {
 
-            $result = $dbh->query($query);
-
+            $users = new Users();
+            
+            $result = $users->loadByRole($this->id);
 
         } catch (DatabaseException $de) {
 
@@ -92,41 +89,17 @@ class Role extends Element {
 
         }
 
-        if ($result->getLength() > 0) {
-
-            $data = $result->getData();
-
-            foreach ($data as $row) {
-
-                array_push($users, User::load($row['id'], $this->dbh));
-
-            }
-
-        }
-
-        return $users;
+        return $result;
 
     }
 
     public function getApplications() {
 
-        $apps = array();
-
-
-        $query = sprintf("SELECT comodojo_apps.id as id
-        FROM
-            comodojo_apps,
-            comodojo_apps_to_roles
-        WHERE
-            comodojo_apps.id = comodojo_apps_to_roles.app AND
-            comodojo_apps_to_roles.role = %d",
-            $this->id
-        );
-
         try {
 
-            $result = $dbh->query($query);
-
+            $applications = new Applications();
+            
+            $result = $applications->loadByRole($this->id);
 
         } catch (DatabaseException $de) {
 
@@ -134,32 +107,15 @@ class Role extends Element {
 
         }
 
-        if ($result->getLength() > 0) {
-
-            $data = $result->getData();
-
-            foreach ($data as $row) {
-
-                array_push($apps, App::load($row['id'], $this->dbh));
-
-            }
-
-        }
-
-        return $apps;
+        return $result;
 
     }
 
-    public static function load($id, $dbh) {
-
-        $query = sprintf("SELECT * FROM comodojo_roles WHERE id = %d",
-            $id
-        );
+    public static function load(EnhancedDatabase $database, $id) {
 
         try {
 
-            $result = $dbh->query($query);
-
+            $result = Model::load($database, $id);
 
         } catch (DatabaseException $de) {
 
@@ -177,9 +133,13 @@ class Role extends Element {
 
             $role->setData($data);
 
-            return $role;
-
+        } else {
+            
+            throw new Exception("Unable to load role");
+            
         }
+        
+        return $role;
 
     }
 
@@ -188,12 +148,15 @@ class Role extends Element {
         $data = array(
             $this->id,
             $this->name,
-            $this->desc
+            $this->description
         );
 
-        if     (!is_null($this->app) && $this->app->getID() !== 0)
-            array_push($data, $this->app->getID());
-
+        if ( $this->landingApp instanceof Application ) {
+            
+            array_push($data, $this->landingApp->getID());
+            
+        }
+        
         return $data;
 
     }
@@ -202,10 +165,13 @@ class Role extends Element {
 
         $this->id   = $data[0];
         $this->name = $data[1];
-        $this->desc = $data[2];
+        $this->description = $data[2];
 
-        if (!isset($data[3]) && is_numeric($data[3]))
-            $this->app = App::load(intval($data[3]), $this->dbh);
+        if ( isset($data[3]) && is_numeric($data[3]) ) {
+            
+            $this->landingapp = Application::load($this->database, intval($data[3]));
+            
+        }
 
         return $this;
 
@@ -213,19 +179,14 @@ class Role extends Element {
 
     protected function create() {
 
-        $query = sprintf("INSERT INTO comodojo_roles VALUES (0, '%s', '%s', %s)",
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->description),
-            mysqli_real_escape_string(
-                $this->dbh->getHandler(),
-                (is_null($this->app) || $this->app->getID() == 0)?'NULL':$this->app->getID()
-            )
-        );
-
         try {
 
-            $result = $this->dbh->query($query);
-
+            $result = Model::create(
+                $this->database,
+                $this->name,
+                $this->description,
+                ($this->landingApp instanceof Application) ? $this->landingApp->getID() : null
+            );
 
         } catch (DatabaseException $de) {
 
@@ -241,20 +202,15 @@ class Role extends Element {
 
     protected function update() {
 
-        $query = sprintf("UPDATE comodojo_roles SET name = '%s', value = '%s', landingapp = %s WHERE id = %d",
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->description),
-            mysqli_real_escape_string(
-                $this->dbh->getHandler(),
-                (is_null($this->app) || $this->app->getID() == 0)?'NULL':$this->app->getID()
-            ),
-            $this->id
-        );
-
         try {
 
-            $this->dbh->query($query);
-
+            $result = Model::create(
+                $this->database,
+                $this->id,
+                $this->name,
+                $this->description,
+                ($this->landingApp instanceof Application) ? $this->landingApp->getID() : null
+            );
 
         } catch (DatabaseException $de) {
 
@@ -268,14 +224,9 @@ class Role extends Element {
 
     public function delete() {
 
-        $query = sprintf("DELETE FROM comodojo_roles WHERE id = %d",
-            $this->id
-        );
-
         try {
 
-            $this->dbh->query($query);
-
+            $result = Model::delete($this->database, $this->id);
 
         } catch (DatabaseException $de) {
 
@@ -283,7 +234,7 @@ class Role extends Element {
 
         }
 
-        $this->setData(array(0, "", ""));
+        $this->setData(array(0, "", null, null));
 
         return $this;
 

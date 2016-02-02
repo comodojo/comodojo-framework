@@ -2,6 +2,7 @@
 
 use \Comodojo\Base\Iterator;
 use \Comodojo\Base\PackagesTrait;
+use \Comodojo\Roles\Role;
 
 /**
  *
@@ -36,11 +37,75 @@ class Applications extends Iterator {
 		return Application::load($this->database, intval($id));
 
 	}
+	
+	public function loadByRole($role_or_id) {
+	    
+	    if ( $role_or_id instanceof Role ) {
+	        
+	        $id = $role_or_id->getID();
+	        
+	    } else if ( is_int($role_or_id) ) {
+	        
+	        $id = $role_or_id;
+	        
+	    } else {
+	        
+	        throw new Exception("Invalid role object or id");
+	        
+	    }
+	    
+	    try {
+	        
+	        $return = $this->loadDataByRole($id);    
+	        
+	    } catch (Exception $e) {
+	        
+	        throw $e;
+	        
+	    }
+	    
+	    return $return;
+	    
+	}
 
 	protected function loadData() {
 
         $this->loadFromDatabase("applications", "name");
 
 	}
+	
+	protected function loadDataByRole($id) {
+        
+        // reset data object
+        $this->data = array();
+
+        try {
+            
+            $result = $this->database
+                ->table('applications')
+                ->table('applications_to_roles')
+                ->keys('*')
+                ->where('*_DBPREFIX_*applications.id', '=', '*_DBPREFIX_*applications_to_roles.application')
+                ->andWhere('*_DBPREFIX_*applicationss_to_roles.role', '=', $id)
+                ->orderBy('name')
+                ->get();
+                
+        } catch (DatabaseException $de) {
+
+            throw $de;
+
+        }
+
+        $this->loadList($result, 'name');
+        
+        if ( isset( $this->packages ) ) {
+            
+            $this->loadPackages($result, 'name');
+            
+        }
+        
+        return $result;
+        
+    }
 
 }

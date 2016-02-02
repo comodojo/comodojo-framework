@@ -2,6 +2,8 @@
 
 use \Comodojo\Database\EnhancedDatabase;
 use \Comodojo\Base\Element;
+use \Comodojo\Roles\Roles;
+use \Comodojo\Routes\Routes;
 use \Comodojo\Exception\DatabaseException;
 use \Exception;
 
@@ -49,23 +51,11 @@ class Application extends Element {
 
     public function getRoles() {
 
-        $roles = array();
-
-
-        $query = sprintf("SELECT comodojo_roles.id as id
-        FROM
-            comodojo_roles,
-            comodojo_apps_to_roles
-        WHERE
-            comodojo_roles.id = comodojo_apps_to_roles.role AND
-            comodojo_apps_to_roles.app = %d",
-            $this->id
-        );
-
         try {
 
-            $result = $dbh->query($query);
-
+            $roles = new Roles();
+            
+            $result = $roles->loadByApplication($this->id);
 
         } catch (DatabaseException $de) {
 
@@ -73,39 +63,17 @@ class Application extends Element {
 
         }
 
-        if ($result->getLength() > 0) {
-
-            $data = $result->getData();
-
-            foreach ($data as $row) {
-
-                array_push($roles, Role::load(intval($row['id']), $this->dbh));
-
-            }
-
-        }
-
-        return $roles;
+        return $result;
 
     }
 
     public function getRoutes() {
 
-        $routes = array();
-
-
-        $query = sprintf("SELECT id
-        FROM
-            comodojo_routes
-        WHERE
-            application = %d",
-            $this->id
-        );
-
         try {
 
-            $result = $dbh->query($query);
-
+            $routes = new Routes();
+            
+            $result = $routes->loadByApplication($this->id);
 
         } catch (DatabaseException $de) {
 
@@ -113,19 +81,7 @@ class Application extends Element {
 
         }
 
-        if ($result->getLength() > 0) {
-
-            $data = $result->getData();
-
-            foreach ($data as $row) {
-
-                array_push($routes, Route::load(intval($row['id']), $this->dbh));
-
-            }
-
-        }
-
-        return $routes;
+        return $result;
 
     }
 

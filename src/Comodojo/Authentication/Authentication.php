@@ -1,6 +1,6 @@
 <?php namespace Comodojo\Authentication;
 
-use \Comodojo\Database\Database;
+use \Comodojo\Database\EnhancedDatabase;
 use \Comodojo\Base\Element;
 use \Comodojo\Exception\DatabaseException;
 use \Exception;
@@ -31,21 +31,21 @@ use \Exception;
 
 class Authentication extends Element {
 
-    protected $desc = "";
+    protected $description = "";
 
-    protected $cls = "";
+    protected $classname = "";
 
-    protected $param = array();
+    protected $parameters = array();
 
     public function getDescription() {
 
-        return $this->desc;
+        return $this->description;
 
     }
 
-    public function setDescription($desc) {
+    public function setDescription($description) {
 
-        $this->desc = $desc;
+        $this->description = $description;
 
         return $this;
 
@@ -53,16 +53,15 @@ class Authentication extends Element {
 
     public function getClass() {
 
-        return $this->cls;
+        return $this->classname;
 
     }
 
     public function getInstance() {
 
-        $class = $this->cls;
+        $class = $this->classname;
 
-        if (class_exists($class))
-            return new $class();
+        if ( class_exists($class) ) return new $class();
 
         return null;
 
@@ -70,7 +69,7 @@ class Authentication extends Element {
 
     public function setClass($class) {
 
-        $this->cls = $class;
+        $this->classname = $class;
 
         return $this;
 
@@ -78,19 +77,19 @@ class Authentication extends Element {
 
     public function getParameters() {
 
-        return array_keys($this->params);
+        return array_keys($this->parameters);
 
     }
 
     public function getParameter($name) {
 
-        return $this->params[$name];
+        return $this->parameters[$name];
 
     }
 
     public function setParameter($name, $value) {
 
-        $this->params[$name] = $value;
+        $this->parameters[$name] = $value;
 
         return $this;
 
@@ -98,23 +97,17 @@ class Authentication extends Element {
 
     public function unsetParameter($name) {
 
-        if (isset($this->params[$name]))
-            unset($this->params[$name]);
+        if ( isset($this->parameters[$name]) ) unset($this->parameters[$name]);
 
         return $this;
 
     }
 
-    public static function load($id, $dbh) {
-
-        $query = sprintf("SELECT * FROM comodojo_authentication WHERE id = %d",
-            $id
-        );
+    public static function load(EnhancedDatabase $database, $id) {
 
         try {
 
-            $result = $dbh->query($query);
-
+            $result = Model::load($database, $id);
 
         } catch (DatabaseException $de) {
 
@@ -132,9 +125,13 @@ class Authentication extends Element {
 
             $auth->setData($data);
 
-            return $auth;
-
+        } else {
+            
+            throw new Exception("Unable to load role");
+            
         }
+        
+        return $auth;
 
     }
 
@@ -143,9 +140,9 @@ class Authentication extends Element {
         return array(
             $this->id,
             $this->name,
-            $this->desc,
-            $this->cls,
-            json_encode($this->param),
+            $this->description,
+            $this->classname,
+            json_encode($this->parameters),
             $this->package
         );
 
@@ -153,11 +150,11 @@ class Authentication extends Element {
 
     protected function setData($data) {
 
-        $auth->id      = $data[0];
-        $auth->name    = $data[1];
-        $auth->desc    = $data[2];
-        $auth->cls     = $data[3];
-        $auth->param   = json_decode($data[4]);
+        $auth->id = $data[0];
+        $auth->name = $data[1];
+        $auth->description = $data[2];
+        $auth->classname = $data[3];
+        $auth->parameters = json_decode($data[4]);
         $auth->package = $data[5];
 
         return $this;
@@ -166,18 +163,16 @@ class Authentication extends Element {
 
     protected function create() {
 
-        $query = sprintf("INSERT INTO comodojo_authentication VALUES (0, '%s', '%s', '%s', '%s', '%s')",
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->desc),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->cls),
-            mysqli_real_escape_string($this->dbh->getHandler(), json_encode($this->param)),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->package)
-        );
-
         try {
 
-            $result = $this->dbh->query($query);
-
+            $result = Model::create(
+                $this->database,
+                $this->name,
+                $this->description,
+                $this->classname,
+                $this->parameters,
+                $this->package
+            );
 
         } catch (DatabaseException $de) {
 
@@ -193,19 +188,17 @@ class Authentication extends Element {
 
     protected function update() {
 
-        $query = sprintf("UPDATE comodojo_authentication SET name = '%s', description = '%s', class = '%s', parameters = '%s', package = '%s' WHERE id = %d",
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->desc),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->cls),
-            mysqli_real_escape_string($this->dbh->getHandler(), json_encode($this->param)),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->package),
-            $this->id
-        );
-
         try {
 
-            $this->dbh->query($query);
-
+            $result = Model::update(
+                $this->database,
+                $this->id,
+                $this->name,
+                $this->description,
+                $this->classname,
+                $this->parameters,
+                $this->package
+            );
 
         } catch (DatabaseException $de) {
 
@@ -219,14 +212,9 @@ class Authentication extends Element {
 
     public function delete() {
 
-        $query = sprintf("DELETE FROM comodojo_authentication WHERE id = %d",
-            $this->id
-        );
-
         try {
 
-            $this->dbh->query($query);
-
+            $result = Model::delete($this->database, $this->id);
 
         } catch (DatabaseException $de) {
 
@@ -234,7 +222,7 @@ class Authentication extends Element {
 
         }
 
-        $this->setData(array(0, "", "", "", "[]", ""));
+        $this->setData(array(0, "", "", "", [], ""));
 
         return $this;
 

@@ -1,4 +1,4 @@
-<?php namespace Comodojo\Applications;
+<?php namespace Comodojo\Plugins;
 
 use \Comodojo\Database\EnhancedDatabase;
 use \Comodojo\Exception\DatabaseException;
@@ -34,7 +34,7 @@ class Model {
         try {
             
             $result = $database
-                ->table('applications')
+                ->table('plugins')
                 ->keys('*')
                 ->where('id', '=', $id)
                 ->get();
@@ -48,20 +48,23 @@ class Model {
         return $result;
         
     }
-
+    
     public static function create(
         EnhancedDatabase $database,
         $name,
-        $description,
+        $class,
+        $method,
+        $event,
+        $framework,
         $package
     ) {
         
         try {
             
             $result = $database
-                ->table('applications')
-                ->keys(array('name', 'description', 'package'))
-                ->values(array($name, $description, $package))
+                ->table('plugins')
+                ->keys(array('name', 'class', 'method', 'event', 'framework', 'package'))
+                ->values(array($name, $class, $method, $event, $framework, $package))
                 ->store();
 
         } catch (DatabaseException $de) {
@@ -78,16 +81,19 @@ class Model {
         EnhancedDatabase $database,
         $id,
         $name,
-        $description,
+        $class,
+        $method,
+        $event,
+        $framework,
         $package
     ) {
         
         try {
             
             $result = $database
-                ->table('applications')
-                ->keys(array('name', 'description', 'package'))
-                ->values(array($name, $description, $package))
+                ->table('plugins')
+                ->keys(array('name', 'class', 'method', 'event', 'framework', 'package'))
+                ->values(array($name, $class, $method, $event, $framework, $package))
                 ->where('id', '=', $id)
                 ->update();
 
@@ -106,7 +112,7 @@ class Model {
         try {
             
             $result = $database
-                ->table('applications')
+                ->table('plugins')
                 ->where('id', '=', $id)
                 ->delete();
 

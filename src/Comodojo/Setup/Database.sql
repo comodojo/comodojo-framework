@@ -22,7 +22,7 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `mydb`.`comodojo_apps`
+-- Table `mydb`.`comodojo_applications`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `mydb`.`comodojo_applications` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`comodojo_roles` (
   INDEX `landingapp_idx` (`landingapp` ASC),
   CONSTRAINT `landingapp`
     FOREIGN KEY (`landingapp`)
-    REFERENCES `mydb`.`comodojo_apps` (`id`)
+    REFERENCES `mydb`.`comodojo_applications` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
@@ -120,16 +120,16 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `mydb`.`comodojo_apps_to_roles`
+-- Table `mydb`.`comodojo_applications_to_roles`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `mydb`.`comodojo_apps_to_roles` (
-  `app` INT UNSIGNED NOT NULL,
+CREATE TABLE IF NOT EXISTS `mydb`.`comodojo_applications_to_roles` (
+  `application` INT UNSIGNED NOT NULL,
   `role` INT UNSIGNED NOT NULL,
-  UNIQUE INDEX `approle` (`app` ASC, `role` ASC),
+  UNIQUE INDEX `approle` (`application` ASC, `role` ASC),
   INDEX `role_idx` (`role` ASC),
-  CONSTRAINT `app`
-    FOREIGN KEY (`app`)
-    REFERENCES `mydb`.`comodojo_apps` (`id`)
+  CONSTRAINT `application`
+    FOREIGN KEY (`application`)
+    REFERENCES `mydb`.`comodojo_applications` (`id`)
     ON DELETE CASCADE
     ON UPDATE CASCADE,
   CONSTRAINT `role`
@@ -156,7 +156,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`comodojo_routes` (
   INDEX `application` (`application` ASC),
   CONSTRAINT `application`
     FOREIGN KEY (`application`)
-    REFERENCES `mydb`.`comodojo_apps` (`id`)
+    REFERENCES `mydb`.`comodojo_applications` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
@@ -236,5 +236,3 @@ CREATE TABLE IF NOT EXISTS `mydb`.`comodojo_rpc` (
   PRIMARY KEY (`id`),
   UNIQUE INDEX `name_UNIQUE` (`name` ASC))
 ENGINE = InnoDB;
-
-

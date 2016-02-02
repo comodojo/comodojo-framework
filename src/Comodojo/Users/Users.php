@@ -1,6 +1,7 @@
 <?php namespace Comodojo\Users;
 
 use \Comodojo\Base\Iterator;
+use \Comodojo\Roles\Role;
 
 /**
  *
@@ -38,6 +39,70 @@ class Users extends Iterator {
 
         $this->loadFromDatabase("users", "username");
 
+    }
+    
+    public function loadByRole($role_or_id) {
+	    
+	    if ( $role_or_id instanceof Role ) {
+	        
+	        $id = $role_or_id->getID();
+	        
+	    } else if ( is_int($role_or_id) ) {
+	        
+	        $id = $role_or_id;
+	        
+	    } else {
+	        
+	        throw new Exception("Invalid user object or id");
+	        
+	    }
+	    
+	    try {
+	        
+	        $return = $this->loadDataByRole($id);    
+	        
+	    } catch (Exception $e) {
+	        
+	        throw $e;
+	        
+	    }
+	    
+	    return $return;
+	    
+	}
+	
+	protected function loadDataByRole($id) {
+        
+        // reset data object
+        $this->data = array();
+
+        try {
+            
+            $result = $this->database
+                ->table('users')
+                ->table('users_to_roles')
+                ->keys('*')
+                ->where('*_DBPREFIX_*users.id', '=', '*_DBPREFIX_*users_to_roles.user')
+                ->andWhere('*_DBPREFIX_*users_to_roles.role', '=', $id)
+                ->orderBy('name')
+                ->get();
+                
+        } catch (DatabaseException $de) {
+
+            throw $de;
+
+        }
+
+        $this->loadList($result, 'name');
+        
+        if ( isset( $this->packages ) ) {
+            
+            $this->loadPackages($result, 'name');
+            
+        }
+        
+        return $result;
+        
     }
 
 }

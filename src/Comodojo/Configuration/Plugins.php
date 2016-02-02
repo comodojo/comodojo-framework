@@ -33,7 +33,7 @@ class Plugins extends AbstractConfiguration {
 
     public function get() {
 
-        $return = new FrameworkPlugins($this->getDbh());
+        $return = new FrameworkPlugins($this->database());
 
         return $return;
 
@@ -41,17 +41,17 @@ class Plugins extends AbstractConfiguration {
 
     public function getByFramework($framework) {
 
-        $return  = array();
+        $return = array();
 
         $plugins = $this->get();
 
-        $list    = $plugins->getListByFramework($framework);
+        $list = $plugins->getListByFramework($framework);
 
         if (!empty($list)) {
 
             foreach ($list as $name) {
 
-                array_push($return, $plugins->getElementByName($name));
+                array_push($return, $plugins->getByName($name));
 
             }
 
@@ -64,12 +64,12 @@ class Plugins extends AbstractConfiguration {
     protected function parameters() {
         
         return array(
-            "package"     => null,
-            "framework"   => null,
-            "name"        => null,
-            "class"       => null,
-            "method"      => "",
-            "event"       => "" 
+            "package" => null,
+            "framework" => null,
+            "name" => null,
+            "class" => null,
+            "method" => "",
+            "event" => "" 
         );
         
         
@@ -78,7 +78,7 @@ class Plugins extends AbstractConfiguration {
     protected function save($params) {
         
         if ($params['id'] == 0)
-            $return = new FrameworkPlugin($this->getDbh());
+            $return = new FrameworkPlugin($this->database());
         else
             $return = $this->getById($id);
             

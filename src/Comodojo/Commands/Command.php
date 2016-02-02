@@ -34,23 +34,23 @@ class Command extends Element {
 
     protected $cls = "";
 
-    protected $desc = "";
+    protected $description = "";
 
-    protected $alias = array();
+    protected $aliases = array();
 
-    protected $opt = array();
+    protected $options = array();
 
-    protected $args = array();
+    protected $arguments = array();
 
     public function getAliases() {
 
-        return $this->alias;
+        return $this->aliases;
 
     }
 
     public function setAliases($aliases) {
 
-        $this->alias = $aliases;
+        $this->aliases = $aliases;
 
         return $this;
 
@@ -58,11 +58,11 @@ class Command extends Element {
 
     public function addAlias($alias) {
 
-        if (!in_array($alias, $this->alias)) {
+        if (!in_array($alias, $this->aliases)) {
 
-            array_push($this->alias, $alias);
+            array_push($this->aliases, $alias);
 
-            sort($this->alias);
+            sort($this->aliases);
 
         }
 
@@ -72,11 +72,11 @@ class Command extends Element {
 
     public function removeAlias($alias) {
 
-        if (in_array($alias, $this->alias)) {
+        if (in_array($alias, $this->aliases)) {
 
-            $idx = array_search($alias, $this->alias);
+            $idx = array_search($alias, $this->aliases);
 
-            array_splice($this->alias, $idx, 1);
+            array_splice($this->aliases, $idx, 1);
 
         }
 
@@ -86,35 +86,38 @@ class Command extends Element {
 
     public function getOptions() {
 
-        return array_keys($this->opt);
+        return array_keys($this->options);
 
     }
 
     public function getRawOptions() {
 
-        return $this->opt;
+        return $this->options;
 
     }
 
     public function setRawOptions($options) {
 
-        $this->opt = array();
+        $this->options = array();
 
-        foreach ($options as $name => $opt)
-            $this->addOption($name, $opt['short_name'], $opt['long_name'], $opt['action'], $opt['description']);
+        foreach ($options as $name => $option) {
+            
+            $this->addOption($name, $option['short_name'], $option['long_name'], $option['action'], $option['description']);
+            
+        }
 
         return $this;
 
     }
 
-    public function addOption($optName, $short = "", $long = "", $action = "StoreTrue", $description = "") {
+    public function addOption($name, $short = "", $long = "", $action = "StoreTrue", $description = "") {
 
-        if (empty($short)) $short = "-"  . substr($optName, 0, 1);
-        if (empty($long))  $long  = "--" . $optName;
+        if ( empty($short) ) $short = "-"  . substr($name, 0, 1);
+        if ( empty($long) )  $long  = "--" . $name;
 
-        if (!isset($this->opt[$optName])) {
+        if ( !isset($this->options[$name]) ) {
 
-            $this->opt[$optName] = array(
+            $this->options[$name] = array(
                 'short_name'  => $short,
                 'long_name'   => $long,
                 'action'      => $action,
@@ -127,11 +130,11 @@ class Command extends Element {
 
     }
 
-    public function removeOption($optName) {
+    public function removeOption($name) {
 
-        if (isset($this->opt[$optName])) {
+        if (isset($this->options[$name])) {
 
-            unset($this->opt[$optName]);
+            unset($this->options[$name]);
 
         }
 
@@ -139,9 +142,9 @@ class Command extends Element {
 
     }
 
-    public function hasOption($optName) {
+    public function hasOption($name) {
 
-        return (isset($this->opt[$optName]));
+        return isset($this->options[$name]);
 
     }
 

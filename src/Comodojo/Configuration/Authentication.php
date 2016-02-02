@@ -33,7 +33,7 @@ class Authentication extends AbstractConfiguration {
 
     public function get() {
 
-        $return = new FrameworkAuthentications($this->getDbh());
+        $return = new FrameworkAuthentications($this->database());
 
         return $return;
 
@@ -54,7 +54,7 @@ class Authentication extends AbstractConfiguration {
     protected function save($params) {
         
         if ($params['id'] == 0)
-            $return = new FrameworkAuthentication($this->getDbh());
+            $return = new FrameworkAuthentication($this->database());
         else
             $return = $this->getById($id);
             

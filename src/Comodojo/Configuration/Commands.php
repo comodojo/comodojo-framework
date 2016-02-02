@@ -33,7 +33,7 @@ class Commands extends AbstractConfiguration {
 
     public function get() {
 
-        $return = new FrameworkCommands($this->getDbh());
+        $return = new FrameworkCommands($this->database());
 
         return $return;
 
@@ -57,7 +57,7 @@ class Commands extends AbstractConfiguration {
     protected function save($params) {
         
         if ($params['id'] == 0)
-            $return = new FrameworkCommand($this->getDbh());
+            $return = new FrameworkCommand($this->database());
         else
             $return = $this->getById($id);
             

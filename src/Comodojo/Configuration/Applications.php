@@ -33,7 +33,7 @@ class Applications extends AbstractConfiguration {
 
     public function get() {
 
-        $return = new FrameworkApps($this->getDbh());
+        $return = new FrameworkApps($this->database());
 
         return $return;
 
@@ -53,7 +53,7 @@ class Applications extends AbstractConfiguration {
     protected function save($params) {
         
         if ($params['id'] == 0)
-            $return = new FrameworkApp($this->getDbh());
+            $return = new FrameworkApp($this->database());
         else
             $return = $this->getById($id);
             
