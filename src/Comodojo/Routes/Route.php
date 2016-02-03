@@ -177,9 +177,9 @@ class Route extends Element {
             $this->package
         );
         
-        if (!is_null($this->application) && $this->application->getID() !== 0) {
+        if (!is_null($this->application) && $this->application->getId() !== 0) {
             
-            array_push($data, $this->application->getID());
+            array_push($data, $this->application->getId());
             
         }
         
@@ -212,7 +212,7 @@ class Route extends Element {
                 $this->cls,
                 json_encode($this->parameters),
                 $this->package,
-                ( is_null($this->application) || $this->application->getID() == 0 ) ? null : $this->application->getID()
+                ( is_null($this->application) || $this->application->getId() == 0 ) ? null : $this->application->getId()
             );
 
         } catch (DatabaseException $de) {
@@ -239,7 +239,7 @@ class Route extends Element {
                 $this->cls,
                 json_encode($this->parameters),
                 $this->package,
-                ( is_null($this->application) || $this->application->getID() == 0 ) ? null : $this->application->getID()
+                ( is_null($this->application) || $this->application->getId() == 0 ) ? null : $this->application->getId()
             );
 
         } catch (DatabaseException $de) {

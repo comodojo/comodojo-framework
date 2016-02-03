@@ -1,9 +1,8 @@
 <?php namespace Comodojo\Commands;
 
-use \Comodojo\Database\Database;
+use \Comodojo\Database\EnhancedDatabase;
 use \Comodojo\Base\Element;
 use \Comodojo\Exception\DatabaseException;
-use \Comodojo\Exception\ConfigurationException;
 use \Exception;
 
 /**
@@ -32,7 +31,7 @@ use \Exception;
 
 class Command extends Element {
 
-    protected $cls = "";
+    protected $classname = "";
 
     protected $description = "";
 
@@ -101,9 +100,9 @@ class Command extends Element {
         $this->options = array();
 
         foreach ($options as $name => $option) {
-            
+
             $this->addOption($name, $option['short_name'], $option['long_name'], $option['action'], $option['description']);
-            
+
         }
 
         return $this;
@@ -148,11 +147,11 @@ class Command extends Element {
 
     }
 
-    public function getOptionShortName($optName) {
+    public function getOptionShortName($name) {
 
-        if (isset($this->opt[$optName])) {
+        if (isset($this->options[$name])) {
 
-            return $this->opt[$optName]['short_name'];
+            return $this->options[$name]['short_name'];
 
         }
 
@@ -162,9 +161,9 @@ class Command extends Element {
 
     public function setOptionShortName($optName, $value) {
 
-        if (isset($this->opt[$optName])) {
+        if (isset($this->options[$optName])) {
 
-            $this->opt[$optName]['short_name'] = $value;
+            $this->options[$optName]['short_name'] = $value;
 
         }
 
@@ -174,9 +173,9 @@ class Command extends Element {
 
     public function getOptionLongName($optName) {
 
-        if (isset($this->opt[$optName])) {
+        if (isset($this->options[$optName])) {
 
-            return $this->opt[$optName]['long_name'];
+            return $this->options[$optName]['long_name'];
 
         }
 
@@ -186,9 +185,9 @@ class Command extends Element {
 
     public function setOptionLongName($optName, $value) {
 
-        if (isset($this->opt[$optName])) {
+        if (isset($this->options[$optName])) {
 
-            $this->opt[$optName]['long_name'] = $value;
+            $this->options[$optName]['long_name'] = $value;
 
         }
 
@@ -198,9 +197,9 @@ class Command extends Element {
 
     public function getOptionAction($optName) {
 
-        if (isset($this->opt[$optName])) {
+        if (isset($this->options[$optName])) {
 
-            return $this->opt[$optName]['action'];
+            return $this->options[$optName]['action'];
 
         }
 
@@ -210,9 +209,9 @@ class Command extends Element {
 
     public function setOptionAction($optName, $value) {
 
-        if (isset($this->opt[$optName])) {
+        if (isset($this->options[$optName])) {
 
-            $this->opt[$optName]['action'] = $value;
+            $this->options[$optName]['action'] = $value;
 
         }
 
@@ -222,9 +221,9 @@ class Command extends Element {
 
     public function getOptionDescription($optName) {
 
-        if (isset($this->opt[$optName])) {
+        if (isset($this->options[$optName])) {
 
-            return $this->opt[$optName]['description'];
+            return $this->options[$optName]['description'];
 
         }
 
@@ -234,9 +233,9 @@ class Command extends Element {
 
     public function setOptionDescription($optName, $value) {
 
-        if (isset($this->opt[$optName])) {
+        if (isset($this->options[$optName])) {
 
-            $this->opt[$optName]['description'] = $value;
+            $this->options[$optName]['description'] = $value;
 
         }
 
@@ -246,19 +245,19 @@ class Command extends Element {
 
     public function getArguments() {
 
-        return array_keys($this->args);
+        return array_keys($this->arguments);
 
     }
 
     public function getRawArguments() {
 
-        return $this->args;
+        return $this->arguments;
 
     }
 
     public function setRawArguments($arguments) {
 
-        $this->args = array();
+        $this->arguments = array();
 
         foreach ($arguments as $name => $arg)
             $this->addArgument($name, $arg['choices'], $arg['multiple'], $arg['optional'], $arg['description']);
@@ -269,9 +268,9 @@ class Command extends Element {
 
     public function addArgument($argName, $choices = array(), $multiple = false, $optional = false, $description = "") {
 
-        if (!isset($this->args[$argName])) {
+        if (!isset($this->arguments[$argName])) {
 
-            $this->args[$argName] = array(
+            $this->arguments[$argName] = array(
                 'choices'     => $choices,
                 'multiple'    => $multiple,
                 'optional'    => $optional,
@@ -287,9 +286,9 @@ class Command extends Element {
 
     public function removeArgument($argName) {
 
-        if (isset($this->args[$argName])) {
+        if (isset($this->arguments[$argName])) {
 
-            unset($this->args[$argName]);
+            unset($this->arguments[$argName]);
 
         }
 
@@ -299,15 +298,15 @@ class Command extends Element {
 
     public function hasArgument($argName) {
 
-        return (isset($this->args[$argName]));
+        return (isset($this->arguments[$argName]));
 
     }
 
     public function getArgumentChoices($argName) {
 
-        if (isset($this->args[$argName])) {
+        if (isset($this->arguments[$argName])) {
 
-            return $this->args[$argName]['choices'];
+            return $this->arguments[$argName]['choices'];
 
         }
 
@@ -317,11 +316,11 @@ class Command extends Element {
 
     public function setArgumentChoices($argName, $value) {
 
-        if (isset($this->args[$argName])) {
+        if (isset($this->arguments[$argName])) {
 
-            $this->args[$argName]['choices']   = $value;
+            $this->arguments[$argName]['choices']   = $value;
 
-            $this->args[$argName]['help_name'] = implode(", ", $value);
+            $this->arguments[$argName]['help_name'] = implode(", ", $value);
 
         }
 
@@ -331,9 +330,9 @@ class Command extends Element {
 
     public function getArgumentMultipleValues($argName) {
 
-        if (isset($this->args[$argName])) {
+        if (isset($this->arguments[$argName])) {
 
-            return $this->args[$argName]['multiple'];
+            return $this->arguments[$argName]['multiple'];
 
         }
 
@@ -343,9 +342,9 @@ class Command extends Element {
 
     public function setArgumentMultipleValues($argName, $value) {
 
-        if (isset($this->args[$argName])) {
+        if (isset($this->arguments[$argName])) {
 
-            $this->args[$argName]['multiple'] = $value;
+            $this->arguments[$argName]['multiple'] = $value;
 
         }
 
@@ -355,9 +354,9 @@ class Command extends Element {
 
     public function getArgumentOptional($argName) {
 
-        if (isset($this->args[$argName])) {
+        if (isset($this->arguments[$argName])) {
 
-            return $this->args[$argName]['optional'];
+            return $this->arguments[$argName]['optional'];
 
         }
 
@@ -367,9 +366,9 @@ class Command extends Element {
 
     public function setArgumentOptional($argName, $value) {
 
-        if (isset($this->args[$argName])) {
+        if (isset($this->arguments[$argName])) {
 
-            $this->args[$argName]['optional'] = $value;
+            $this->arguments[$argName]['optional'] = $value;
 
         }
 
@@ -379,9 +378,9 @@ class Command extends Element {
 
     public function getArgumentHelpName($argName) {
 
-        if (isset($this->args[$argName])) {
+        if (isset($this->arguments[$argName])) {
 
-            return $this->args[$argName]['help_name'];
+            return $this->arguments[$argName]['help_name'];
 
         }
 
@@ -391,9 +390,9 @@ class Command extends Element {
 
     public function getArgumentDescription($argName) {
 
-        if (isset($this->args[$argName])) {
+        if (isset($this->arguments[$argName])) {
 
-            return $this->args[$argName]['description'];
+            return $this->arguments[$argName]['description'];
 
         }
 
@@ -403,9 +402,9 @@ class Command extends Element {
 
     public function setArgumentDescription($argName, $value) {
 
-        if (isset($this->args[$argName])) {
+        if (isset($this->arguments[$argName])) {
 
-            $this->args[$argName]['description'] = $value;
+            $this->arguments[$argName]['description'] = $value;
 
         }
 
@@ -415,13 +414,13 @@ class Command extends Element {
 
     public function getClass() {
 
-        return $this->cls;
+        return $this->classname;
 
     }
 
     public function getInstance() {
 
-        $class = $this->cls;
+        $class = $this->classname;
 
         if (class_exists($class))
             return new $class();
@@ -432,7 +431,7 @@ class Command extends Element {
 
     public function setClass($class) {
 
-        $this->cls = $class;
+        $this->classname = $class;
 
         return $this;
 
@@ -454,14 +453,9 @@ class Command extends Element {
 
     public static function load($id, $dbh) {
 
-        $query = sprintf("SELECT * FROM comodojo_commands WHERE id = %d",
-            $id
-        );
-
         try {
 
-            $result = $dbh->query($query);
-
+            $result = Model::load($database, $id);
 
         } catch (DatabaseException $de) {
 
@@ -479,9 +473,13 @@ class Command extends Element {
 
             $command->setData($data);
 
-            return $command;
+        } else {
+
+            throw new Exception("Unable to load command");
 
         }
+
+        return $command;
 
     }
 
@@ -490,11 +488,11 @@ class Command extends Element {
         return array(
             $this->id,
             $this->name,
-            $this->cls,
-            $this->desc,
-            json_encode($this->alias),
-            json_encode($this->opt),
-            json_encode($this->args),
+            $this->classname,
+            $this->description,
+            json_encode($this->aliases),
+            json_encode($this->options),
+            json_encode($this->arguments),
             $this->package
         );
 
@@ -502,14 +500,14 @@ class Command extends Element {
 
     protected function setData($data) {
 
-        $this->id     = intval($data[0]);
-        $this->name   = $data[1];
-        $this->cls    = $data[2];
-        $this->desc   = $data[3];
-        $this->alias  = json_decode($data[4], true);
-        $this->opt    = json_decode($data[5], true);
-        $this->args   = json_decode($data[6], true);
-        $this->package= $data[7];
+        $this->id = intval($data[0]);
+        $this->name = $data[1];
+        $this->classname = $data[2];
+        $this->description = $data[3];
+        $this->aliases = json_decode($data[4], true);
+        $this->options = json_decode($data[5], true);
+        $this->arguments = json_decode($data[6], true);
+        $this->package = $data[7];
 
         return $this;
 
@@ -517,20 +515,17 @@ class Command extends Element {
 
     protected function create() {
 
-        $query = sprintf("INSERT INTO comodojo_commands VALUES (0, '%s', '%s', '%s', '%s', '%s', '%s', '%s')",
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->cls),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->desc),
-            mysqli_real_escape_string($this->dbh->getHandler(), json_encode($this->alias)),
-            mysqli_real_escape_string($this->dbh->getHandler(), json_encode($this->opt)),
-            mysqli_real_escape_string($this->dbh->getHandler(), json_encode($this->args)),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->package)
-        );
-
         try {
 
-            $result = $this->dbh->query($query);
-
+            $result = Model::create(
+                $this->database,
+                $this->name,
+                $this->classname,
+                $this->constant,
+                $this->type,
+                $this->validation,
+                $this->package
+            );
 
         } catch (DatabaseException $de) {
 
@@ -546,21 +541,18 @@ class Command extends Element {
 
     protected function update() {
 
-        $query = sprintf("UPDATE comodojo_commands SET command = '%s', class = '%s', description = '%s', aliases = '%s', options = '%s', arguments = '%s', package = '%s' WHERE id = %d",
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->cls),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->desc),
-            mysqli_real_escape_string($this->dbh->getHandler(), json_encode($this->alias)),
-            mysqli_real_escape_string($this->dbh->getHandler(), json_encode($this->opt)),
-            mysqli_real_escape_string($this->dbh->getHandler(), json_encode($this->args)),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->package),
-            $this->id
-        );
-
         try {
 
-            $this->dbh->query($query);
-
+            $result = Model::update(
+                $this->database,
+                $this->id,
+                $this->name,
+                $this->classname,
+                $this->constant,
+                $this->type,
+                $this->validation,
+                $this->package
+            );
 
         } catch (DatabaseException $de) {
 
@@ -574,14 +566,12 @@ class Command extends Element {
 
     public function delete() {
 
-        $query = sprintf("DELETE FROM comodojo_commands WHERE id = %d",
-            $this->id
-        );
-
         try {
 
-            $this->dbh->query($query);
-
+            $result = Model::delete(
+                $this->database,
+                $this->id
+            );
 
         } catch (DatabaseException $de) {
 

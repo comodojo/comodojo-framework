@@ -42,14 +42,14 @@ abstract class Iterator implements PhpIterator, ArrayAccess, Countable, Serializ
     protected $current = 0;
 
     protected $database;
-    
+
     protected $configuration;
 
-    public function __construct(Database $database, Configuration $configuration) {
+    public function __construct(Database $database/*, Configuration $configuration*/) {
 
         $this->database = $database;
-        
-        $this->configuration = $configuration;
+
+        //$this->configuration = $configuration;
 
         $this->loadData();
 
@@ -59,12 +59,18 @@ abstract class Iterator implements PhpIterator, ArrayAccess, Countable, Serializ
 
     abstract public function getById($id);
 
+    public function database() {
+
+        return $database;
+
+    }
+
 	public function getByName($name) {
 
 		if ( !isset($this->data[$name]) ) {
-		    
+
 		    throw new ConfigurationException("Value identified by $name does not exist");
-		    
+
 		}
 
 		return $this->getElementByID($this->data[$name]);
@@ -81,7 +87,7 @@ abstract class Iterator implements PhpIterator, ArrayAccess, Countable, Serializ
 
         $element->setName($name)->save();
 
-        $this->data[$name] = $element->getID();
+        $this->data[$name] = $element->getId();
 
     }
 
@@ -90,7 +96,7 @@ abstract class Iterator implements PhpIterator, ArrayAccess, Countable, Serializ
         if (isset($this->data[$name])) {
 
             $val = $this->getByName($name);
-            
+
             $this->remove($val);
 
         }
@@ -104,7 +110,7 @@ abstract class Iterator implements PhpIterator, ArrayAccess, Countable, Serializ
         if (in_array($id, array_values($this->data))) {
 
             $val = $this->getById($id);
-            
+
             $this->remove($val);
 
         }
@@ -112,44 +118,44 @@ abstract class Iterator implements PhpIterator, ArrayAccess, Countable, Serializ
         return $this;
 
     }
-    
+
     protected function remove(Element $element) {
-        
+
         $name = $element->getName();
-        
+
         unset($this->data[$name]);
-        
+
         $element->delete();
-        
+
         if ( isset( $this->packages ) ) {
-            
+
             $package = $this->getListByPackage($element->getPackageName());
-            
+
             $index = array_search($name, $package);
-            
+
             if ($index >= 0) {
 
                 array_splice($this->packages[$element->getPackageName()], $index, 1);
-        
+
             }
-            
+
         }
-        
+
     }
-    
+
     protected function loadFromDatabase($table, $fieldName) {
 
         // reset data object
         $this->data = array();
 
         try {
-            
+
             $result = $this->database
                 ->table($table)
                 ->keys('*')
                 ->orderBy($fieldName)
                 ->get();
-            
+
         } catch (DatabaseException $de) {
 
             throw $de;
@@ -157,15 +163,15 @@ abstract class Iterator implements PhpIterator, ArrayAccess, Countable, Serializ
         }
 
         $this->loadList($result, $fieldName);
-        
+
         if ( isset( $this->packages ) ) {
-            
+
             $this->loadPackages($result, $fieldName);
-            
+
         }
-        
+
         return $result;
-        
+
     }
 
     protected function loadList($data, $fieldName) {
@@ -265,7 +271,7 @@ abstract class Iterator implements PhpIterator, ArrayAccess, Countable, Serializ
     }
 
     /**
-     * 
+     *
      *
      * @param string $name
      *
@@ -278,7 +284,7 @@ abstract class Iterator implements PhpIterator, ArrayAccess, Countable, Serializ
     }
 
     /**
-     * 
+     *
      *
      * @param string $name
      * @param ConfigElement $element
@@ -352,13 +358,13 @@ abstract class Iterator implements PhpIterator, ArrayAccess, Countable, Serializ
         $data = unserialize($data);
 
         $this->data     = json_decode($data[0], true);
-        
+
         if ( isset($this->packages) ) {
-            
+
             $this->packages = json_decode($data[1], true);
-            
+
         }
-    
+
         $this->current  = json_decode($data[2], true);
 
         return $this;

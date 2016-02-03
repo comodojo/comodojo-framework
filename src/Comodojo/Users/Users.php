@@ -45,7 +45,7 @@ class Users extends Iterator {
 	    
 	    if ( $role_or_id instanceof Role ) {
 	        
-	        $id = $role_or_id->getID();
+	        $id = $role_or_id->getId();
 	        
 	    } else if ( is_int($role_or_id) ) {
 	        

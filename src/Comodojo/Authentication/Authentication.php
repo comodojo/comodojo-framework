@@ -67,6 +67,12 @@ class Authentication extends Element {
 
     }
 
+    public function getProvider() {
+
+        return $this->getInstance();
+        
+    }
+
     public function setClass($class) {
 
         $this->classname = $class;
@@ -126,11 +132,11 @@ class Authentication extends Element {
             $auth->setData($data);
 
         } else {
-            
+
             throw new Exception("Unable to load role");
-            
+
         }
-        
+
         return $auth;
 
     }

@@ -37,7 +37,7 @@ class Setting extends Element {
     protected $type = "STRING";
 
     protected $validation = "";
-    
+
     private $supported_value_types = array(
         "STRING",
         "BOOL",
@@ -52,15 +52,15 @@ class Setting extends Element {
     );
 
     public function getValue() {
-        
+
         return $this->value;
 
     }
 
     public function setValue($value) {
-        
+
         $this->value = $value;
-        
+
         return $this;
 
     }
@@ -86,17 +86,17 @@ class Setting extends Element {
     }
 
     public function setType($type) {
-        
+
         $type = strtoupper($type);
-        
+
         if ( !in_array($type, $this->supported_value_types) ) {
-            
+
             throw new Exception("Setting type not supported");
-            
+
         }
-        
+
         $this->type = $type;
-            
+
         return $this;
 
     }
@@ -116,61 +116,61 @@ class Setting extends Element {
     }
 
     public function validate() {
-        
+
         $type = $this->type;
-        
+
         $val  = $this->value;
-        
+
         switch ($type) {
-            
+
             case "STRING":
-                
+
                 if (preg_match("/" . $this->getValidation() . "/i", $val)) return true;
-                    
+
                 break;
-                
+
             case "BOOL":
             case "BOOLEAN":
-                
+
                 if ( is_bool($val) ) return true;
-                
+
                 break;
-                
+
             case "INT":
             case "INTEGER":
             case "NUMBER":
-                
+
                 if (is_numeric($val)) return true;
-                    
+
                 break;
-                
+
             case "DOUBLE":
             case "FLOAT":
-                
+
                 if (is_float($val)) return true;
-                    
+
                 break;
-                
+
             case "JSON":
-                
+
                 $decoded = json_decode($val);
-                
+
                 if (!is_null($decoded)) return true;
-                    
+
                 break;
-                
+
             case "OBJECT":
-                
+
                 $decoded = unserialize($val);
-                
+
                 if ($val == serialize(false) || $decoded !== false) return true;
-                    
+
                 break;
-                
+
         }
-        
+
         return false;
-        
+
     }
 
     public static function load(EnhancedDatabase $database, $id) {
@@ -191,16 +191,16 @@ class Setting extends Element {
 
             $data = array_values($data[0]);
 
-            $setting = new Setting($dbh);
+            $setting = new Setting($database);
 
             $setting->setData($data);
 
         } else {
-            
+
             throw new Exception("Unable to load setting");
-            
+
         }
-        
+
         return $setting;
 
     }
@@ -236,11 +236,11 @@ class Setting extends Element {
     protected function create() {
 
         if ( $this->validate() === false ) {
-            
+
             throw new Exception('Value is not valid');
-            
+
         }
-        
+
         $value = self::encode($this->value);
 
         try {
@@ -270,11 +270,11 @@ class Setting extends Element {
     protected function update() {
 
         if ( $this->validate() === false ) {
-            
+
             throw new Exception('Value is not valid');
-            
+
         }
-        
+
         $value = self::encode($this->value);
 
         try {
@@ -317,114 +317,114 @@ class Setting extends Element {
         return $this;
 
     }
-    
+
     private static function encode($value, $type) {
-        
+
         switch ($type) {
-            
+
             case "STRING":
-                
+
                 $return = strval($value);
-                    
+
                 break;
-                
+
             case "BOOL":
             case "BOOLEAN":
-                
+
                 $return = filter_var($value, FILTER_VALIDATE_BOOLEAN);
-                    
+
                 break;
-                
+
             case "INT":
             case "INTEGER":
             case "NUMBER":
-                
+
                 $return = sprintf("%d", intval($value));
-                    
+
                 break;
-                
+
             case "DOUBLE":
-                
+
                 $return = sprintf("%e", doubleval($value));
-                    
+
                 break;
-                
+
             case "FLOAT":
-                
+
                 $return = sprintf("%f", floatval($value));
-                    
+
                 break;
-                
+
             case "JSON":
-                
+
                 $return = json_encode($value);
-                    
+
                 break;
-                
+
             case "OBJECT":
-                
+
                 $return = serialize($value);
-                    
+
                 break;
         }
 
         return $return;
-        
+
     }
-    
+
     private static function decode($value, $type) {
-     
+
         switch ($type) {
-            
+
             case "STRING":
-                
+
                 $return = $value . "";
-                    
+
                 break;
-                
+
             case "BOOL":
             case "BOOLEAN":
-                
+
                 $return = filter_var($val, FILTER_VALIDATE_BOOLEAN);
-                    
+
                 break;
-                
+
             case "INT":
             case "INTEGER":
             case "NUMBER":
-                
+
                 $return = intval($val);
-                    
+
                 break;
-                
+
             case "DOUBLE":
-                
+
                 $return = doubleval($val);
-                    
+
                 break;
-                
+
             case "FLOAT":
-                
+
                 $return = floatval($val);
-                    
+
                 break;
-                
+
             case "JSON":
-                
+
                 $return = json_decode($val, true);
-                    
+
                 break;
-                
+
             case "OBJECT":
-                
+
                 $return = unserialize($val);
-                    
+
                 break;
-                
+
         }
-        
+
         return $return;
-        
+
     }
 
 }

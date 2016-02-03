@@ -281,13 +281,13 @@ class User extends Element {
 
         if ( $this->authentication instanceof Authentication ) {
             
-            array_push($data, $this->authentication->getID());
+            array_push($data, $this->authentication->getId());
             
         }
         
         if ( $this->primaryrole instanceof Role ) {
             
-            array_push($data, $this->primaryrole->getID());
+            array_push($data, $this->primaryrole->getId());
             
         }
         
@@ -326,8 +326,8 @@ class User extends Element {
                 $this->birthdate,
                 $this->gender,
                 $this->enabled,
-                ( $this->authentication instanceof Authentication ) ? $this->authentication->getID() : null,
-                ( $this->primaryrole instanceof Role ) ? $this->primaryrole->getID() : null
+                ( $this->authentication instanceof Authentication ) ? $this->authentication->getId() : null,
+                ( $this->primaryrole instanceof Role ) ? $this->primaryrole->getId() : null
             );
             
             $this->id = $result->getInsertId();
@@ -367,8 +367,8 @@ class User extends Element {
                 $this->birthdate,
                 $this->gender,
                 $this->enabled,
-                ( $this->authentication instanceof Authentication ) ? $this->authentication->getID() : null,
-                ( $this->primaryrole instanceof Role ) ? $this->primaryrole->getID() : null
+                ( $this->authentication instanceof Authentication ) ? $this->authentication->getId() : null,
+                ( $this->primaryrole instanceof Role ) ? $this->primaryrole->getId() : null
             );
             
             foreach( $this->roles as $role ) {

@@ -153,7 +153,7 @@ class Role extends Element {
 
         if ( $this->landingApp instanceof Application ) {
             
-            array_push($data, $this->landingApp->getID());
+            array_push($data, $this->landingApp->getId());
             
         }
         
@@ -185,7 +185,7 @@ class Role extends Element {
                 $this->database,
                 $this->name,
                 $this->description,
-                ($this->landingApp instanceof Application) ? $this->landingApp->getID() : null
+                ($this->landingApp instanceof Application) ? $this->landingApp->getId() : null
             );
 
         } catch (DatabaseException $de) {
@@ -209,7 +209,7 @@ class Role extends Element {
                 $this->id,
                 $this->name,
                 $this->description,
-                ($this->landingApp instanceof Application) ? $this->landingApp->getID() : null
+                ($this->landingApp instanceof Application) ? $this->landingApp->getId() : null
             );
 
         } catch (DatabaseException $de) {

@@ -50,7 +50,7 @@ class Routes extends Iterator {
 	    
 	    if ( $application_or_id instanceof Application ) {
 	        
-	        $id = $application_or_id->getID();
+	        $id = $application_or_id->getId();
 	        
 	    } else if ( is_int($application_or_id) ) {
 	        

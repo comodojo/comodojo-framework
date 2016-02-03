@@ -53,8 +53,8 @@ class Application extends Element {
 
         try {
 
-            $roles = new Roles();
-            
+            $roles = new Roles($this->database);
+
             $result = $roles->loadByApplication($this->id);
 
         } catch (DatabaseException $de) {
@@ -71,8 +71,8 @@ class Application extends Element {
 
         try {
 
-            $routes = new Routes();
-            
+            $routes = new Routes($this->database);
+
             $result = $routes->loadByApplication($this->id);
 
         } catch (DatabaseException $de) {
@@ -108,11 +108,11 @@ class Application extends Element {
             $app->setData($data);
 
         } else {
-            
+
             throw new Exception("Unable to load application");
-            
+
         }
-        
+
         return $app;
 
     }

@@ -43,7 +43,7 @@ class Roles extends Iterator {
 	    
 	    if ( $application_or_id instanceof Application ) {
 	        
-	        $id = $application_or_id->getID();
+	        $id = $application_or_id->getId();
 	        
 	    } else if ( is_int($application_or_id) ) {
 	        
@@ -73,7 +73,7 @@ class Roles extends Iterator {
 	    
 	    if ( $urser_or_id instanceof User ) {
 	        
-	        $id = $urser_or_id->getID();
+	        $id = $urser_or_id->getId();
 	        
 	    } else if ( is_int($urser_or_id) ) {
 	        

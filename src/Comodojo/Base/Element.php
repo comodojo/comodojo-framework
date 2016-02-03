@@ -39,14 +39,14 @@ abstract class Element implements \Serializable {
     protected $package = "";
 
     protected $database;
-    
+
     protected $configuration;
 
-    public function __construct(EnhancedDatabase $database, Configuration $configuration) {
+    public function __construct(EnhancedDatabase $database/*, Configuration $configuration*/) {
 
         $this->database = $database;
-        
-        $this->configuration = $configuration;
+
+        //$this->configuration = $configuration;
 
     }
 
@@ -62,7 +62,19 @@ abstract class Element implements \Serializable {
 
     abstract public function delete();
 
-    public function getID() {
+    public function database() {
+
+        return $this->database;
+
+    }
+
+    // public function configuration() {
+    //
+    //     return $this->configuration;
+    //
+    // }
+
+    public function getId() {
 
         return $this->id;
 
