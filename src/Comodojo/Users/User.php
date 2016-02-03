@@ -1,8 +1,10 @@
 <?php namespace Comodojo\Users;
 
-use \Comodojo\Authentication\Authentication;
-use \Comodojo\Database\Database;
+use \Comodojo\Database\EnhancedDatabase;
 use \Comodojo\Base\Element;
+use \Comodojo\Authentication\Authentication;
+use \Comodojo\Roles\Role;
+use \Comodojo\Roles\Roles;
 use \Comodojo\Exception\DatabaseException;
 use \Exception;
 
@@ -32,25 +34,27 @@ use \Exception;
 
 class User extends Element {
 
-    private $oldpwd = "";
+    private $gender_types = array('M', 'F');
     
-    private $password = "";
+    private $password_hash;
     
-    private $isPwdChanged = false;
+    protected $displayname;
 
-    protected $displayname = "";
+    protected $mail;
 
-    protected $mail = "";
+    protected $birthdate;
 
-    protected $birthdate = "";
-
-    protected $gender = "";
+    protected $gender;
 
     protected $enabled = false;
 
     protected $authentication;
 
     protected $primaryrole;
+    
+    protected $roles;
+    
+    protected $password;
 
     public function getUsername() {
 
@@ -66,6 +70,12 @@ class User extends Element {
 
     }
 
+    public function getPasswordHash() {
+
+        return $this->password_hash;
+
+    }
+    
     public function getPassword() {
 
         return $this->password;
@@ -74,13 +84,8 @@ class User extends Element {
 
     public function setPassword($password) {
         
-        if (empty($this->oldpwd))
-            $this->oldpwd = $this->password;
-
         $this->password = $password;
         
-        $this->isPwdChanged = true;
-
         return $this;
 
     }
@@ -107,7 +112,7 @@ class User extends Element {
 
     public function setMail($mail) {
 
-        $this->mail = $mail;
+        $this->mail = filter_var($mail, FILTER_VALIDATE_EMAIL);
 
         return $this;
 
@@ -134,6 +139,8 @@ class User extends Element {
     }
 
     public function setGender($gender) {
+        
+        if ( in_array($gender, $this->gender_types) ) throw new Exception('Invalid gender for user');
 
         $this->gender = $gender;
 
@@ -149,7 +156,7 @@ class User extends Element {
 
     public function setEnabled($enabled) {
 
-        $this->enabled = $enabled;
+        $this->enabled = filter_var($enabled, FILTER_VALIDATE_BOOLEAN);
 
         return $this;
 
@@ -162,11 +169,12 @@ class User extends Element {
     }
 
     public function setAuthentication($authentication) {
+        
+        $provider = Authentication::load($this->database, intval($authentication));
 
-        if (!empty($authentication) && is_numeric($authentication))
-            $authentication = Authentication::load(intval($authentication), $this->dbh);
+        if ( is_null($provider) ) throw new Exception('Invalid authentication provider');
 
-        $this->authentication = $authentication;
+        $this->authentication = $provider;
 
         return $this;
 
@@ -179,68 +187,59 @@ class User extends Element {
     }
 
     public function setPrimaryRole($primaryrole) {
+        
+        $role = Role::load($this->database, intval($primaryrole));
 
-        if (!empty($primaryrole) && is_numeric($primaryrole))
-            $primaryrole = Role::load(intval($primaryrole), $this->dbh);
+        if ( is_null($role) ) throw new Exception('Invalid role');
 
-        $this->primaryrole = $primaryrole;
+        $this->primaryrole = $role;
+        
+        $this->pushRole($role->getId());
 
         return $this;
 
     }
-
+    
     public function getRoles() {
+        
+        return $this->roles;
+        
+    }
+    
+    public function addRole($role) {
+        
+        $new_role = Role::load($this->database, intval($role));
 
-        $roles = array();
+        if ( is_null($new_role) ) throw new Exception('Invalid role');
 
-        $query = sprintf("SELECT comodojo_roles.id as id
-        FROM
-            comodojo_roles,
-            comodojo_users_to_roles
-        WHERE
-            comodojo_roles.id = comodojo_users_to_roles.role AND
-            comodojo_users_to_roles.user = %d",
-            $this->id
-        );
+        $this->pushRole($new_role->getId());
 
+        return $this;
+        
+    }
+    
+    public function changePassword($old_password, $new_password) {
+        
         try {
-
-            $result = $dbh->query($query);
-
-
-        } catch (DatabaseException $de) {
-
-            throw $de;
-
+            
+            $result = $this->authentication->getProvider($this)->chpasswd($old_password, $new_password);
+            
+        } catch (Exception $e) {
+            
+            throw $e;
+            
         }
-
-        if ($result->getLength() > 0) {
-
-            $data = $result->getData();
-
-            foreach ($data as $row) {
-
-                array_push($roles, Role::load(intval($row['id']), $this->dbh));
-
-            }
-
-        }
-
-        return $roles;
-
+        
+        return $result;
+        
     }
 
-    public static function load($id, $dbh) {
-
-        $query = sprintf("SELECT * FROM comodojo_users WHERE id = %d",
-            $id
-        );
+    public static function load(EnhancedDatabase $database, $id) {
 
         try {
 
-            $result = $dbh->query($query);
-
-
+            $result = Model::load($datanase, $id);
+            
         } catch (DatabaseException $de) {
 
             throw $de;
@@ -257,9 +256,13 @@ class User extends Element {
 
             $user->setData($data);
 
-            return $user;
-
+        } else {
+            
+            throw new Exception("Unable to load user");
+            
         }
+        
+        return $user;
 
     }
 
@@ -267,37 +270,45 @@ class User extends Element {
 
         $data = array(
             $this->id,
-            $this->username,
-            $this->password,
+            $this->name,
+            $this->password_hash,
             $this->displayname,
             $this->mail,
             $this->birthdate,
             $this->gender,
-            ($this->enabled)?1:0
+            $this->enabled
         );
 
-        if (!is_null($this->authentication) && $this->authentication->getID() !== 0)
+        if ( $this->authentication instanceof Authentication ) {
+            
             array_push($data, $this->authentication->getID());
-
-        if (!is_null($this->primaryrole) && $this->primaryrole->getID() !== 0)
+            
+        }
+        
+        if ( $this->primaryrole instanceof Role ) {
+            
             array_push($data, $this->primaryrole->getID());
-
+            
+        }
+        
         return $data;
 
     }
 
     protected function setData($data) {
 
-        $this->id             = $data[0];
-        $this->name           = $data[1];
-        $this->password       = $data[2];
-        $this->displayname    = $data[3];
-        $this->mail           = $data[4];
-        $this->birthdate      = $data[5];
-        $this->gender         = $data[6];
-        $this->enabled        = ($data[7] == 1);
+        $this->id = $data[0];
+        $this->name = $data[1];
+        $this->password_hash = $data[2];
+        $this->displayname = $data[3];
+        $this->mail = $data[4];
+        $this->birthdate = $data[5];
+        $this->gender = $data[6];
+        $this->enabled = ($data[7] == 1);
         $this->setAuthentication($data[8]);
         $this->setPrimaryRole($data[9]);
+
+        $this->loadRoles();
 
         return $this;
 
@@ -305,29 +316,39 @@ class User extends Element {
 
     protected function create() {
 
-        $query = sprintf("INSERT INTO comodojo_users VALUES (0, '%s', '', '%s', '%s', '%s', '%s', %d, %s, %s)",
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->displayname),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->mail),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->birthdate),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->gender),
-            (($this->getEnabled())?1:0),
-            (is_null($this->authentication) || $this->authentication->getID() == 0)?'NULL':$this->authentication->getID(),
-            (is_null($this->primaryrole) || $this->primaryrole->getID() == 0)?'NULL':$this->primaryrole->getID()
-        );
-
         try {
 
-            $result = $this->dbh->query($query);
-
+            $result = Model::create(
+                $this->database,
+                $this->name,
+                $this->displayname,
+                $this->mail,
+                $this->birthdate,
+                $this->gender,
+                $this->enabled,
+                ( $this->authentication instanceof Authentication ) ? $this->authentication->getID() : null,
+                ( $this->primaryrole instanceof Role ) ? $this->primaryrole->getID() : null
+            );
+            
+            $this->id = $result->getInsertId();
+            
+            foreach( $this->roles as $role ) {
+                
+                $this->pushRole($role->getId());
+                
+            }
+            
+            if ( $this->authentication instanceof Authentication ) {
+                
+                $this->authentication->getProvider($this)->passwd($this->password);
+                
+            }
 
         } catch (DatabaseException $de) {
 
             throw $de;
 
         }
-
-        $this->id = $result->getInsertId();
 
         return $this;
 
@@ -335,46 +356,41 @@ class User extends Element {
 
     protected function update() {
         
-        if ($this->isPwdChanged && !is_null($this->authentication)) {
-            
-            $this->authentication->getInstance()->chpasswd($this->oldpwd, $this->password);
-            
-        }
-
-        $query = sprintf("UPDATE comodojo_users SET
-            `username` = '%s',
-            `displayname` = '%s',
-            `mail` = '%s',
-            `birthdate` = '%s',
-            `gender` = '%s',
-            `enabled` = %d,
-            `authentication` = %s,
-            `primaryrole` = %s
-        WHERE id = %d",
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->name),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->displayname),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->mail),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->birthdate),
-            mysqli_real_escape_string($this->dbh->getHandler(), $this->gender),
-            (($this->getEnabled())?1:0),
-            (is_null($this->authentication) || $this->authentication->getID() == 0)?'NULL':$this->authentication->getID(),
-            (is_null($this->primaryrole) || $this->primaryrole->getID() == 0)?'NULL':$this->primaryrole->getID(),
-            $this->id
-        );
-
         try {
 
-            $this->dbh->query($query);
-
+            $result = Model::update(
+                $this->database,
+                $this->id,
+                $this->name,
+                $this->displayname,
+                $this->mail,
+                $this->birthdate,
+                $this->gender,
+                $this->enabled,
+                ( $this->authentication instanceof Authentication ) ? $this->authentication->getID() : null,
+                ( $this->primaryrole instanceof Role ) ? $this->primaryrole->getID() : null
+            );
+            
+            foreach( $this->roles as $role ) {
+                
+                $this->pushRole($role->getId());
+                
+            }
+            
+            if ( 
+                ( $this->authentication instanceof Authentication ) &&
+                $this->password !== null
+            ) {
+                
+                $this->authentication->getProvider($this)->passwd($this->password);
+                
+            }
 
         } catch (DatabaseException $de) {
 
             throw $de;
 
         }
-        
-        $this->oldpwd = "";
-        $this->isPwdChanged = false;
 
         return $this;
 
@@ -382,14 +398,12 @@ class User extends Element {
 
     public function delete() {
 
-        $query = sprintf("DELETE FROM comodojo_users WHERE id = %d",
-            $this->id
-        );
-
         try {
 
-            $this->dbh->query($query);
-
+            $result = Model::delete(
+                $this->database,
+                $this->id
+            );
 
         } catch (DatabaseException $de) {
 
@@ -397,11 +411,46 @@ class User extends Element {
 
         }
 
-
         $this->setData(array(0, "", "", "", "", "", "", false));
 
         return $this;
 
+    }
+
+    private function loadRoles() {
+        
+        try {
+
+            $roles = new Roles($this->database);
+            
+            $roles->loadByUser($this->id);
+
+        } catch (DatabaseException $de) {
+
+            throw $de;
+
+        }
+        
+        $this->roles = $roles;
+        
+    }
+    
+    private function pushRole($id) {
+        
+        try {
+
+            $result = Model::pushRole($this->database, $this->id, $id);
+            
+            $this->loadRoles();
+
+        } catch (DatabaseException $de) {
+
+            throw $de;
+
+        }
+
+        return $result;
+        
     }
 
 }
