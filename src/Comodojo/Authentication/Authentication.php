@@ -228,7 +228,7 @@ class Authentication extends Element {
 
         }
 
-        $this->setData(array(0, "", "", "", [], ""));
+        $this->setData(array(0, "", "", "", "[]", ""));
 
         return $this;
 
