@@ -1,6 +1,7 @@
 <?php namespace Comodojo\Configuration;
 
 use \Comodojo\Base\Firestarter;
+use \Comodojo\Dispatcher\Components\Configuration;
 use \Exception;
 
 /**
@@ -30,7 +31,7 @@ use \Exception;
 class Installer {
     
     use Firestarter;
-
+    
     private $applications;
 
     private $authentication;
@@ -49,10 +50,10 @@ class Installer {
 
     private $themes;
 
-    public function __construct( $configuration = array() ) {
+    public function __construct( Configuration $configuration ) {
         
-        $this->getStaticConfiguration($configuration);
-
+        $this->configuration = $configuration;
+        
         $this->getDatabase();
 
         $this->applications = new Applications($this->database);

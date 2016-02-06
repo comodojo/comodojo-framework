@@ -33,9 +33,9 @@ use \Exception;
 
 trait Firestarter {
 
-    private $database;
+    protected $database;
     
-    private $configuration;
+    protected $configuration;
 
     public function database() {
         

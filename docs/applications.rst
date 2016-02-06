@@ -1,5 +1,5 @@
-Applicaions
-===========
+Applications
+============
 
 (Section yet to be written)
 
