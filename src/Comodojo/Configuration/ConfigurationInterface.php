@@ -25,23 +25,23 @@
  */
 
 interface ConfigurationInterface {
-    
+
     // These methods must be implemented by the final classes
-    
+
     public function get();
-    
-    protected function save($params);
-    
-    protected function parameters();
-    
+
+    public function save($params);
+
+    public function parameters();
+
     // Editing methods
-    
+
     public function add();
-    
+
     public function update();
 
     public function delete($id);
-    
+
     // Retriving methods
 
     public function getByName($name);

@@ -29,9 +29,9 @@ use \Exception;
  */
 
 class Installer {
-    
+
     use Firestarter;
-    
+
     private $applications;
 
     private $authentication;
@@ -51,9 +51,9 @@ class Installer {
     private $themes;
 
     public function __construct( Configuration $configuration ) {
-        
+
         $this->configuration = $configuration;
-        
+
         $this->getDatabase();
 
         $this->applications = new Applications($this->database);
@@ -79,6 +79,12 @@ class Installer {
     final public function database() {
 
         return $this->database;
+
+    }
+
+    final public function configuration() {
+
+        return $this->configuration;
 
     }
 
@@ -135,5 +141,5 @@ class Installer {
         return $this->themes;
 
     }
-    
+
 }

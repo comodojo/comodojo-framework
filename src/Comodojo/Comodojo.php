@@ -7,9 +7,9 @@ use \Comodojo\Base\Firestarter;
 use \Comodojo\Base\Error as StartupError;
 use \Comodojo\Dispatcher\Dispatcher;
 use \League\Event\Emitter;
-use \Comodojo\Base\CacheHandler;
-use \Comodojo\Base\LogHandler;
-use \Comodojo\Base\AuditHandler;
+//use \Comodojo\Base\CacheHandler;
+//use \Comodojo\Base\LogHandler;
+//use \Comodojo\Base\AuditHandler;
 use \Comodojo\Exception\AuthenticationException;
 use \Comodojo\Exception\DatabaseException;
 use \Comodojo\Exception\CookieException;
@@ -45,182 +45,186 @@ class Comodojo {
     use Firestarter;
 
     private $logger;
-    
+
     private $audit;
-    
+
     private $cache;
-    
+
     private $router;
-    
+
     private $dispatcher;
-    
+
     private $events;
-    
+
     private $startup_exception;
-    
+
     public function __construct( $configuration = array() ) {
-        
+
         $this->getStaticConfiguration($configuration);
-        
+
         $this->events = new Emitter();
-        
+
         try {
-            
+
             $this->getDatabase();
-            
+
             $this->getConfiguration();
-            
-            $this->cache = CacheHandler::create($this->configuration);
-            
-            $this->logger = LogHandler::create($this->configuration);
-            
-            $this->audit = AuditHandler::create($this->configuration);
-            
+
+            //$this->logger = LogHandler::create($this->configuration);
+
+            $this->logger = \Comodojo\Dispatcher\Log\DispatcherLogger::create($this->configuration);
+
+            //$this->cache = CacheHandler::create($this->configuration);
+
+            $this->cache = \Comodojo\Dispatcher\Cache\DispatcherCache::create($this->configuration, $this->logger);
+
+            //$this->audit = AuditHandler::create($this->configuration);
+
             $this->dispatcher = new Dispatcher($this->configuration, $this->events, $this->cache, $this->logger);
-            
+
             $this->dispatcher->extra()
                 ->set( 'database', $this->database() )
-                ->set( 'configuration', $this->configuration() )
-                ->set( 'audit', $this->audit() );
-                
+                ->set( 'configuration', $this->configuration() );
+                //->set( 'audit', $this->audit() );
+
             $this->dispatcher->table()->put("/", "ROUTE", "\\Comodojo\\Services\\Landing");
-            
+
             $this->dispatcher->table()->put("/rpc", "ROUTE", "\\Comodojo\\Services\\Rpc");
-            
+
             $this->dispatcher->table()->put("/authentication", "ROUTE", "\\Comodojo\\Services\\Authentication");
-            
+
             $plugins_handler = new Plugins($this->database, $this->configuration);
-            
+
             $plugins = $plugins_handler->getByFramework('dispatcher');
-            
+
             foreach ( $plugins as $plugin ) {
-                
+
                 $this->dispatcher->events()->addListener($plugin->getEvent(), $plugin->getCallable());
-                
+
             }
-            
+
         } catch (Exception $e) {
-            
+
             $this->startup_exception = $e;
-            
+
         }
-        
+
     }
-    
+
     final public function logger() {
-        
+
         return $this->logger;
-        
+
     }
-    
+
     final public function audit() {
-        
+
         return $this->audit;
-        
+
     }
-    
+
     final public function cache() {
-        
+
         return $this->cache;
-        
+
     }
-    
+
     final public function dispatcher() {
-        
+
         return $this->dispatcher;
-        
+
     }
-    
+
     public function boot() {
-        
+
         if ( $this->startup_exception !== null ) {
-            
+
             return StartupError::raise($e);
-            
+
         }
-        
+
         try {
-            
+
             $user = self::getCurrentUser($this->configuration, $this->database);
-            
+
         } catch (Exception $e) {
-            
+
             return StartupError::raise($e);
-            
+
         }
-        
+
         try {
-            
+
             $roles = $user->getRoles();
-            
+
             $apps = array();
-            
+
             foreach ($roles as $role ) {
-                
+
                 $apps[] = $role->getApplications();
-                
+
             }
-            
+
             foreach ( $apps as $app ) {
-                
+
                 foreach ( $app->getRoutes() as $route ) {
-                 
+
                     $this->dispatcher->table()->put($route->getName(), $route->getType(), $route->getClass(), $route->getParameters());
-                    
+
                 }
-                
+
             }
-            
+
             $return = $this->dispatcher()->dispatch();
-            
+
         } catch (Exception $e) {
-            
+
             return StartupError::raise($e);
-            
+
         }
-        
+
         return $return;
-        
+
     }
-    
+
     private static function getCurrentUser(Configuration $configuration, EnhancedDatabase $database) {
-        
+
         $token_name = $configuration->get('auth-token');
-        
+
         try {
-            
+
             $token = Cookie::retrieve($token_name);
-            
+
             $broker = new Broker($database);
-            
+
             $user = $broker->validate($token);
-            
+
         } catch (CookieException $ce ) {
-            
+
             $user = User::loadGuest();
-            
+
         } catch (AuthenticationException $ae) {
-            
+
             $user = User::loadGuest();
-            
+
         } catch (Exception $e) {
-            
+
             throw $e;
-            
+
         }
-        
+
         return $user;
-        
+
     }
-    
+
     private function getConfiguration() {
-        
+
         $settings = new Settings( $this->database() );
-        
+
         foreach ( $settings as $setting => $value ) {
-            
+
             $this->configuration->set($setting, $value);
-            
+
         }
 
     }

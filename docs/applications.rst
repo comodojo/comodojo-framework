@@ -37,7 +37,12 @@ Application can be packed into bundles using special composer package type *como
                 }
             }
             "comodojo-configuration-register": {
-                "HELLOWORLD_DEFAULT_USER": "Comodojo"
+                "app-helloworld-default": {
+                    "value": 'Comodojo',
+                    "constant": false,
+                    "type": "STRING",
+                    "validate": ""
+                }
             }
             "comodojo-rpc-register": {
                 "myrpc.helloworld": {
