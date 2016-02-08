@@ -7,9 +7,9 @@ use \Comodojo\Base\Firestarter;
 use \Comodojo\Base\Error as StartupError;
 use \Comodojo\Dispatcher\Dispatcher;
 use \League\Event\Emitter;
-//use \Comodojo\Base\CacheHandler;
-//use \Comodojo\Base\LogHandler;
-//use \Comodojo\Base\AuditHandler;
+use \Comodojo\Base\CacheHandler;
+use \Comodojo\Base\LogHandler;
+use \Comodojo\Base\AuditHandler;
 use \Comodojo\Exception\AuthenticationException;
 use \Comodojo\Exception\DatabaseException;
 use \Comodojo\Exception\CookieException;
@@ -50,8 +50,6 @@ class Comodojo {
 
     private $cache;
 
-    private $router;
-
     private $dispatcher;
 
     private $events;
@@ -63,6 +61,12 @@ class Comodojo {
         $this->getStaticConfiguration($configuration);
 
         $this->events = new Emitter();
+        
+        $this->logger = LogHandler::create($this->configuration);
+        
+        $this->audit = AuditHandler::create($this->configuration);
+
+        $this->cache = CacheHandler::create($this->configuration);
 
         try {
 
@@ -70,22 +74,11 @@ class Comodojo {
 
             $this->getConfiguration();
 
-            //$this->logger = LogHandler::create($this->configuration);
-
-            $this->logger = \Comodojo\Dispatcher\Log\DispatcherLogger::create($this->configuration);
-
-            //$this->cache = CacheHandler::create($this->configuration);
-
-            $this->cache = \Comodojo\Dispatcher\Cache\DispatcherCache::create($this->configuration, $this->logger);
-
-            //$this->audit = AuditHandler::create($this->configuration);
-
             $this->dispatcher = new Dispatcher($this->configuration, $this->events, $this->cache, $this->logger);
 
             $this->dispatcher->extra()
                 ->set( 'database', $this->database() )
-                ->set( 'configuration', $this->configuration() );
-                //->set( 'audit', $this->audit() );
+                ->set( 'audit', $this->audit() );
 
             $this->dispatcher->table()->put("/", "ROUTE", "\\Comodojo\\Services\\Landing");
 
@@ -108,6 +101,12 @@ class Comodojo {
             $this->startup_exception = $e;
 
         }
+
+    }
+    
+    final public function events() {
+
+        return $this->events;
 
     }
 
@@ -218,8 +217,32 @@ class Comodojo {
     }
 
     private function getConfiguration() {
+        
+        $startup_cache_enabled = $this->configuration->get('startup-cache-enabled');
+        
+        $startup_cache_ttl = $this->configuration->get('startup-cache-ttl');
+        
+        if ( $startup_cache_enabled === true ) {
+            
+            $cached = $this->cache->setNamespace('COMODOJO')->get('startup-configuration');
+            
+            if ( $cache instanceof Settings ) {
+                
+                $settings = $cache;
+                
+            } else {
+                
+                $settings = new Settings( $this->database() );
+                
+                $this->cache->set('startup-configuration', $settings, $startup_cache_ttl);
+                
+            }
 
-        $settings = new Settings( $this->database() );
+        } else {
+            
+            $settings = new Settings( $this->database() );
+            
+        }
 
         foreach ( $settings as $setting => $value ) {
 
