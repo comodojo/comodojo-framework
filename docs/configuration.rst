@@ -27,3 +27,10 @@ On static file
 - log-remote: host::port::facility::level
 - audit-local: file::level
 - audit-remote: host::port::facility::level
+
+On database
+-----------
+
+- extender-idle-time
+- extender-database-jobs
+- extender-database-worklogs
