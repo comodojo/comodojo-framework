@@ -1,6 +1,7 @@
 <?php namespace Comodojo\Base;
 
 use \Comodojo\Database\EnhancedDatabase;
+use \Comodojo\Database\Database;
 use \Comodojo\Dispatcher\Components\Configuration;
 use \Comodojo\Base\Element;
 use \Iterator as PhpIterator;

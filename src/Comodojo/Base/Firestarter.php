@@ -34,23 +34,23 @@ use \Exception;
 trait Firestarter {
 
     protected $database;
-    
+
     protected $configuration;
 
     public function database() {
-        
+
         return $this->database;
-        
+
     }
-    
+
     public function configuration() {
-        
+
         return $this->configuration;
-        
+
     }
 
     protected function getDatabase( ) {
-        
+
         $model = $this->configuration->get('database-model');
         $host = $this->configuration->get('database-host');
         $port = $this->configuration->get('database-port');
@@ -58,9 +58,9 @@ trait Firestarter {
         $user = $this->configuration->get('database-user');
         $password = $this->configuration->get('database-password');
         $prefix = $this->configuration->get('database-prefix');
-        
+
         try {
-            
+
             $this->database = new EnhancedDatabase(
                 $model,
                 $host,
@@ -69,29 +69,33 @@ trait Firestarter {
                 $user,
                 $password
             );
-            
+
             $this->database->tablePrefix($prefix);
-            
+
             $this->database->autoClean();
-            
+
         } catch (DatabaseException $de) {
-            
+
             throw $de;
-            
+
+        } catch (Exception $e) {
+
+            throw $e;
+
         }
-        
+
     }
-    
+
     protected function getStaticConfiguration( $static_configuration = array() ) {
-        
+
         $this->configuration = new Configuration();
-        
+
         foreach ( $static_configuration as $setting => $value ) {
-            
+
             $this->configuration->set($setting, $value);
-            
+
         }
-        
+
     }
-    
+
 }

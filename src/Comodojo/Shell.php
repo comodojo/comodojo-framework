@@ -1,6 +1,7 @@
 <?php namespace Comodojo;
 
 use \Comodojo\Base\Firestarter;
+use \Comodojo\Settings\Settings;
 use \Comodojo\Extender\Econtrol;
 use \Comodojo\Extender\Extender;
 use \Comodojo\Base\CacheHandler;
@@ -36,14 +37,14 @@ use \Exception;
 class Shell {
 
     use Firestarter;
-    
+
     public function __construct( $configuration = array() ) {
 
         $this->getStaticConfiguration($configuration);
-        
+
         try {
 
-            $this->getDatabase();
+            @$this->getDatabase();
 
             $this->getConfiguration();
 
@@ -52,9 +53,9 @@ class Shell {
             echo "\nConfiguration not available; is comodojo installed?\n";
 
         }
-        
+
         $idle = $this->configuration->get('extender-idle-time');
-        
+
         define('EXTENDER_IDLE_TIME', is_null($idle) ? 1 : $idle);
         define('EXTENDER_DATABASE_MODEL', $this->configuration->get('database-model'));
         define('EXTENDER_DATABASE_HOST', $this->configuration->get('database-host'));
@@ -66,19 +67,20 @@ class Shell {
         define('EXTENDER_DATABASE_TABLE_JOBS', $this->configuration->get('extender-database-jobs'));
         define('EXTENDER_DATABASE_TABLE_WORKLOGS', $this->configuration->get('extender-database-worklogs'));
         define('EXTENDER_CACHE_FOLDER', $this->configuration->get('local-cache'));
-        
+
     }
-    
+
     public function createEcontrol() {
-    
+
         $econtrol = new Econtrol();
-        
+
         $controller = $econtrol->controller();
-        
+
         $tasks = $econtrol->tasks();
-        
+
         $controller->add('system', array(
             "description" => "System actions",
+            "class" => "\\Comodojo\\Commands\\System",
             "aliases"=> array("sys"),
             "options" => array(
                 "force" => array(
@@ -104,25 +106,37 @@ class Shell {
                 )
             ))
         );
-        
+
         if ( $this->database instanceof EnhancedDatabase ) {
-            
+
             $this->pushCommands($controller);
-            
+
             $this->pushTasks($tasks);
-            
+
         }
-        
+
         return $econtrol;
-    
+
     }
-    
+
     private function pushCommands(Controller $controller) {
-        
+
     }
-    
+
     private function pushTasks(TasksTable $tasks) {
-        
+
     }
-    
+
+    private function getConfiguration() {
+
+        $settings = new Settings( $this->database() );
+
+        foreach ( $settings as $setting => $value ) {
+
+            $this->configuration->set($setting, $value);
+
+        }
+
+    }
+
 }
