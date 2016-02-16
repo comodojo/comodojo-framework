@@ -80,11 +80,11 @@ class Comodojo {
                 ->set( 'database', $this->database() )
                 ->set( 'audit', $this->audit() );
 
-            $this->dispatcher->table()->put("/", "ROUTE", "\\Comodojo\\Services\\Landing");
+            $this->dispatcher->router()->add("/", "ROUTE", "\\Comodojo\\Services\\Landing");
 
-            $this->dispatcher->table()->put("/rpc", "ROUTE", "\\Comodojo\\Services\\Rpc");
+            $this->dispatcher->router()->add("/rpc", "ROUTE", "\\Comodojo\\Services\\Rpc");
 
-            $this->dispatcher->table()->put("/authentication", "ROUTE", "\\Comodojo\\Services\\Authentication");
+            $this->dispatcher->router()->add("/authentication", "ROUTE", "\\Comodojo\\Services\\Authentication");
 
             $plugins_handler = new Plugins($this->database, $this->configuration);
 
@@ -168,7 +168,7 @@ class Comodojo {
 
                 foreach ( $app->getRoutes() as $route ) {
 
-                    $this->dispatcher->table()->put($route->getName(), $route->getType(), $route->getClass(), $route->getParameters());
+                    $this->dispatcher->router()->add($route->getName(), $route->getType(), $route->getClass(), $route->getParameters());
 
                 }
 
