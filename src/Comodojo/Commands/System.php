@@ -30,6 +30,12 @@ use \Exception;
 
 class System extends AbstractCommand {
 
+    private static $lockfile = "extender.pid";
+
+    private static $statusfile = "extender.status";
+
+    private static $queuefile = "extender.queue";
+
     public function execute() {
 
         $force = $this->getOption("force");
@@ -197,6 +203,14 @@ class System extends AbstractCommand {
 
                 self::emptyDatabase();
 
+                $this->logger->info("Installing database");
+
+                self::installDatabase();
+
+                $this->logger->info("Writing default content");
+
+                self::pushDefaultContent();
+
             } catch (Exception $se) {
 
                 throw $se;
@@ -211,9 +225,21 @@ class System extends AbstractCommand {
 
         try {
 
+            if ($installed) {
+
+                $this->logger->info("Truncating database");
+
+                self::emptyDatabase();
+
+            }
+
             $this->logger->info("Installing database");
 
             self::installDatabase();
+
+            $this->logger->info("Writing default content");
+
+            self::pushDefaultContent();
 
         } catch (Exception $e) {
 
@@ -362,11 +388,13 @@ class System extends AbstractCommand {
                 EXTENDER_DATABASE_PASS
             );
 
+            $db->tablePrefix(EXTENDER_DATABASE_PREFIX);
+
             $db->autoClean();
 
             foreach ( array_reverse(array_keys(self::getInstallQueries())) as $table ) {
 
-                $db->tablePrefix(EXTENDER_DATABASE_PREFIX)->table($table)->truncate();
+                $db->tablePrefix(EXTENDER_DATABASE_PREFIX)->table($table)->drop();
             }
 
         } catch (DatabaseException $de) {
@@ -616,5 +644,59 @@ class System extends AbstractCommand {
 
     }
 
+    private static function pushDefaultContent() {
+
+        try {
+
+            $db = new EnhancedDatabase(
+                EXTENDER_DATABASE_MODEL,
+                EXTENDER_DATABASE_HOST,
+                EXTENDER_DATABASE_PORT,
+                EXTENDER_DATABASE_NAME,
+                EXTENDER_DATABASE_USER,
+                EXTENDER_DATABASE_PASS
+            );
+
+            $db->tablePrefix(EXTENDER_DATABASE_PREFIX);
+
+            $db->autoClean();
+
+            // admin role
+            $admin_role_id = $db->table('roles')
+                ->keys(array('name','description'))
+                ->values(array('admin','Default administrator role'))
+                ->store()
+                ->getInsertId();
+
+            $authentication_id = $db->table('authentication')
+                ->keys(array('name','description','class'))
+                ->values(array('local','Local Authentication Provider','\\Comodojo\\Authentication\\Provider\\LocalProvider'))
+                ->store()
+                ->getInsertId();
+
+            $admin_pwd = password_hash('comodojo',PASSWORD_DEFAULT);
+
+            $admin_user_id = $db->table('users')
+                ->keys(array('username','password','displayname','mail','authentication','enabled','primaryrole'))
+                ->values(array('admin',$admin_pwd, 'Administrator','administrator@localhost',$authentication_id,1,$admin_role_id))
+                ->store()
+                ->getInsertId();
+
+            $db->table('users_to_roles')
+                ->keys(array('user','role'))
+                ->values(array($admin_user_id,$admin_role_id))
+                ->store();
+
+        } catch (DatabaseException $de) {
+
+            unset($db);
+
+            throw new ShellException("Database error: ".$de->getMessage());
+
+        }
+
+        unset($db);
+
+    }
 
 }
