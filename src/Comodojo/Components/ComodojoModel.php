@@ -31,33 +31,27 @@ abstract class ComodojoModel extends AbstractModel {
 
     private $args;
 
-    protected $schema
+    protected $schema;
 
     public function __construct(
+        Configuration $configuration,
         $schema,
-        $fields,
+        $attributes,
         $values = array(),
-        EnhancedDatabase $database = null,
-        Configuration $configuration = null
+        EnhancedDatabase $database = null
     ) {
 
         $this->args = func_get_args();
 
-        parent::__construct($database, $configuration);
+        parent::__construct($configuration, $database);
 
         $this->data['id'] = 0;
 
         $this->schema = $schema;
 
-        $this->fields = array_merge($this->data, $fields);
+        $this->fields = array_merge($this->data, $attributes);
 
         if ( !empty($values) ) $this->populate($values);
-
-    }
-
-    public function getId() {
-
-        return $this->get('id');
 
     }
 
@@ -85,23 +79,103 @@ abstract class ComodojoModel extends AbstractModel {
 
     }
 
-    public function persist() {
+    public function load($id) {
 
-    }
+        if ( $fid = filter_var($id, FILTER_VALIDATE_INT) === false ) {
+            $className = getClass($this);
+            throw new Exception("Invalid id $id for $className");
+        }
 
-    public function delete() {
+        try {
+
+            $result = $this->database
+                ->table($this->schema)
+                ->keys(array_keys($this->data))
+                ->where('id', '=', $fid)
+                ->get();
+
+            if ( $result->getLength() != 1 ) {
+                $className = getClass($this);
+                throw new Exception("Unable to load object $className: missing id $id");
+            }
+
+            $data = $result->getData();
+
+            $return = $this->populate($data[0]);
+
+        } catch (DatabaseException $de) {
+            throw $de;
+        } catch (Exception $e) {
+            throw $e;
+        }
+
+        return $return;
 
     }
 
     protected function create() {
 
+        try {
+
+            $result = $this->database
+                ->table($this->schema)
+                ->keys(array_keys($this->data))
+                ->values(array_values($this->data))
+                ->store();
+
+            $id = $result->getInsertId();
+
+            $this->data['id'] = $id;
+
+        } catch (DatabaseException $de) {
+            throw $de;
+        } catch (Exception $e) {
+            throw $e;
+        }
+
+        return $this;
+
     }
 
     protected function update() {
 
+        try {
+
+            $result = $this->database
+                ->table($this->schema)
+                ->keys(array_keys($this->args))
+                ->values(array_values(array_intersect($this->data, $this->args)))
+                ->where('id', '=', $this->id)
+                ->update();
+
+        } catch (DatabaseException $de) {
+            throw $de;
+        } catch (Exception $e) {
+            throw $e;
+        }
+
+        return $this;
+
     }
 
     protected function remove() {
+
+        try {
+
+            $result = $this->database
+                ->table($this->schema)
+                ->where('id', '=', $this->id)
+                ->delete();
+
+            $rows = $this->database->getAffectedRows();
+
+        } catch (DatabaseException $de) {
+            throw $de;
+        } catch (Exception $e) {
+            throw $e;
+        }
+
+        return intval($rows) == 1 ? true : false;
 
     }
 
@@ -112,6 +186,8 @@ abstract class ComodojoModel extends AbstractModel {
         if ( !empty($diff) ) throw new Exception("Missing class attributes: ".implode(",",$diff));
 
         $this->data = array_replace($this->data, $this->value);
+
+        return $this;
 
     }
 

@@ -1,8 +1,4 @@
-<?php namespace Comodojo\Components;
-
-use \Comodojo\Dispatcher\Components\Configuration;
-use \Serializable;
-use \Exception;
+<?php namespace Comodojo\Package;
 
 /**
  * @package     Comodojo Framework
@@ -26,33 +22,17 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-abstract class AbstractModel implements Serializable {
+trait PackageTrait {
 
-    use SerializableTrait;
-    use DatabaseTrait;
+    private static $element_schema = "packages";
 
-    protected $configuration;
+    private static $element_attributes = array(
+        "package" => null,
+        "version" => null
+    );
 
-    protected $data = array();
+    private static $element_controller = "\\Comodojo\\Package\\Controller";
 
-    public function __construct(Configuration $configuration, EnhancedDatabase $database = null) {
-
-        $this->configuration = $configuration;
-
-        $this->database = self::initDatabase($database);
-
-    }
-
-    public function configuration() {
-
-        return $this->configuration;
-
-    }
-
-    public function toArray() {
-
-        return $this->data;
-
-    }
+    private static $element_view = "\\Comodojo\\Package\\View";
 
 }

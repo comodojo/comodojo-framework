@@ -36,26 +36,17 @@ abstract class AbstractIterator implements Iterator, ArrayAccess, Countable {
     use IteratorTrait;
     use ArrayAccessTrait;
     use CountableTrait;
-
-    protected $data = array();
-
-    protected $current = 0;
-
-    protected $database;
+    use DatabaseTrait;
 
     protected $configuration;
 
-    public function __construct(EnhancedDatabase $database, Configuration $configuration) {
+    protected $data = array();
 
-        $this->database = $database;
+    public function __construct(Configuration $configuration, EnhancedDatabase $database = null) {
 
         $this->configuration = $configuration;
 
-    }
-
-    public function database() {
-
-        return $this->database;
+        $this->database = self::initDatabase($database);
 
     }
 
@@ -70,6 +61,5 @@ abstract class AbstractIterator implements Iterator, ArrayAccess, Countable {
         return $this->data;
 
     }
-
 
 }

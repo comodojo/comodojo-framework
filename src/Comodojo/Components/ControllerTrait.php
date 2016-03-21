@@ -22,58 +22,11 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-trait CountableTrait {
+trait ControllerTrait {
 
-    /**
-     * Check if an offset exists
-     *
-     * @param string|int $index
-     *
-     * @return boolean
-     */
-    public function offsetExists($index) {
+    public function __set($name, $value) {
 
-        return $this->offsetGet($index) !== null;
-
-    }
-
-    /**
-     * Get element from index
-     *
-     * @param string|int $index
-     *
-     * @return mixed
-     */
-    public function offsetGet($index) {
-
-        return $this->data[$index];
-
-    }
-
-    /**
-     * Set a value
-     *
-     * @param string|int $index
-     * @param mixed      $value
-     */
-    public function offsetSet($index, $value) {
-
-        $this->data[$index] = $value;
-
-    }
-
-    /**
-     * Remove an element from array
-     *
-     * @param string|int $index
-     *
-     * @return boolean
-     */
-    public function offsetUnset($index) {
-
-        $action = unset($this->data[$index]);
-
-        return $action;
+        $this->data[$name] = $value;
 
     }
 
