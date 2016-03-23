@@ -1,13 +1,10 @@
-<?php namespace Comodojo\Authentication\Provider;
+<?php namespace Comodojo\Authentication;
 
-use \Comodojo\Database\EnhancedDatabase;
-use \Comodojo\Dispatcher\Components\Configuration;
-use \Comodojo\User\View as UserView;
-use \Comodojo\User\Controller as UserController;
+use \Comodojo\Components\ControllerPersistenceTrait;
+use \Comodojo\Components\PackageControllerTrait;
+use \Exception;
 
 /**
- *
- *
  * @package     Comodojo Framework
  * @author      Marco Giovinazzi <marco.giovinazzi@comodojo.org>
  * @author      Marco Castiello <marco.castiello@gmail.com>
@@ -29,17 +26,29 @@ use \Comodojo\User\Controller as UserController;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-interface AuthenticationProviderInterface {
+class Controller extends View {
 
-    public function __construct(Configuration $configuration, $parameters, EnhancedDatabase $database);
+    use ControllerPersistenceTrait;
+    use PackageControllerTrait;
 
-    public function authenticate(UserView $user, $password);
+    public function __set($name, $value) {
 
-    public function passwd(UserController $user, $password);
+        $className = get_class($this);
 
-    public function chpasswd(UserController $user, $old_password, $new_password);
+        if ( array_key_exists($name, $this->data) === false ) throw new Exception("Invalid property $name for $className");
 
-    public function release(UserController $user);
+        if ( $name == 'parameters') $this->data[$name] = json_encode($value);
 
+        else $this->data[$name] = $value;
+
+    }
+
+    public function getUsers() {
+
+        $filter = array("authentication","=",$this->id);
+
+        return UserIterator::loadBy($this->configuration(), $filter, $this->database, false);
+
+    }
 
 }

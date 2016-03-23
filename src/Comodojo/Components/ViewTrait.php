@@ -32,9 +32,9 @@ trait ViewTrait {
 
         }
 
-        $class = getClass($this);
+        $className = getClass($this);
 
-        throw new Exception("Invalid property $name for $class");
+        throw new Exception("Invalid property $name for $className");
 
     }
 

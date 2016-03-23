@@ -67,11 +67,13 @@ abstract class ComodojoModel extends AbstractModel {
 
     }
 
-    public function clone() {
+    public function __clone() {
 
         list($schema, $fields, $values, $database, $configuration) = $this->args;
 
         $values = array_replace($values, $this->data);
+
+        $values['id'] = 0;
 
         $className = get_class($this);
 

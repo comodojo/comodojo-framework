@@ -1,13 +1,6 @@
-<?php namespace Comodojo\Authentication\Provider;
-
-use \Comodojo\Database\EnhancedDatabase;
-use \Comodojo\Dispatcher\Components\Configuration;
-use \Comodojo\User\View as UserView;
-use \Comodojo\User\Controller as UserController;
+<?php namespace Comodojo\User;
 
 /**
- *
- *
  * @package     Comodojo Framework
  * @author      Marco Giovinazzi <marco.giovinazzi@comodojo.org>
  * @author      Marco Castiello <marco.castiello@gmail.com>
@@ -29,17 +22,24 @@ use \Comodojo\User\Controller as UserController;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-interface AuthenticationProviderInterface {
+trait UserTrait {
 
-    public function __construct(Configuration $configuration, $parameters, EnhancedDatabase $database);
+    private static $element_schema = "users";
 
-    public function authenticate(UserView $user, $password);
+    private static $element_attributes = array(
+        "username" => null,
+        "password" => null,
+        "displayname" => false,
+        "mail" => null,
+        "birthdate" => null,
+        "gender" => null,
+        "enabled" => false,
+        "authentication" => null,
+        "primaryrole" => null
+    );
 
-    public function passwd(UserController $user, $password);
+    private static $element_controller = "\\Comodojo\\User\\Controller";
 
-    public function chpasswd(UserController $user, $old_password, $new_password);
-
-    public function release(UserController $user);
-
+    private static $element_view = "\\Comodojo\\User\\View";
 
 }

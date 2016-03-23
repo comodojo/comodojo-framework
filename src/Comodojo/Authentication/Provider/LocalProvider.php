@@ -1,9 +1,11 @@
 <?php namespace Comodojo\Authentication\Provider;
 
-use \Comodojo\Database\Database;
-use \Comodojo\Users\User;
+use \Comodojo\Database\EnhancedDatabase;
+use \Comodojo\Dispatcher\Components\Configuration;
+use \Comodojo\User\View as UserView;
+use \Comodojo\User\Controller as UserController;
 use \Comodojo\Exception\AuthenticationException;
-use \Comodojo\Exception\DatabaseException;
+use \Exception;
 
 /**
  *
@@ -31,65 +33,64 @@ use \Comodojo\Exception\DatabaseException;
 
 class LocalProvider implements AuthenticationProviderInterface {
 
-    private $user;
-    
-    private $dbh;
+    private $configuration;
 
-    public function __construct(User $user, Database $database) {
-        
-        $this->user = $user;
-        
-        $this->dbh = $database;
-        
+    private $parameters;
+
+    private $database;
+
+    public function __construct(Configuration $configuration, $parameters, EnhancedDatabase $database) {
+
+        $this->configuration = $configuration;
+
+        $this->parameters = $parameters;
+
+        $this->database = $database;
+
     }
-    
-    public function authenticate($password) {
-        
-        return password_verify($password, $user->getPassword());
-        
+
+    public function authenticate(UserView $user, $password) {
+
+        return password_verify($password, $user->password);
+
     }
-    
-    public function passwd($password) {
-        
+
+    public function passwd(UserController $user, $password) {
+
         $hash = password_hash($password, PASSWORD_DEFAULT);
-        
-        $query = sprintf("UPDATE comodojo_users SET `password` = %s WHERE id = %d",
-            mysqli_real_escape_string($this->dbh->getHandler(), $hash),
-            $this->user->getId()
-        );
 
         try {
 
-            $this->dbh->query($query);
-            
-        } catch (DatabaseException $de) {
+            $user->password = $hash;
+
+        } catch (Exception $de) {
 
             throw $de;
 
         }
 
+        return true;
+
+    }
+
+    public function chpasswd(UserController $user, $old_password, $new_password) {
+
+        if ( $this->authenticate($user, $old_password) === false ) {
+
+            throw new AuthenticationException('Previous password mismatch');
+
+        }
+
+        $this->passwd($user, $new_password);
+
         return $this;
 
     }
-    
-    public function chpasswd($old_password, $new_password) {
-        
-        if ( $this->authenticate($old_password) === false ) {
-            
-            throw new AuthenticationException('Previous password mismatch');
-            
-        }
-        
-        $this->passwd($new_password);
-        
-        return $this;
-        
-    }
-    
-    public function release() {
-        
+
+    public function release(UserController $user) {
+
         return true;
-        
+
     }
 
 }

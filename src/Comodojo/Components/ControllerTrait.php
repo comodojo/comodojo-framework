@@ -26,6 +26,10 @@ trait ControllerTrait {
 
     public function __set($name, $value) {
 
+        $className = get_class($this);
+
+        if ( array_key_exists($name, $this->data) === false ) throw new Exception("Invalid property $name for $className");
+
         $this->data[$name] = $value;
 
     }

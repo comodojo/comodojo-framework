@@ -63,7 +63,7 @@ abstract class ComodojoIterator extends AbstractIterator {
 
     }
 
-    protected function loadData() {
+    public function loadData() {
 
         try {
 
@@ -86,7 +86,7 @@ abstract class ComodojoIterator extends AbstractIterator {
 
     }
 
-    protected function loadFiltered($filters) {
+    public function loadFiltered($filters) {
 
         try {
 

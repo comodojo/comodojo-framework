@@ -1,13 +1,9 @@
-<?php namespace Comodojo\Authentication\Provider;
+<?php namespace Comodojo\Components;
 
-use \Comodojo\Database\EnhancedDatabase;
 use \Comodojo\Dispatcher\Components\Configuration;
-use \Comodojo\User\View as UserView;
-use \Comodojo\User\Controller as UserController;
+use \Comodojo\Database\EnhancedDatabase;
 
 /**
- *
- *
  * @package     Comodojo Framework
  * @author      Marco Giovinazzi <marco.giovinazzi@comodojo.org>
  * @author      Marco Castiello <marco.castiello@gmail.com>
@@ -29,17 +25,33 @@ use \Comodojo\User\Controller as UserController;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-interface AuthenticationProviderInterface {
+trait IteratorLoaderTrait {
 
-    public function __construct(Configuration $configuration, $parameters, EnhancedDatabase $database);
+    public static function load(
+        Configuration $configuration,
+        EnhancedDatabase $database = null,
+        $controller = false) {
 
-    public function authenticate(UserView $user, $password);
+        $iteratorClass = getClass();
 
-    public function passwd(UserController $user, $password);
+        $iterator = new $iteratorClass($configuration, $database, $controller);
 
-    public function chpasswd(UserController $user, $old_password, $new_password);
+        return $iterator->loadData();
 
-    public function release(UserController $user);
+    }
 
+    public static function loadBy(
+        Configuration $configuration,
+        $filter,
+        EnhancedDatabase $database = null,
+        $controller = false) {
+
+        $iteratorClass = getClass();
+
+        $iterator = new $iteratorClass($configuration, $database, $controller);
+
+        return $iterator->loadFiltered($filter);
+
+    }
 
 }

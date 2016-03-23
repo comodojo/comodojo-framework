@@ -1,13 +1,13 @@
-<?php namespace Comodojo\Authentication\Provider;
+<?php namespace Comodojo\User;
 
-use \Comodojo\Database\EnhancedDatabase;
-use \Comodojo\Dispatcher\Components\Configuration;
-use \Comodojo\User\View as UserView;
-use \Comodojo\User\Controller as UserController;
+use \Comodojo\Components\ViewTrait;
+use \Comodojo\Components\PackageViewTrait;
+use \Comodojo\Authentication\View as AuthenticationView;
+use \Comodojo\Role\View as RoleView;
+use \Comodojo\Role\Iterator as RoleIterator;
+use \Exception;
 
 /**
- *
- *
  * @package     Comodojo Framework
  * @author      Marco Giovinazzi <marco.giovinazzi@comodojo.org>
  * @author      Marco Castiello <marco.castiello@gmail.com>
@@ -29,17 +29,31 @@ use \Comodojo\User\Controller as UserController;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-interface AuthenticationProviderInterface {
+class View extends Model {
 
-    public function __construct(Configuration $configuration, $parameters, EnhancedDatabase $database);
+    use ViewTrait;
+    use PackageViewTrait;
 
-    public function authenticate(UserView $user, $password);
+    public function getAuthentication() {
 
-    public function passwd(UserController $user, $password);
+        $auth = new AuthenticationView($this->configuration(), $this->database());
 
-    public function chpasswd(UserController $user, $old_password, $new_password);
+        return $auth->load($this->authentication);
 
-    public function release(UserController $user);
+    }
 
+    public function getPrimaryRole() {
+
+        $auth = new RoleView($this->configuration(), $this->database());
+
+        return $auth->load($this->primaryrole);
+
+    }
+
+    public function getRoles() {
+
+        return RoleIterator::loadByUser($this->configuration(), $this->id, $this->database(), false);
+
+    }
 
 }

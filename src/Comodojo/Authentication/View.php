@@ -1,8 +1,7 @@
 <?php namespace Comodojo\Authentication;
 
-use \Comodojo\Components\ComodojoModel;
-use \Comodojo\Dispatcher\Components\Configuration;
-use \Comodojo\Database\EnhancedDatabase;
+use \Comodojo\Components\PackageViewTrait;
+use \Comodojo\User\Iterator as UserIterator;
 use \Exception;
 
 /**
@@ -27,23 +26,45 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Model extends ComodojoModel {
+class View extends Model {
 
-    use AuthenticationTrait;
+    use PackageViewTrait;
 
-    public function __construct(
-        Configuration $configuration,
-        EnhancedDatabase $database = null,
-        $values = array()
-    ) {
+    public function __get($name) {
 
-        parent::__construct(
-            $configuration,
-            self::$element_schema,
-            self::$element_attributes,
-            $values,
-            $database
-        );
+        if ( array_key_exists($name, $this->data) ) {
+
+            if ( $name == 'parameters') return json_decode($this->data[$name], true);
+
+            return $this->data[$name];
+
+        }
+
+        $class = getClass($this);
+
+        throw new Exception("Invalid property $name for $class");
+
+    }
+
+    public function __isset($name) {
+
+        return isset($this->data[$name]);
+
+    }
+
+    public function getUsers() {
+
+        $filter = array("authentication","=",$this->id);
+
+        return UserIterator::loadBy($this->configuration(), $filter, $this->database(), false);
+
+    }
+
+    public function getProvider() {
+
+        $className = $this->class;
+
+        return new $className($this->configuration(), $this->parameters, $this->database());
 
     }
 

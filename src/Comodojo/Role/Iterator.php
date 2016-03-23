@@ -1,4 +1,4 @@
-<?php namespace Comodojo\Package;
+<?php namespace Comodojo\Role;
 
 use \Comodojo\Components\ComodojoIterator;
 use \Comodojo\Components\IteratorLoaderTrait;
@@ -30,6 +30,7 @@ use \Exception;
 
 class Iterator extends ComodojoIterator {
 
+    use RoleTrait;
     use IteratorLoaderTrait;
 
     public function __construct(
@@ -45,6 +46,47 @@ class Iterator extends ComodojoIterator {
             $controller === true ? self::$element_controller : self::$element_view,
             $database
         );
+
+    }
+
+    public function loadDataByApplication($id) {
+
+        $fields = array_map(function($field) {
+            return "*_DBPREFIX_*".$this->schema.".".$field;
+        }, $this->fields);
+
+        try {
+
+            $result = $this->database
+                ->table($this->schema)
+                ->table("applications_to_roles")
+                ->keys($fields)
+                ->where("*_DBPREFIX_*applications_to_roles.application","=",$id)
+                ->get();
+
+            $data = $result->getData();
+
+            $this->populate($data);
+
+        } catch (DatabaseException $de) {
+            throw $de;
+        } catch (Exception $e) {
+            throw $e;
+        }
+
+        return $this;
+
+    }
+
+    public static function loadByApplication(
+        Configuration $configuration,
+        $id,
+        EnhancedDatabase $database = null,
+        $controller = false) {
+
+        $iterator = new Iterator($configuration, $database, $controller);
+
+        return $iterator->loadDataByApplication($id);
 
     }
 

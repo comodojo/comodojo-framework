@@ -39,7 +39,7 @@ abstract class AbstractModel implements Serializable {
 
         $this->configuration = $configuration;
 
-        $this->database = self::initDatabase($database);
+        $this->database = $this->initDatabase($database);
 
     }
 

@@ -1,5 +1,14 @@
 <?php namespace Comodojo\Package;
 
+use \Comodojo\Rpc\Iterator as RpcIterator;
+use \Comodojo\Plugin\Iterator as PluginIterator;
+use \Comodojo\Route\Iterator as RouteIterator;
+use \Comodojo\Theme\Iterator as ThemeIterator;
+use \Comodojo\Task\Iterator as TaskIterator;
+use \Comodojo\Command\Iterator as CommandIterator;
+use \Comodojo\Application\Iterator as ApplicationIterator;
+use \Comodojo\Authentication\Iterator as AuthenticationIterator;
+use \Comodojo\Setting\Iterator as SettingIterator;
 use \Comodojo\Components\ViewTrait;
 use \Comodojo\Dispatcher\Components\Configuration;
 use \Comodojo\Database\EnhancedDatabase;
@@ -30,5 +39,77 @@ use \Exception;
 class View extends Model {
 
     use ViewTrait;
+
+    public function getRpc() {
+
+        $filter = array("package","=",$this->id);
+
+        return RpcIterator::loadBy($filter, $this->configuration(), $this->database());
+
+    }
+
+    public function getPlugins() {
+
+        $filter = array("package","=",$this->id);
+
+        return PluginIterator::loadBy($filter, $this->configuration(), $this->database());
+
+    }
+
+    public function getRoutes() {
+
+        $filter = array("package","=",$this->id);
+
+        return RouteIterator::loadBy($filter, $this->configuration(), $this->database());
+
+    }
+
+    public function getThemes() {
+
+        $filter = array("package","=",$this->id);
+
+        return ThemeIterator::loadBy($filter, $this->configuration(), $this->database());
+
+    }
+
+    public function getTasks() {
+
+        $filter = array("package","=",$this->id);
+
+        return TaskIterator::loadBy($filter, $this->configuration(), $this->database());
+
+    }
+
+    public function getCommands() {
+
+        $filter = array("package","=",$this->id);
+
+        return CommandIterator::loadBy($filter, $this->configuration(), $this->database());
+
+    }
+
+    public function getApplications() {
+
+        $filter = array("package","=",$this->id);
+
+        return ApplicationIterator::loadBy($filter, $this->configuration(), $this->database());
+
+    }
+
+    public function getAuthentications() {
+
+        $filter = array("package","=",$this->id);
+
+        return AuthenticationIterator::loadBy($filter, $this->configuration(), $this->database());
+
+    }
+
+    public function getSettings() {
+
+        $filter = array("package","=",$this->id);
+
+        return SettingIterator::loadBy($filter, $this->configuration(), $this->database());
+
+    }
 
 }

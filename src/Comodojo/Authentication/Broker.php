@@ -4,15 +4,14 @@ use \Lcobucci\JWT\Token;
 use \Lcobucci\JWT\Builder;
 use \Lcobucci\JWT\Signer\Hmac\Sha256;
 use \Lcobucci\JWT\Parser;
-use \Comodojo\Database\Database;
-use \Comodojo\Users\Users;
-use \Comodojo\Users\User;
+use \Comodojo\Dispatcher\Components\Configuration;
+use \Comodojo\Database\EnhancedDatabase;
+use \Comodojo\User\Iterator as UserIterator;
+use \Comodojo\User\View as UserView;
 use \Comodojo\Exception\AuthenticationException;
 use \Exception;
 
 /**
- *
- *
  * @package     Comodojo Framework
  * @author      Marco Giovinazzi <marco.giovinazzi@comodojo.org>
  * @author      Marco Castiello <marco.castiello@gmail.com>
@@ -35,119 +34,136 @@ use \Exception;
  */
 
 class Broker {
-    
-    private $dbh;
-    
-    public function __construct(Database $database) {
-        
-        $this->dbh = $database;
-        
+
+    private $database;
+
+    private $configuration;
+
+    public function __construct(Configuration $configuration, EnhancedDatabase $database) {
+
+        $this->configuration = $configuration;
+
+        $tthis->database = $database;
+
     }
-    
+
     public function authenticate($username, $password) {
-     
-        $users = new Users();
-        
-        $user = $users->getElementByName($username);
-        
-        if ( $user === null ) {
-            
+
+        $filter = array("username","=",$username);
+
+        $users = UserIterator::loadBy($this->configuration, $filter, $this->database);
+
+        if ( count($users) != 1 ) {
+
             throw new AuthenticationException("Unknown user or wrong password");
-            
+
         }
-        
-        if ( $user->getEnabled() === false ) {
-            
+
+        $user = $users[0];
+
+        if ( $user->enabled === false ) {
+
             throw new AuthenticationException("Account locked, please contact administrator.");
-            
+
         }
-        
-        if ( $user->getAuthentication()->getInstance()->authenticate($password) !== true ) {
-            
+
+        if ( $user->getAuthentication()->getProvider()->authenticate($user, $password) !== true ) {
+
             throw new AuthenticationException("Unknown user or wrong password");
-            
+
         }
-        
+
         return $this->generateToken($user);
-        
+
     }
-    
+
     public function validate($token_string) {
-        
+
         $signer = new Sha256();
-        
+
         $token = (new Parser())->parse((string) $token_string);
-        
-        if ( $token->validate($signer, COMODOJO_AUTH_KEY) === false ) {
-            
+
+        if ( $token->validate($signer, $this->configuration->get('auth-key')) === false ) {
+
             throw new AuthenticationException("Token mismatch!");
-            
+
         }
-        
+
         $id = $token->getClaim('uid');
-        
-        $user = User::load($id, $this->database);
-        
-        if ( $user->getEnabled() === false ) {
-            
+
+        $user = new UserView($this->configuration, $this->database);
+
+        $user->load($id);
+
+        if ( $user->enabled() === false ) {
+
             throw new AuthenticationException("Account locked, please contact administrator.");
-            
+
         }
-        
+
         return $user;
-        
+
     }
-    
-    public function release($username) {
-        
-        $users = new Users();
-        
-        $user = $users->getElementByName($username);
-        
-        if ( $user === null ) {
-            
+
+    public function release(UserView $user) {
+
+        $filter = array("username","=",$username);
+
+        $users = UserIterator::loadBy($this->configuration, $filter, $this->database);
+
+        if ( count($users) != 1 ) {
+
             throw new AuthenticationException("Unknown user or wrong password");
-            
+
         }
-        
-        if ( $user->getEnabled() === false ) {
-            
+
+        $user = $users[0];
+
+        if ( $user->enabled === false ) {
+
             throw new AuthenticationException("Account locked, please contact administrator.");
-            
+
         }
-        
-        if ( $user->getAuthentication()->getInstance()->release() !== true ) {
-            
+
+        if ( $user->getAuthentication()->getProvider()->release($user) !== true ) {
+
             throw new AuthenticationException("Unknown user or wrong password");
-            
+
         }
-        
+
         return true;
-        
+
     }
-    
-    private function generateToken(User $user) {
-        
+
+    private function generateToken(UserView $user) {
+
         $signer = new Sha256();
-        
+
         $issuedAt = time();
-        
-        $expiration = defined('COMODOJO_AUTH_TTL') ? (int)COMODOJO_AUTH_TTL : 3600;
+
+        $key = $this->configuration->get('auth-key');
+        $ttl = $this->configuration->get('auth-ttl');
+
+        $expiration = is_null($ttl) ? (int)$ttl : 3600;
 
         $builder = new Builder();
-        
+
         $builder->setIssuedAt($issuedAt)
             ->setNotBefore($issuedAt + 1)
             ->setExpiration($issuedAt + $expiration)
             ->set('uid', $user->getId());
-        
-        if ( defined('COMODOJO_AUTH_ISSUER') ) $builder->setIssuer(COMODOJO_AUTH_ISSUER);
-        if ( defined('COMODOJO_AUTH_AUDIENCE') ) $builder->setIssuer(COMODOJO_AUTH_AUDIENCE);
-        
-        $token = $builder->sign($signer, COMODOJO_AUTH_KEY)->getToken();
-            
+
+        $issuer = $this->configuration->get('auth-issuer');
+        $audience = $this->configuration->get('auth-audience');
+
+        if ( $issuer != null ) $builder->setIssuer($issuer);
+        if ( $audience != null ) $builder->setAudience($audience);
+
+
+        $token = $builder->sign($signer, $key)->getToken();
+
         return (string)$token;
-        
+
     }
-    
+
 }

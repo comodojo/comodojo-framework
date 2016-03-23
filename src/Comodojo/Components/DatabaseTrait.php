@@ -36,7 +36,7 @@ trait DatabaseTrait {
 
     }
 
-    protected static function initDatabase(EnhancedDatabase $database = null) {
+    protected function initDatabase(EnhancedDatabase $database = null) {
 
         if ( $database != null ) return $database;
 

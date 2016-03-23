@@ -1,13 +1,12 @@
-<?php namespace Comodojo\Authentication\Provider;
+<?php namespace Comodojo\Setting;
 
-use \Comodojo\Database\EnhancedDatabase;
+use \Comodojo\Components\ComodojoIterator;
+use \Comodojo\Components\IteratorLoaderTrait;
 use \Comodojo\Dispatcher\Components\Configuration;
-use \Comodojo\User\View as UserView;
-use \Comodojo\User\Controller as UserController;
+use \Comodojo\Database\EnhancedDatabase;
+use \Exception;
 
 /**
- *
- *
  * @package     Comodojo Framework
  * @author      Marco Giovinazzi <marco.giovinazzi@comodojo.org>
  * @author      Marco Castiello <marco.castiello@gmail.com>
@@ -29,17 +28,25 @@ use \Comodojo\User\Controller as UserController;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-interface AuthenticationProviderInterface {
+class Iterator extends ComodojoIterator {
 
-    public function __construct(Configuration $configuration, $parameters, EnhancedDatabase $database);
+    use SettingTrait;
+    use IteratorLoaderTrait;
 
-    public function authenticate(UserView $user, $password);
+    public function __construct(
+        Configuration $configuration,
+        EnhancedDatabase $database = null,
+        $controller = false
+    ) {
 
-    public function passwd(UserController $user, $password);
+        parent::__construct(
+            $configuration,
+            self::$element_schema,
+            array_keys(self::$element_attributes),
+            $controller === true ? self::$element_controller : self::$element_view,
+            $database
+        );
 
-    public function chpasswd(UserController $user, $old_password, $new_password);
-
-    public function release(UserController $user);
-
+    }
 
 }
