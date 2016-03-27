@@ -3,7 +3,6 @@
 use \Comodojo\Database\EnhancedDatabase;
 use \Comodojo\Dispatcher\Components\Configuration;
 use \Comodojo\User\View as UserView;
-use \Comodojo\User\Controller as UserController;
 use \Comodojo\Exception\AuthenticationException;
 use \Exception;
 
@@ -39,9 +38,17 @@ class LocalProvider implements AuthenticationProviderInterface {
 
     private $database;
 
-    public function __construct(Configuration $configuration, $parameters, EnhancedDatabase $database) {
+    private $user;
+
+    public function __construct(
+        Configuration $configuration,
+        UserView $user,
+        $parameters,
+        EnhancedDatabase $database) {
 
         $this->configuration = $configuration;
+
+        $this->user = $user;
 
         $this->parameters = $parameters;
 
@@ -49,45 +56,33 @@ class LocalProvider implements AuthenticationProviderInterface {
 
     }
 
-    public function authenticate(UserView $user, $password) {
+    public function authenticate($password) {
 
-        return password_verify($password, $user->password);
+        return password_verify($password, $this->user->password);
 
     }
 
-    public function passwd(UserController $user, $password) {
+    public function passwd($password) {
 
         $hash = password_hash($password, PASSWORD_DEFAULT);
 
-        try {
-
-            $user->password = $hash;
-
-        } catch (Exception $de) {
-
-            throw $de;
-
-        }
-
-        return true;
+        return $hash;
 
     }
 
-    public function chpasswd(UserController $user, $old_password, $new_password) {
+    public function chpasswd($old_password, $new_password) {
 
-        if ( $this->authenticate($user, $old_password) === false ) {
+        if ( $this->authenticate($old_password) === false ) {
 
             throw new AuthenticationException('Previous password mismatch');
 
         }
 
-        $this->passwd($user, $new_password);
-
-        return $this;
+        return $this->passwd($new_password);
 
     }
 
-    public function release(UserController $user) {
+    public function release() {
 
         return true;
 

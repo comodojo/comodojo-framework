@@ -1,11 +1,11 @@
-<?php namespace Comodojo\Settings;
+<?php namespace Comodojo\Rpc;
 
+use \Comodojo\Components\ComodojoModel;
+use \Comodojo\Dispatcher\Components\Configuration;
 use \Comodojo\Database\EnhancedDatabase;
-use \Comodojo\Exception\DatabaseException;
+use \Exception;
 
 /**
- *
- *
  * @package     Comodojo Framework
  * @author      Marco Giovinazzi <marco.giovinazzi@comodojo.org>
  * @author      Marco Castiello <marco.castiello@gmail.com>
@@ -27,103 +27,24 @@ use \Comodojo\Exception\DatabaseException;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Model {
+class Model extends ComodojoModel {
 
-    public static function load(EnhancedDatabase $database, $id) {
-        
-        try {
-            
-            $result = $database
-                ->table('rpc')
-                ->keys('*')
-                ->where('id', '=', $id)
-                ->get();
+    use RpcTrait;
 
-        } catch (DatabaseException $de) {
-
-            throw $de;
-
-        }
-        
-        return $result;
-        
-    }
-    
-    public static function create(
-        EnhancedDatabase $database,
-        $name,
-        $callback,
-        $method,
-        $description,
-        $signatures,
-        $package
+    public function __construct(
+        Configuration $configuration,
+        EnhancedDatabase $database = null,
+        $values = array()
     ) {
-        
-        try {
-            
-            $result = $database
-                ->table('rpc')
-                ->keys(array('name', 'callback', 'method', 'description', 'signatures', 'package'))
-                ->values(array($name, $callback, $method, $description, $signatures, $package))
-                ->store();
 
-        } catch (DatabaseException $de) {
+        parent::__construct(
+            $configuration,
+            self::$element_schema,
+            self::$element_attributes,
+            $values,
+            $database
+        );
 
-            throw $de;
-
-        }
-        
-        return $result;
-        
     }
-    
-    public static function update(
-        EnhancedDatabase $database,
-        $id,
-        $name,
-        $callback,
-        $method,
-        $description,
-        $signatures,
-        $package
-    ) {
-        
-        try {
-            
-            $result = $database
-                ->table('rpc')
-                ->keys(array('name', 'callback', 'method', 'description', 'signatures', 'package'))
-                ->values(array($name, $callback, $method, $description, $signatures, $package))
-                ->where('id', '=', $id)
-                ->update();
 
-        } catch (DatabaseException $de) {
-
-            throw $de;
-
-        }
-        
-        return $result;
-        
-    }
-    
-    public static function delete(EnhancedDatabase $database, $id) {
-        
-        try {
-            
-            $result = $database
-                ->table('rpc')
-                ->where('id', '=', $id)
-                ->delete();
-
-        } catch (DatabaseException $de) {
-
-            throw $de;
-
-        }
-        
-        return $result;
-        
-    }
-    
 }

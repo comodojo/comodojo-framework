@@ -2,6 +2,7 @@
 
 use \Comodojo\Components\PackageViewTrait;
 use \Comodojo\User\Iterator as UserIterator;
+use \Comodojo\User\View as UserView;
 use \Exception;
 
 /**
@@ -60,11 +61,11 @@ class View extends Model {
 
     }
 
-    public function getProvider() {
+    public function getProvider(UserView $user) {
 
         $className = $this->class;
 
-        return new $className($this->configuration(), $this->parameters, $this->database());
+        return new $className($this->configuration(), $user, $this->parameters, $this->database());
 
     }
 

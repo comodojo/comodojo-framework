@@ -1,11 +1,11 @@
-<?php namespace Comodojo\Commands;
+<?php namespace Comodojo\Command;
 
-use \Comodojo\Base\Iterator;
-use \Comodojo\Base\PackagesTrait;
+use \Comodojo\Components\ComodojoModel;
+use \Comodojo\Dispatcher\Components\Configuration;
+use \Comodojo\Database\EnhancedDatabase;
+use \Exception;
 
 /**
- *
- *
  * @package     Comodojo Framework
  * @author      Marco Giovinazzi <marco.giovinazzi@comodojo.org>
  * @author      Marco Castiello <marco.castiello@gmail.com>
@@ -27,19 +27,23 @@ use \Comodojo\Base\PackagesTrait;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Commands extends Iterator {
+class Model extends ComodojoModel {
 
-    use PackagesTrait;
+    use CommandTrait;
 
-	public function getByID($id) {
+    public function __construct(
+        Configuration $configuration,
+        EnhancedDatabase $database = null,
+        $values = array()
+    ) {
 
-		return Command::load($this->database, intval($id));
-
-	}
-
-    protected function loadData() {
-
-        $this->loadFromDatabase("commands", "command");
+        parent::__construct(
+            $configuration,
+            self::$element_schema,
+            self::$element_attributes,
+            $values,
+            $database
+        );
 
     }
 

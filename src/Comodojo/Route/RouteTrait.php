@@ -30,7 +30,7 @@ trait RouteTrait {
         "route" => null,
         "type" => null,
         "class" => null,
-        "parameters" => array(),
+        "parameters" => null,
         "application" => null,
         "package" => null
     );

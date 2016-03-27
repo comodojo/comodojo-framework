@@ -1,11 +1,6 @@
-<?php namespace Comodojo\Rpc;
-
-use \Comodojo\Base\Iterator;
-use \Comodojo\Base\PackagesTrait;
+<?php namespace Comodojo\Command;
 
 /**
- *
- *
  * @package     Comodojo Framework
  * @author      Marco Giovinazzi <marco.giovinazzi@comodojo.org>
  * @author      Marco Castiello <marco.castiello@gmail.com>
@@ -27,20 +22,22 @@ use \Comodojo\Base\PackagesTrait;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Rpc extends Iterator {
+trait CommandTrait {
 
-    use PackagesTrait;
+    private static $element_schema = "commands";
 
-	public function getByID($id) {
+    private static $element_attributes = array(
+        "command" => null,
+        "class" => null,
+        "description" => null,
+        "aliases" => null,
+        "options" => null,
+        "arguments" => null,
+        "package" => null
+    );
 
-		return Rpc::load($this->database, intval($id));
+    private static $element_controller = "\\Comodojo\\Command\\Controller";
 
-	}
-
-    protected function loadData() {
-
-        $this->loadFromDatabase("rpc", "name");
-
-    }
+    private static $element_view = "\\Comodojo\\Command\\View";
 
 }

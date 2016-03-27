@@ -1,13 +1,6 @@
-<?php namespace Comodojo\Commands;
-
-use \Comodojo\Database\EnhancedDatabase;
-use \Comodojo\Base\Element;
-use \Comodojo\Exception\DatabaseException;
-use \Exception;
+<?php namespace Comodojo\Command;
 
 /**
- *
- *
  * @package     Comodojo Framework
  * @author      Marco Giovinazzi <marco.giovinazzi@comodojo.org>
  * @author      Marco Castiello <marco.castiello@gmail.com>
@@ -29,11 +22,11 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Command extends Element {
+class Command {
 
-    protected $classname = "";
+    protected $classname;
 
-    protected $description = "";
+    protected $description;
 
     protected $aliases = array();
 
@@ -446,140 +439,6 @@ class Command extends Element {
     public function setDescription($description) {
 
         $this->desc = $description;
-
-        return $this;
-
-    }
-
-    public static function load($id, $dbh) {
-
-        try {
-
-            $result = Model::load($database, $id);
-
-        } catch (DatabaseException $de) {
-
-            throw $de;
-
-        }
-
-        if ($result->getLength() > 0) {
-
-            $data = $result->getData();
-
-            $data = array_values($data[0]);
-
-            $command = new Command($dbh);
-
-            $command->setData($data);
-
-        } else {
-
-            throw new Exception("Unable to load command");
-
-        }
-
-        return $command;
-
-    }
-
-    protected function getData() {
-
-        return array(
-            $this->id,
-            $this->name,
-            $this->classname,
-            $this->description,
-            json_encode($this->aliases),
-            json_encode($this->options),
-            json_encode($this->arguments),
-            $this->package
-        );
-
-    }
-
-    protected function setData($data) {
-
-        $this->id = intval($data[0]);
-        $this->name = $data[1];
-        $this->classname = $data[2];
-        $this->description = $data[3];
-        $this->aliases = json_decode($data[4], true);
-        $this->options = json_decode($data[5], true);
-        $this->arguments = json_decode($data[6], true);
-        $this->package = $data[7];
-
-        return $this;
-
-    }
-
-    protected function create() {
-
-        try {
-
-            $result = Model::create(
-                $this->database,
-                $this->name,
-                $this->classname,
-                $this->constant,
-                $this->type,
-                $this->validation,
-                $this->package
-            );
-
-        } catch (DatabaseException $de) {
-
-            throw $de;
-
-        }
-
-        $this->id = $result->getInsertId();
-
-        return $this;
-
-    }
-
-    protected function update() {
-
-        try {
-
-            $result = Model::update(
-                $this->database,
-                $this->id,
-                $this->name,
-                $this->classname,
-                $this->constant,
-                $this->type,
-                $this->validation,
-                $this->package
-            );
-
-        } catch (DatabaseException $de) {
-
-            throw $de;
-
-        }
-
-        return $this;
-
-    }
-
-    public function delete() {
-
-        try {
-
-            $result = Model::delete(
-                $this->database,
-                $this->id
-            );
-
-        } catch (DatabaseException $de) {
-
-            throw $de;
-
-        }
-
-        $this->setData(array(0, "", "", "", "[]", "[]", "[]", ""));
 
         return $this;
 

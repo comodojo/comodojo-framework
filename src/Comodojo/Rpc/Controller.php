@@ -1,7 +1,7 @@
-<?php namespace Comodojo\Route;
+<?php namespace Comodojo\Rpc;
 
-use \Comodojo\Components\PackageViewTrait;
-use \Comodojo\Application\View as ApplicationView;
+use \Comodojo\Components\ControllerPersistenceTrait;
+use \Comodojo\Components\PackageControllerTrait;
 use \Exception;
 
 /**
@@ -26,37 +26,20 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class View extends Model {
+class Controller extends View {
 
-    use PackageViewTrait;
+    use ControllerPersistenceTrait;
+    use PackageControllerTrait;
 
-    public function __get($name) {
+    public function __set($name, $value) {
 
-        if ( array_key_exists($name, $this->data) ) {
+        $className = get_class($this);
 
-            if ( $name == 'parameters') return unserialize($this->data[$name]);
+        if ( array_key_exists($name, $this->data) === false ) throw new Exception("Invalid property $name for $className");
 
-            return $this->data[$name];
+        if ( $name == "signatures" ) $this->data[$name] = serialize($value);
 
-        }
-
-        $class = getClass($this);
-
-        throw new Exception("Invalid property $name for $class");
-
-    }
-
-    public function __isset($name) {
-
-        return isset($this->data[$name]);
-
-    }
-
-    public function getApplication() {
-
-        $application = new ApplicationView($this->configuration(), $this->database());
-
-        return $application->load($this->application);
+        else $this->data[$name] = $value;
 
     }
 

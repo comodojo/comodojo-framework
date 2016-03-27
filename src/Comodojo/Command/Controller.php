@@ -1,7 +1,8 @@
-<?php namespace Comodojo\Route;
+<?php namespace Comodojo\Command;
 
-use \Comodojo\Components\PackageViewTrait;
-use \Comodojo\Application\View as ApplicationView;
+use \Comodojo\Components\ControllerPersistenceTrait;
+use \Comodojo\Components\PackageControllerTrait;
+use \Comodojo\Application\Controller as ApplicationController;
 use \Exception;
 
 /**
@@ -26,37 +27,38 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class View extends Model {
+class Controller extends View {
 
-    use PackageViewTrait;
+    use ControllerPersistenceTrait;
+    use PackageControllerTrait;
 
-    public function __get($name) {
+    public function __set($name, $value) {
 
-        if ( array_key_exists($name, $this->data) ) {
+        $className = get_class($this);
 
-            if ( $name == 'parameters') return unserialize($this->data[$name]);
+        if ( array_key_exists($name, $this->data) === false ) throw new Exception("Invalid property $name for $className");
 
-            return $this->data[$name];
+        if ( in_array($name, $this->serializable) ) $this->data[$name] = serialize($value);
 
-        }
-
-        $class = getClass($this);
-
-        throw new Exception("Invalid property $name for $class");
+        else $this->data[$name] = $value;
 
     }
 
-    public function __isset($name) {
+    public function getAliases() {
 
-        return isset($this->data[$name]);
+        return new AliasesController($this->aliases);
 
     }
 
-    public function getApplication() {
+    public function getOptions() {
 
-        $application = new ApplicationView($this->configuration(), $this->database());
+        return new OptionsController($this->options);
 
-        return $application->load($this->application);
+    }
+
+    public function getArguments() {
+
+        return new ArgumentsController($this->arguments);
 
     }
 

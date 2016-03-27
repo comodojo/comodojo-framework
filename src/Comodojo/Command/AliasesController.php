@@ -1,8 +1,6 @@
-<?php namespace Comodojo\Base;
+<?php namespace Comodojo\Command;
 
 /**
- *
- *
  * @package     Comodojo Framework
  * @author      Marco Giovinazzi <marco.giovinazzi@comodojo.org>
  * @author      Marco Castiello <marco.castiello@gmail.com>
@@ -24,45 +22,37 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-trait PackagesTrait {
+class AliasesController extends AliasesView {
 
-    protected $packages = array();
+    public function set($aliases) {
 
-    public function getPackages() {
+        $this->aliases = $aliases;
 
-        return array_keys($this->packages);
-
-    }
-
-    public function getListByPackage($package) {
-
-        return $this->packages[$package];
+        return $this;
 
     }
 
-    protected function loadPackages($data, $fieldName) {
+    public function add($alias) {
 
-        if ($data->getLength() > 0) {
+        if (!in_array($alias, $this->aliases)) {
 
-            $data = $data->getData();
+            array_push($this->aliases, $alias);
 
-            foreach ($data as $row) {
-
-                if (!isset($this->packages[$row['package']])) {
-                    
-                    $this->packages[$row['package']] = array();
-                    
-                }
-
-                array_push($this->packages[$row['package']], $row[$fieldName]);
-
-            }
+            sort($this->aliases);
 
         }
 
-        foreach ($this->packages as $package => $list) {
+        return $this;
 
-            $this->packages[$package] = sort($list);
+    }
+
+    public function remove($alias) {
+
+        if (in_array($alias, $this->aliases)) {
+
+            $idx = array_search($alias, $this->aliases);
+
+            array_splice($this->aliases, $idx, 1);
 
         }
 

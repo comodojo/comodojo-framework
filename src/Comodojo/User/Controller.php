@@ -1,10 +1,10 @@
 <?php namespace Comodojo\User;
 
 use \Comodojo\Components\ControllerTrait;
-use \Comodojo\Components\ControllerPersistenceTrait;
 use \Comodojo\Components\PackageControllerTrait;
 use \Comodojo\Authentication\Controller as AuthenticationController;
 use \Comodojo\Role\Controller as RoleController;
+use \Comodojo\Role\View as RoleView;
 use \Comodojo\Role\Iterator as RoleIterator;
 use \Exception;
 
@@ -33,8 +33,35 @@ use \Exception;
 class Controller extends View {
 
     use ControllerTrait;
-    use ControllerPersistenceTrait;
     use PackageControllerTrait;
+
+    public function persist() {
+
+        if ( $this->id == 0 ) {
+
+            // a new user is being created, the password will be generated also.
+            $this->password = $this->getAuthentication()->getProvider($this)->passwd($this->password);
+
+            return $this->create();
+
+        } else {
+
+            /* an existing user is being updated, we do not distinguish here if
+             * is an administrative action or user wish.
+             * @todo: design a strong pwd update flow
+             */
+
+            return $this->update();
+
+        }
+
+    }
+
+    public function delete() {
+
+        return $this->remove();
+
+    }
 
     public function getAuthentication() {
 
@@ -55,6 +82,24 @@ class Controller extends View {
     public function getRoles() {
 
         return RoleIterator::loadByUser($this->configuration(), $this->id, $this->database(), true);
+
+    }
+
+    public function addRole($role_or_id) {
+
+        if ( $role_or_id instanceof RoleView ) $id = $role_or_id->id;
+        else $id = $role_or_id;
+
+        return $this->pushRole($id);
+
+    }
+
+    public function deleteRole($role_or_id) {
+
+        if ( $role_or_id instanceof RoleView ) $id = $role_or_id->id;
+        else $id = $role_or_id;
+
+        return $this->popRole($id);
 
     }
 

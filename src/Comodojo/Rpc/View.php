@@ -1,7 +1,6 @@
-<?php namespace Comodojo\Route;
+<?php namespace Comodojo\Rpc;
 
 use \Comodojo\Components\PackageViewTrait;
-use \Comodojo\Application\View as ApplicationView;
 use \Exception;
 
 /**
@@ -34,7 +33,7 @@ class View extends Model {
 
         if ( array_key_exists($name, $this->data) ) {
 
-            if ( $name == 'parameters') return unserialize($this->data[$name]);
+            if ( $name == "signatures" ) return unserialize($this->data[$name]);
 
             return $this->data[$name];
 
@@ -49,14 +48,6 @@ class View extends Model {
     public function __isset($name) {
 
         return isset($this->data[$name]);
-
-    }
-
-    public function getApplication() {
-
-        $application = new ApplicationView($this->configuration(), $this->database());
-
-        return $application->load($this->application);
 
     }
 

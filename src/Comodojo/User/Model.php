@@ -47,4 +47,51 @@ class Model extends ComodojoModel {
 
     }
 
+    protected function pushRole($id) {
+
+        try {
+
+            // $check = $this->database
+            //     ->table("users_to_roles")
+            //     ->keys(array('user', 'role'))
+            //     ->where("user", "=", $this->id)
+            //     ->andWhere("role", "=", $id)
+            //     ->get();
+
+            $result = $this->database
+                ->table("users_to_roles")
+                ->keys(array('user', 'role'))
+                ->values(array($this->id, $id))
+                ->store();
+
+        } catch (DatabaseException $de) {
+            throw $de;
+        } catch (Exception $e) {
+            throw $e;
+        }
+
+        return true;
+
+    }
+
+    protected function popRole($id) {
+
+        try {
+
+            $result = $this->database
+                ->table("users_to_roles")
+                ->where("user", "=", $this->id)
+                ->andWhere("role", "=", $id)
+                ->delete();
+
+        } catch (DatabaseException $de) {
+            throw $de;
+        } catch (Exception $e) {
+            throw $e;
+        }
+
+        return true;
+
+    }
+
 }

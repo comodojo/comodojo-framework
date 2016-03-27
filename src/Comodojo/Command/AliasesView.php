@@ -1,8 +1,4 @@
-<?php namespace Comodojo\Route;
-
-use \Comodojo\Components\PackageViewTrait;
-use \Comodojo\Application\View as ApplicationView;
-use \Exception;
+<?php namespace Comodojo\Command;
 
 /**
  * @package     Comodojo Framework
@@ -26,37 +22,25 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class View extends Model {
+class AliasesView {
 
-    use PackageViewTrait;
+    protected $aliases = array();
 
-    public function __get($name) {
+    public function __construct($aliases) {
 
-        if ( array_key_exists($name, $this->data) ) {
-
-            if ( $name == 'parameters') return unserialize($this->data[$name]);
-
-            return $this->data[$name];
-
-        }
-
-        $class = getClass($this);
-
-        throw new Exception("Invalid property $name for $class");
+        $this->aliases = $aliases;
 
     }
 
-    public function __isset($name) {
+    public function get() {
 
-        return isset($this->data[$name]);
+        return $this->aliases;
 
     }
 
-    public function getApplication() {
+    public function exists($alias) {
 
-        $application = new ApplicationView($this->configuration(), $this->database());
-
-        return $application->load($this->application);
+        return (isset($this->$aliases[$alias]));
 
     }
 

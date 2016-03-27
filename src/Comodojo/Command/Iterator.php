@@ -1,7 +1,9 @@
-<?php namespace Comodojo\Route;
+<?php namespace Comodojo\Command;
 
-use \Comodojo\Components\PackageViewTrait;
-use \Comodojo\Application\View as ApplicationView;
+use \Comodojo\Components\ComodojoIterator;
+use \Comodojo\Components\IteratorLoaderTrait;
+use \Comodojo\Dispatcher\Components\Configuration;
+use \Comodojo\Database\EnhancedDatabase;
 use \Exception;
 
 /**
@@ -26,37 +28,24 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class View extends Model {
+class Iterator extends ComodojoIterator {
 
-    use PackageViewTrait;
+    use CommandTrait;
+    use IteratorLoaderTrait;
 
-    public function __get($name) {
+    public function __construct(
+        Configuration $configuration,
+        EnhancedDatabase $database = null,
+        $controller = false
+    ) {
 
-        if ( array_key_exists($name, $this->data) ) {
-
-            if ( $name == 'parameters') return unserialize($this->data[$name]);
-
-            return $this->data[$name];
-
-        }
-
-        $class = getClass($this);
-
-        throw new Exception("Invalid property $name for $class");
-
-    }
-
-    public function __isset($name) {
-
-        return isset($this->data[$name]);
-
-    }
-
-    public function getApplication() {
-
-        $application = new ApplicationView($this->configuration(), $this->database());
-
-        return $application->load($this->application);
+        parent::__construct(
+            $configuration,
+            self::$element_schema,
+            array_keys(self::$element_attributes),
+            $controller === true ? self::$element_controller : self::$element_view,
+            $database
+        );
 
     }
 

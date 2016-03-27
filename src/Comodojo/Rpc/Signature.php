@@ -1,8 +1,6 @@
 <?php namespace Comodojo\Rpc;
 
 /**
- *
- *
  * @package     Comodojo Framework
  * @author      Marco Giovinazzi <marco.giovinazzi@comodojo.org>
  * @author      Marco Castiello <marco.castiello@gmail.com>
@@ -24,7 +22,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class RpcSignature {
+class Signature {
 
     protected $return_type = "";
 
@@ -67,11 +65,11 @@ class RpcSignature {
     public function getParameterType($name) {
 
         if (isset($this->parameters[$name])) {
-            
+
             return $this->parameters[$name]['type'];
-            
+
         }
-            
+
         return null;
 
     }
@@ -79,9 +77,9 @@ class RpcSignature {
     public function isParameterOptional($name) {
 
         if (isset($this->parameters[$name])) {
-            
+
             return filter_var($this->parameters[$name]['optional'], FILTER_VALIDATE_BOOLEAN);
-            
+
         }
 
         return null;
@@ -108,11 +106,11 @@ class RpcSignature {
     public function removeParameter($name) {
 
         if (isset($this->parameters[$name])) {
-            
+
             unset($this->parameters[$name]);
-            
+
         }
-            
+
         return $this;
 
     }

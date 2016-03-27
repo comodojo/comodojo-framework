@@ -38,7 +38,7 @@ class Controller extends View {
 
         if ( array_key_exists($name, $this->data) === false ) throw new Exception("Invalid property $name for $className");
 
-        if ( $name == 'parameters') $this->data[$name] = json_encode($value);
+        if ( $name == 'parameters') $this->data[$name] = serialize($value);
 
         else $this->data[$name] = $value;
 

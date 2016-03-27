@@ -1,4 +1,4 @@
-<?php namespace Comodojo\Route;
+<?php namespace Comodojo\Command;
 
 use \Comodojo\Components\PackageViewTrait;
 use \Comodojo\Application\View as ApplicationView;
@@ -30,11 +30,17 @@ class View extends Model {
 
     use PackageViewTrait;
 
+    protected $serializable = array(
+        'aliases',
+        'options',
+        'arguments'
+    );
+
     public function __get($name) {
 
         if ( array_key_exists($name, $this->data) ) {
 
-            if ( $name == 'parameters') return unserialize($this->data[$name]);
+            if ( in_array($name, $this->serializable) ) return unserialize($this->data[$name]);
 
             return $this->data[$name];
 
@@ -52,11 +58,21 @@ class View extends Model {
 
     }
 
-    public function getApplication() {
+    public function getAliases() {
 
-        $application = new ApplicationView($this->configuration(), $this->database());
+        return new AliasesView($this->aliases);
 
-        return $application->load($this->application);
+    }
+
+    public function getOptions() {
+
+        return new OptionsView($this->options);
+
+    }
+
+    public function getArguments() {
+
+        return new ArgumentsView($this->arguments);
 
     }
 

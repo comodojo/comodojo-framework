@@ -1,8 +1,4 @@
-<?php namespace Comodojo\Route;
-
-use \Comodojo\Components\PackageViewTrait;
-use \Comodojo\Application\View as ApplicationView;
-use \Exception;
+<?php namespace Comodojo\Rpc;
 
 /**
  * @package     Comodojo Framework
@@ -26,38 +22,21 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class View extends Model {
+trait RpcTrait {
 
-    use PackageViewTrait;
+    private static $element_schema = "rpc";
 
-    public function __get($name) {
+    private static $element_attributes = array(
+        "name" => null,
+        "callback" => null,
+        "method" => null,
+        "description" => null,
+        "signatures" => array(),
+        "package" => null
+    );
 
-        if ( array_key_exists($name, $this->data) ) {
+    private static $element_controller = "\\Comodojo\\Rpc\\Controller";
 
-            if ( $name == 'parameters') return unserialize($this->data[$name]);
-
-            return $this->data[$name];
-
-        }
-
-        $class = getClass($this);
-
-        throw new Exception("Invalid property $name for $class");
-
-    }
-
-    public function __isset($name) {
-
-        return isset($this->data[$name]);
-
-    }
-
-    public function getApplication() {
-
-        $application = new ApplicationView($this->configuration(), $this->database());
-
-        return $application->load($this->application);
-
-    }
+    private static $element_view = "\\Comodojo\\Rpc\\View";
 
 }
