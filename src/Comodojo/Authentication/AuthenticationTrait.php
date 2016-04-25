@@ -38,4 +38,6 @@ trait AuthenticationTrait {
 
     private static $element_view = "\\Comodojo\\Authentication\\View";
 
+    private static $element_name = 'name';
+
 }

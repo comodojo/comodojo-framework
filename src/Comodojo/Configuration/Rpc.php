@@ -1,13 +1,6 @@
 <?php namespace Comodojo\Configuration;
 
-use \Comodojo\Rpc\RpcMethod as FrameworkRpcMethod;
-use \Comodojo\Rpc\Rpc as FrameworkRpc;
-use \Comodojo\Exception\ConfigurationException;
-use \Exception;
-
 /**
- *
- *
  * @package     Comodojo Framework
  * @author      Marco Giovinazzi <marco.giovinazzi@comodojo.org>
  * @author      Marco Castiello <marco.castiello@gmail.com>
@@ -31,47 +24,6 @@ use \Exception;
 
 class Rpc extends AbstractConfiguration {
 
-    public function get() {
-
-        $return = new FrameworkRpc($this->database());
-
-        return $return;
-
-    }
-    
-    protected function parameters() {
-        
-        return array(
-            "package" => null,
-            "name" => null,
-            "callback" => null,
-            "method" => null,
-            "description" => "",
-            "signatures" => array() 
-        );
-        
-        
-    }
-
-    protected function save($params) {
-        
-        if ($params['id'] == 0)
-            $return = new FrameworkRpcMethod($this->database());
-        else
-            $return = $this->getById($id);
-            
-        if (empty($return)) throw new ConfigurationException("Unable to load object");
-            
-        $return->setName($params['name'])
-            ->setPackage($params['package'])
-            ->setCallback($params['callback'])
-            ->setMethod($params['method'])
-            ->setDescription($params['description'])
-            ->setRawSignatures($params['signatures'])
-            ->save();
-
-        return $return;
-
-    }
+    protected $controller = "Comodojo\\Rpc\\Controller";
 
 }

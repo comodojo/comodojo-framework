@@ -30,7 +30,7 @@ trait PackageControllerTrait {
 
         $package = new PackageController($this->configuration(), $this->database());
 
-        return $package->load($this->package);
+        return $package->load($this->get('package'));
 
     }
 

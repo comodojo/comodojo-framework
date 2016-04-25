@@ -2,12 +2,11 @@
 
 use \Comodojo\Database\EnhancedDatabase;
 use \Comodojo\Exception\DatabaseException;
+use \Comodojo\Dispatcher\Components\Configuration;
 use \Comodojo\Exception\ConfigurationException;
 use \Exception;
 
 /**
- *
- *
  * @package     Comodojo Framework
  * @author      Marco Giovinazzi <marco.giovinazzi@comodojo.org>
  * @author      Marco Castiello <marco.castiello@gmail.com>
@@ -29,109 +28,60 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-abstract class AbstractConfiguration implements ConfigurationInterface {
+abstract class AbstractConfiguration {
 
     protected $database;
 
-    public function __construct( EnhancedDatabase $database ) {
-		
-		$this->database = $database;
-		
-    }
-    
-    public function add() {
-        
-        $params = func_get_args();
-        
-        array_unshift($params, 0);
-        
-        $this->save($this->loadParameters($params));
-        
-    }
-    
-    public function update() {
-        
-        $params = func_get_args();
-        
-        $this->save($this->loadParameters($params));
-        
-    }
-    
-    protected function loadParameters($params) {
-        
-        $elaborated = array( "id" => array_shift($params) );
-        
-        $list = $this->parameters();
-        
-        $par = 0;
-        
-        foreach ($list as $name => $default) {
-            
-            if (!isset($params[$par]) && is_null($default)) {
-                
-                throw new ConfigurationException("Parameter '$name' must be specified!");
-                
-            }
-            
-            $value = (!isset($params[$par]))?$default:$params[$par];
-            
-            $elaborated[$name] = $value;
-            
-            $par++;
-            
-        }
-        
-        return $elaborated;
-        
-    }
+    protected $configuration;
 
-    public function getByName($name) {
+    protected $controller;
 
-        return $this->get()->getByName($name);
+    public function __construct( Configuration $configuration, EnhancedDatabase $database ) {
+
+		$this->configuration = $configuration;
+
+        $this->database = $database;
 
     }
 
-    public function getById($id) {
+    public function configuration() {
 
-        return $this->get()->getByID($id);
-
-    }
-
-    public function getByPackage($package) {
-
-        $return = array();
-
-        $iter   = $this->get();
-
-        $list   = $iter->getListByPackage($package);
-
-        if (!empty($list)) {
-
-            foreach ($list as $name) {
-
-                array_push($return, $iter->getByName($name));
-
-            }
-
-        }
-
-        return $return;
-
-    }
-
-    public function delete($id) {
-
-        $return = $this->getById($id);
-
-        if ( empty($return) ) throw new ConfigurationException("The specified ID doesn't exist");
-        
-        return $this->get()->removeByID($id);
-
+        return $this->configuration;
     }
 
     public function database() {
 
         return $this->database;
+
+    }
+
+    public function get($reference) {
+
+        $handler = new $this->controller($this->configuration, $this->database);
+
+        return $handler->loadByName($reference);
+
+    }
+
+    public function add($data) {
+
+        $handler = new $this->controller($this->configuration, $this->database, $data);
+
+        return $handler->persist();
+
+    }
+
+    public function update($data) {
+
+        return $this->add($data);
+
+    }
+
+    public function delete($id) {
+
+        $handler = new $this->controller($this->configuration, $this->database);
+
+        return $handler->load($id)->delete();
 
     }
 

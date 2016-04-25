@@ -1,24 +1,23 @@
 <?php namespace Comodojo;
 
-use \Comodojo\Users\User;
 use \Comodojo\Cookies\CookieManager;
 use \Comodojo\Cookies\Cookie;
-use \Comodojo\Base\Firestarter;
-use \Comodojo\Base\Error as StartupError;
 use \Comodojo\Dispatcher\Dispatcher;
-use \League\Event\Emitter;
+use \Comodojo\Dispatcher\Events\EventsManager;
+use \Comodojo\Base\FireStarter;
 use \Comodojo\Base\CacheHandler;
 use \Comodojo\Base\LogHandler;
 use \Comodojo\Base\AuditHandler;
+use \Comodojo\Plugin\Iterator as PluginIterator;
+use \Comodojo\Setting\Iterator as SettingIterator;
+use \Comodojo\User\View as UserView;
+use \Comodojo\Authentication\Broker;
 use \Comodojo\Exception\AuthenticationException;
 use \Comodojo\Exception\DatabaseException;
 use \Comodojo\Exception\CookieException;
 use \Exception;
 
-
 /**
- *
- *
  * @package     Comodojo Framework
  * @author      Marco Giovinazzi <marco.giovinazzi@comodojo.org>
  * @author      Marco Castiello <marco.castiello@gmail.com>
@@ -40,9 +39,7 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Comodojo {
-
-    use Firestarter;
+class Comodojo extends FireStarter {
 
     private $logger;
 
@@ -58,21 +55,21 @@ class Comodojo {
 
     public function __construct( $configuration = array() ) {
 
-        $this->getStaticConfiguration($configuration);
+        parent::__construct($configuration);
 
-        $this->events = new Emitter();
-        
+        $this->loadConfiguration();
+
+        $this->events = new EventsManager();
+
         $this->logger = LogHandler::create($this->configuration);
-        
+
         $this->audit = AuditHandler::create($this->configuration);
 
         $this->cache = CacheHandler::create($this->configuration);
 
         try {
 
-            $this->getDatabase();
-
-            $this->getConfiguration();
+            $plugins_handler = new Plugins($this->database, $this->configuration);
 
             $this->dispatcher = new Dispatcher($this->configuration, $this->events, $this->cache, $this->logger);
 
@@ -86,13 +83,12 @@ class Comodojo {
 
             $this->dispatcher->router()->add("/authentication", "ROUTE", "\\Comodojo\\Services\\Authentication");
 
-            $plugins_handler = new Plugins($this->database, $this->configuration);
+            $this->dispatcher->router()->add("/error", "ROUTE", "\\Comodojo\\Services\\Error");
 
-            $plugins = $plugins_handler->getByFramework('dispatcher');
+            foreach ( PluginIterator::loadBy(array('framework','=','dispatcher') ) as $plugin) {
 
-            foreach ( $plugins as $plugin ) {
-
-                $this->dispatcher->events()->addListener($plugin->getEvent(), $plugin->getCallable());
+                $this->dispatcher->events()
+                    ->subscribe($plugin->event, $plugin->class, $plugin->method);
 
             }
 
@@ -103,7 +99,7 @@ class Comodojo {
         }
 
     }
-    
+
     final public function events() {
 
         return $this->events;
@@ -136,59 +132,57 @@ class Comodojo {
 
     public function boot() {
 
-        if ( $this->startup_exception !== null ) {
+        if ( $this->startup_exception instanceof Exception || $this->loadEnvironment() === false ) {
 
-            return StartupError::raise($e);
-
-        }
-
-        try {
-
-            $user = self::getCurrentUser($this->configuration, $this->database);
-
-        } catch (Exception $e) {
-
-            return StartupError::raise($e);
+            $this->suchAMonday();
 
         }
 
+        return $this->dispatcher()->dispatch();
+
+    }
+
+    private function loadEnvironment() {
+
         try {
+
+            $user = $this->getCurrentUser();
 
             $roles = $user->getRoles();
 
-            $apps = array();
+            foreach ($roles as $role) {
 
-            foreach ($roles as $role ) {
+                $apps = $role->getApplications();
 
-                $apps[] = $role->getApplications();
+                foreach ( $apps as $app ) {
 
-            }
+                    $routes = $app->getRoutes();
 
-            foreach ( $apps as $app ) {
+                    foreach ( $routes as $route ) {
 
-                foreach ( $app->getRoutes() as $route ) {
+                        $this->dispatcher->router()->add($route->get('name'), $route->get('type'), $route->get('class'), $route->get('parameters'));
 
-                    $this->dispatcher->router()->add($route->getName(), $route->getType(), $route->getClass(), $route->getParameters());
+                    }
 
                 }
 
             }
 
-            $return = $this->dispatcher()->dispatch();
-
         } catch (Exception $e) {
 
-            return StartupError::raise($e);
+            $this->startup_exception = $e;
+
+            return false;
 
         }
 
-        return $return;
+        return true;
 
     }
 
-    private static function getCurrentUser(Configuration $configuration, EnhancedDatabase $database) {
+    private function getCurrentUser() {
 
-        $token_name = $configuration->get('auth-token');
+        $token_name = $this->configuration->get('auth-token');
 
         try {
 
@@ -200,11 +194,11 @@ class Comodojo {
 
         } catch (CookieException $ce ) {
 
-            $user = User::loadGuest();
+            $user = $this->loadGuestUser();
 
         } catch (AuthenticationException $ae) {
 
-            $user = User::loadGuest();
+            $user = $this->loadGuestUser();
 
         } catch (Exception $e) {
 
@@ -216,32 +210,32 @@ class Comodojo {
 
     }
 
-    private function getConfiguration() {
-        
+    private function loadConfiguration() {
+
         $startup_cache_enabled = $this->configuration->get('startup-cache-enabled');
-        
+
         $startup_cache_ttl = $this->configuration->get('startup-cache-ttl');
-        
+
         if ( $startup_cache_enabled === true ) {
-            
+
             $cached = $this->cache->setNamespace('COMODOJO')->get('startup-configuration');
-            
+
             if ( $cache instanceof Settings ) {
-                
+
                 $settings = $cache;
-                
+
             } else {
-                
+
                 $settings = new Settings( $this->database() );
-                
+
                 $this->cache->set('startup-configuration', $settings, $startup_cache_ttl);
-                
+
             }
 
         } else {
-            
+
             $settings = new Settings( $this->database() );
-            
+
         }
 
         foreach ( $settings as $setting => $value ) {
@@ -249,6 +243,16 @@ class Comodojo {
             $this->configuration->set($setting, $value);
 
         }
+
+    }
+
+    private function loadGuestUser() {
+
+        $user = new UserView($this->configuration, $this->database);
+
+        $user->load(2);
+
+        return $user;
 
     }
 

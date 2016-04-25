@@ -39,4 +39,6 @@ trait PluginTrait {
 
     private static $element_view = "\\Comodojo\\Plugin\\View";
 
+    private static $element_name = 'name';
+
 }

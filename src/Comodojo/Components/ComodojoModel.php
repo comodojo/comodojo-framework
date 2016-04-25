@@ -181,7 +181,7 @@ abstract class ComodojoModel extends AbstractModel {
 
     }
 
-    private function populate($values) {
+    protected function populate($values) {
 
         $diff = array_diff( array_keys($this->data), array_keys($values) );
 

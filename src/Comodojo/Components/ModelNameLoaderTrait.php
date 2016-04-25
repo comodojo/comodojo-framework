@@ -1,8 +1,6 @@
-<?php namespace Comodojo\Configuration;
+<?php namespace Comodojo\Components;
 
 /**
- *
- *
  * @package     Comodojo Framework
  * @author      Marco Giovinazzi <marco.giovinazzi@comodojo.org>
  * @author      Marco Castiello <marco.castiello@gmail.com>
@@ -24,30 +22,40 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-interface ConfigurationInterface {
+trait ModelNameLoaderTrait {
 
-    // These methods must be implemented by the final classes
+    public function loadByName($value) {
 
-    public function get();
+        $className = getClass($this);
 
-    public function save($params);
+        if ( empty($name) ) {
+            throw new Exception("Unable to load object $className: empty name");
+        }
 
-    public function parameters();
+        try {
 
-    // Editing methods
+            $result = $this->database
+                ->table($this->schema)
+                ->keys(array_keys($this->data))
+                ->where(self::$element_name, '=', $value)
+                ->get();
 
-    public function add();
+            if ( $result->getLength() != 1 ) {
+                throw new Exception("Unable to load object $className: missing name $value");
+            }
 
-    public function update();
+            $data = $result->getData();
 
-    public function delete($id);
+            $return = $this->populate($data[0]);
 
-    // Retriving methods
+        } catch (DatabaseException $de) {
+            throw $de;
+        } catch (Exception $e) {
+            throw $e;
+        }
 
-    public function getByName($name);
+        return $return;
 
-    public function getById($id);
-
-    public function getByPackage($package);
+    }
 
 }

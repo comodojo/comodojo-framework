@@ -1,13 +1,6 @@
 <?php namespace Comodojo\Configuration;
 
-use \Comodojo\Applications\Application as FrameworkApp;
-use \Comodojo\Applications\Applications as FrameworkApps;
-use \Comodojo\Exception\ConfigurationException;
-use \Exception;
-
 /**
- *
- *
  * @package     Comodojo Framework
  * @author      Marco Giovinazzi <marco.giovinazzi@comodojo.org>
  * @author      Marco Castiello <marco.castiello@gmail.com>
@@ -31,41 +24,6 @@ use \Exception;
 
 class Applications extends AbstractConfiguration {
 
-    public function get() {
-
-        $return = new FrameworkApps($this->database());
-
-        return $return;
-
-    }
-    
-    protected function parameters() {
-        
-        return array(
-            "package"     => null,
-            "name"        => null,
-            "description" => ""  
-        );
-        
-        
-    }
-
-    protected function save($params) {
-        
-        if ($params['id'] == 0)
-            $return = new FrameworkApp($this->database());
-        else
-            $return = $this->getById($id);
-            
-        if (empty($return)) throw new ConfigurationException("Unable to load object");
-            
-        $return->setName($params['name'])
-            ->setPackage($params['package'])
-            ->setDescription($params['description'])
-            ->save();
-
-        return $return;
-
-    }
+    protected $controller = "Comodojo\\Application\\Controller";
 
 }

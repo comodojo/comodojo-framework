@@ -36,4 +36,6 @@ trait ApplicationTrait {
 
     private static $element_view = "\\Comodojo\\Application\\View";
 
+    private static $element_name = 'name';
+
 }

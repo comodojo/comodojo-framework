@@ -37,4 +37,6 @@ trait TaskTrait {
 
     private static $element_view = "\\Comodojo\\Task\\View";
 
+    private static $element_name = 'name';
+
 }

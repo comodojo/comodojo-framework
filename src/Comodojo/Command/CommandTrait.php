@@ -40,4 +40,6 @@ trait CommandTrait {
 
     private static $element_view = "\\Comodojo\\Command\\View";
 
+    private static $element_name = 'command';
+
 }

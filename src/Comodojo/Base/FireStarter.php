@@ -1,15 +1,12 @@
 <?php namespace Comodojo\Base;
 
 use \Comodojo\Settings\Settings;
-use \Comodojo\Database\Database;
 use \Comodojo\Database\EnhancedDatabase;
 use \Comodojo\Dispatcher\Components\Configuration;
 use \Comodojo\Exception\DatabaseException;
 use \Exception;
 
 /**
- *
- *
  * @package     Comodojo Framework
  * @author      Marco Giovinazzi <marco.giovinazzi@comodojo.org>
  * @author      Marco Castiello <marco.castiello@gmail.com>
@@ -31,11 +28,21 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-trait Firestarter {
+abstract class FireStarter {
 
     protected $database;
 
     protected $configuration;
+
+    abstract public function boot();
+
+    public function __construct($static_configuration) {
+
+        $this->configuration = $this->createBaseConfiguration($static_configuration);
+
+        $this->database = $this->initDatabase($this->configuration);
+
+    }
 
     public function database() {
 
@@ -49,19 +56,19 @@ trait Firestarter {
 
     }
 
-    protected function getDatabase( ) {
+    protected function initDatabase(Configuration $configuration) {
 
-        $model = $this->configuration->get('database-model');
-        $host = $this->configuration->get('database-host');
-        $port = $this->configuration->get('database-port');
-        $name = $this->configuration->get('database-name');
-        $user = $this->configuration->get('database-user');
-        $password = $this->configuration->get('database-password');
-        $prefix = $this->configuration->get('database-prefix');
+        $model = $configuration->get('database-model');
+        $host = $configuration->get('database-host');
+        $port = $configuration->get('database-port');
+        $name = $configuration->get('database-name');
+        $user = $configuration->get('database-user');
+        $password = $configuration->get('database-password');
+        $prefix = $configuration->get('database-prefix');
 
         try {
 
-            $this->database = new EnhancedDatabase(
+            $database = new EnhancedDatabase(
                 $model,
                 $host,
                 $port,
@@ -70,9 +77,9 @@ trait Firestarter {
                 $password
             );
 
-            $this->database->tablePrefix($prefix);
+            $database->tablePrefix($prefix);
 
-            $this->database->autoClean();
+            $database->autoClean();
 
         } catch (DatabaseException $de) {
 
@@ -83,6 +90,8 @@ trait Firestarter {
             throw $e;
 
         }
+
+        return $database;
 
     }
 

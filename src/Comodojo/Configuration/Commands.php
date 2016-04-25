@@ -1,13 +1,6 @@
 <?php namespace Comodojo\Configuration;
 
-use \Comodojo\Commands\Command as FrameworkCommand;
-use \Comodojo\Commands\Commands as FrameworkCommands;
-use \Comodojo\Exception\ConfigurationException;
-use \Exception;
-
 /**
- *
- *
  * @package     Comodojo Framework
  * @author      Marco Giovinazzi <marco.giovinazzi@comodojo.org>
  * @author      Marco Castiello <marco.castiello@gmail.com>
@@ -31,49 +24,6 @@ use \Exception;
 
 class Commands extends AbstractConfiguration {
 
-    public function get() {
-
-        $return = new FrameworkCommands($this->database());
-
-        return $return;
-
-    }
-    
-    protected function parameters() {
-        
-        return array(
-            "package"     => null,
-            "name"        => null,
-            "class"       => null,
-            "description" => "",
-            "aliases"     => array(),
-            "options"     => array(),
-            "arguments"   => array()  
-        );
-        
-        
-    }
-
-    protected function save($params) {
-        
-        if ($params['id'] == 0)
-            $return = new FrameworkCommand($this->database());
-        else
-            $return = $this->getById($id);
-            
-        if (empty($return)) throw new ConfigurationException("Unable to load object");
-            
-        $return->setName($params['name'])
-            ->setPackage($params['package'])
-            ->setClass($params['class'])
-            ->setDescription($params['description'])
-            ->setAliases($params['aliases'])
-            ->setRawOptions($params['options'])
-            ->setRawArguments($params['arguments'])
-            ->save();
-
-        return $return;
-
-    }
+    protected $controller = "Comodojo\\Command\\Controller";
 
 }

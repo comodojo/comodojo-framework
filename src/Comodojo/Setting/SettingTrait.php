@@ -39,4 +39,6 @@ trait SettingTrait {
 
     private static $element_view = "\\Comodojo\\Setting\\View";
 
+    private static $element_name = 'name';
+
 }

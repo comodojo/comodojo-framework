@@ -39,4 +39,6 @@ trait RouteTrait {
 
     private static $element_view = "\\Comodojo\\Route\\View";
 
+    private static $element_name = 'route';
+
 }

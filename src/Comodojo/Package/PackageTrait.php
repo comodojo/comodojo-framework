@@ -35,4 +35,6 @@ trait PackageTrait {
 
     private static $element_view = "\\Comodojo\\Package\\View";
 
+    private static $element_name = 'package';
+
 }

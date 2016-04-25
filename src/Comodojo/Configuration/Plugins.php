@@ -1,13 +1,6 @@
 <?php namespace Comodojo\Configuration;
 
-use \Comodojo\Plugins\Plugin as FrameworkPlugin;
-use \Comodojo\Plugins\Plugins as FrameworkPlugins;
-use \Comodojo\Exception\ConfigurationException;
-use \Exception;
-
 /**
- *
- *
  * @package     Comodojo Framework
  * @author      Marco Giovinazzi <marco.giovinazzi@comodojo.org>
  * @author      Marco Castiello <marco.castiello@gmail.com>
@@ -31,69 +24,6 @@ use \Exception;
 
 class Plugins extends AbstractConfiguration {
 
-    public function get() {
-
-        $return = new FrameworkPlugins($this->database());
-
-        return $return;
-
-    }
-
-    public function getByFramework($framework) {
-
-        $return = array();
-
-        $plugins = $this->get();
-
-        $list = $plugins->getListByFramework($framework);
-
-        if (!empty($list)) {
-
-            foreach ($list as $name) {
-
-                array_push($return, $plugins->getByName($name));
-
-            }
-
-        }
-
-        return $return;
-
-    }
-    
-    protected function parameters() {
-        
-        return array(
-            "package" => null,
-            "framework" => null,
-            "name" => null,
-            "class" => null,
-            "method" => "",
-            "event" => "" 
-        );
-        
-        
-    }
-
-    protected function save($params) {
-        
-        if ($params['id'] == 0)
-            $return = new FrameworkPlugin($this->database());
-        else
-            $return = $this->getById($id);
-            
-        if (empty($return)) throw new ConfigurationException("Unable to load object");
-            
-        $return->setName($params['name'])
-            ->setPackage($params['package'])
-            ->setFramework($params['framework'])
-            ->setClass($params['class'])
-            ->setMethod($params['method'])
-            ->setEvent($params['event'])
-            ->save();
-
-        return $return;
-
-    }
+    protected $controller = "Comodojo\\Plugin\\Controller";
 
 }

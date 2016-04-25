@@ -32,7 +32,6 @@ use \Exception;
 class View extends Model {
 
     use ViewTrait;
-    use PackageViewTrait;
 
     public function getUsers() {
 

@@ -34,4 +34,12 @@ trait ControllerTrait {
 
     }
 
+    public function merge($values) {
+
+        foreach ($values as $key => $value) $this->$key = $value;
+
+        return $this;
+
+    }
+
 }

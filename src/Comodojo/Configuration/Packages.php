@@ -1,4 +1,4 @@
-<?php namespace Comodojo\Components;
+<?php namespace Comodojo\Configuration;
 
 use \Comodojo\Package\View as PackageView;
 
@@ -24,14 +24,8 @@ use \Comodojo\Package\View as PackageView;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-trait PackageViewTrait {
+class Packages extends AbstractConfiguration {
 
-    public function getPackage() {
-
-        $package = new PackageView($this->configuration(), $this->database());
-
-        return $package->load($this->get('package'));
-
-    }
+    protected $controller = "Comodojo\\Package\\Controller";
 
 }

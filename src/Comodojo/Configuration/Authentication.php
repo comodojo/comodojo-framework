@@ -1,13 +1,6 @@
 <?php namespace Comodojo\Configuration;
 
-use \Comodojo\Authentication\Authentication as FrameworkAuthentication;
-use \Comodojo\Authentication\Authentications as FrameworkAuthentications;
-use \Comodojo\Exception\ConfigurationException;
-use \Exception;
-
 /**
- *
- *
  * @package     Comodojo Framework
  * @author      Marco Giovinazzi <marco.giovinazzi@comodojo.org>
  * @author      Marco Castiello <marco.castiello@gmail.com>
@@ -29,45 +22,8 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Authentication extends AbstractConfiguration {
+class Authentications extends AbstractConfiguration {
 
-    public function get() {
-
-        $return = new FrameworkAuthentications($this->database());
-
-        return $return;
-
-    }
-    
-    protected function parameters() {
-        
-        return array(
-            "package"     => null,
-            "name"        => null,
-            "class"       => null,
-            "description" => ""  
-        );
-        
-        
-    }
-
-    protected function save($params) {
-        
-        if ($params['id'] == 0)
-            $return = new FrameworkAuthentication($this->database());
-        else
-            $return = $this->getById($id);
-            
-        if (empty($return)) throw new ConfigurationException("Unable to load object");
-            
-        $return->setName($params['name'])
-            ->setPackage($params['package'])
-            ->setClass($params['class'])
-            ->setDescription($params['description'])
-            ->save();
-
-        return $return;
-
-    }
+    protected $controller = "Comodojo\\Authentication\\Controller";
 
 }

@@ -3,10 +3,10 @@
 use \Comodojo\Authentication\Broker;
 use \Comodojo\Authentication\Token;
 use \Comodojo\Users\Users;
-use \Comodojo\Dispatcher\Service\Service as DispatcherService;
+use \Comodojo\Dispatcher\Service\AbstractService;
 use \Comodojo\Cookies\Cookie;
 
-class Authentication extends DispatcherService {
+class Authentication extends AbstractService {
 
     private static $cookie_name = 'comodojo-auth-token';
 
@@ -19,30 +19,30 @@ class Authentication extends DispatcherService {
         $password  = $this->getParameter("password");
 
         try {
-            
+
             $broker = new Broker($this->getDatabase());
-            
+
             switch ( strtoupper($action) ) {
 
                 case "LOGIN":
 
                     try {
-                        
+
                         $token = $broker->authenticate($username, $password);
-                        
+
                         $this->createCookie($token);
-                        
+
                     } catch (AuthenticationException $ae) {
-                        
+
                         return json_encode(array(
                             'success' => false,
                             'data' => $ae->getMessage()
                         ));
-                        
+
                     } catch (Exception $e) {
-                        
+
                         throw $e;
-                        
+
                     }
 
                 break;

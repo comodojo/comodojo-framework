@@ -3,6 +3,7 @@
 use \Comodojo\Components\ComodojoModel;
 use \Comodojo\Dispatcher\Components\Configuration;
 use \Comodojo\Database\EnhancedDatabase;
+use \Comodojo\Components\ModelNameLoaderTrait;
 use \Exception;
 
 /**
@@ -30,6 +31,7 @@ use \Exception;
 class Model extends ComodojoModel {
 
     use PackageTrait;
+    use ModelnameLoaderTrait;
 
     public function __construct(
         Configuration $configuration,

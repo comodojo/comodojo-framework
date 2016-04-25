@@ -36,4 +36,6 @@ trait RoleTrait {
 
     private static $element_view = "\\Comodojo\\Role\\View";
 
+    private static $element_name = 'name';
+
 }

@@ -1,13 +1,6 @@
 <?php namespace Comodojo\Configuration;
 
-use \Comodojo\Routes\Route as FrameworkRoute;
-use \Comodojo\Routes\Routes as FrameworkRoutes;
-use \Comodojo\Exception\ConfigurationException;
-use \Exception;
-
 /**
- *
- *
  * @package     Comodojo Framework
  * @author      Marco Giovinazzi <marco.giovinazzi@comodojo.org>
  * @author      Marco Castiello <marco.castiello@gmail.com>
@@ -31,53 +24,6 @@ use \Exception;
 
 class Routes extends AbstractConfiguration {
 
-    public function get() {
+    protected $controller = "Comodojo\\Route\\Controller";
 
-        $return = new FrameworkRoutes($this->database());
-
-        return $return;
-
-    }
-    
-    protected function parameters() {
-        
-        return array(
-            "package" => null,
-            "name" => null,
-            "class" => null,
-            "type" => null,
-            "parameters" => array() 
-        );
-        
-    }
-
-    protected function save($params) {
-        
-        if ($params['id'] == 0)
-            $return = new FrameworkRoute($this->database());
-        else
-            $return = $this->getById($id);
-            
-        if (empty($return)) throw new ConfigurationException("Unable to load object");
-            
-        $return->setName($params['name'])
-            ->setPackage($params['package'])
-            ->setClass($params['class'])
-            ->setType($params['type']);
-
-        foreach ( $return->getParameters() as $param ) {
-
-            $return->unsetParameter($param);
-
-        }
-
-        foreach ($params['parameters'] as $key => $value) {
-
-            $return->setParameter($key, $value);
-
-        }
-
-        return $return->save();
-
-    }
 }

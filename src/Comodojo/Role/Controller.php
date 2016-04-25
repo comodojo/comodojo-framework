@@ -34,7 +34,6 @@ class Controller extends View {
 
     use ControllerTrait;
     use ControllerPersistenceTrait;
-    use PackageControllerTrait;
 
     public function getUsers() {
 

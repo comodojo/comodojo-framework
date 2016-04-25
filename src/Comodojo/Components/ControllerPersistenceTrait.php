@@ -26,7 +26,7 @@ trait ControllerTrait {
 
     public function persist() {
 
-        if ( $this->id == 0 ) return $this->create();
+        if ( $this->get('id') == 0 ) return $this->create();
 
         return $this->update();
 

@@ -1,13 +1,6 @@
 <?php namespace Comodojo\Configuration;
 
-use \Comodojo\Settings\Setting as FrameworkSetting;
-use \Comodojo\Settings\Settings as FrameworkSettings;
-use \Comodojo\Exception\ConfigurationException;
-use \Exception;
-
 /**
- *
- *
  * @package     Comodojo Framework
  * @author      Marco Giovinazzi <marco.giovinazzi@comodojo.org>
  * @author      Marco Castiello <marco.castiello@gmail.com>
@@ -31,47 +24,6 @@ use \Exception;
 
 class Settings extends AbstractConfiguration {
 
-    public function get() {
-
-        $return = new FrameworkSettings($this->database());
-
-        return $return;
-
-    }
-    
-    protected function parameters() {
-        
-        return array(
-            "package" => null,
-            "name" => null,
-            "value" => null,
-            "constant" => false,
-            "type" => "STRING",
-            "validate" => ""
-        );
-        
-        
-    }
-
-    protected function save($params) {
-        
-        if ($params['id'] == 0)
-            $return = new FrameworkSetting($this->database());
-        else
-            $return = $this->getById($id);
-            
-        if (empty($return)) throw new ConfigurationException("Unable to load object");
-            
-        $return->setName($params['name'])
-            ->setPackage($params['package'])
-            ->setConstant($params['constant'])
-            ->setType($params['type'])
-            ->setValidation($params['validate'])
-            ->setValue($params['value'])
-            ->save();
-
-        return $return;
-
-    }
+    protected $controller = "Comodojo\\Setting\\Controller";
 
 }

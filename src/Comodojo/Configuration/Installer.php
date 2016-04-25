@@ -1,7 +1,6 @@
 <?php namespace Comodojo\Configuration;
 
 use \Comodojo\Base\Firestarter;
-use \Comodojo\Dispatcher\Components\Configuration;
 use \Exception;
 
 /**
@@ -28,63 +27,51 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Installer {
+class Installer extends Firestarter {
 
-    use Firestarter;
+    protected $applications;
 
-    private $applications;
+    protected $authentication;
 
-    private $authentication;
+    protected $commands;
 
-    private $commands;
+    protected $packages;
 
-    private $plugins;
+    protected $plugins;
 
-    private $routes;
+    protected $routes;
 
-    private $rpc;
+    protected $rpc;
 
-    private $settings;
+    protected $settings;
 
-    private $tasks;
+    protected $tasks;
 
-    private $themes;
+    protected $themes;
 
-    public function __construct( Configuration $configuration ) {
+    public function __construct( $configuration ) {
 
-        $this->configuration = $configuration;
+        parent::__construct($configuration);
 
-        $this->getDatabase();
+        $this->applications = new Applications($this->configuration(), $this->database());
 
-        $this->applications = new Applications($this->database);
+        $this->authentication = new Authentication($this->configuration(), $this->database());
 
-        $this->authentication = new Authentication($this->database);
+        $this->commands = new Commands($this->configuration(), $this->database());
 
-        $this->commands = new Commands($this->database);
+        $this->packages = new Packages($this->configuration(), $this->database());
 
-        $this->plugins = new Plugins($this->database);
+        $this->plugins = new Plugins($this->configuration(), $this->database());
 
-        $this->routes = new Routes($this->database);
+        $this->routes = new Routes($this->configuration(), $this->database());
 
-        $this->rpc = new Rpc($this->database);
+        $this->rpc = new Rpc($this->configuration(), $this->database());
 
-        $this->settings = new Settings($this->database);
+        $this->settings = new Settings($this->configuration(), $this->database());
 
-        $this->tasks = new Tasks($this->database);
+        $this->tasks = new Tasks($this->configuration(), $this->database());
 
-        $this->themes = new Themes($this->database);
-
-    }
-
-    final public function database() {
-
-        return $this->database;
-
-    }
-
-    final public function configuration() {
-
-        return $this->configuration;
+        $this->themes = new Themes($this->configuration(), $this->database());
 
     }
 

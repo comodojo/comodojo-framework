@@ -36,4 +36,6 @@ trait ThemeTrait {
 
     private static $element_view = "\\Comodojo\\Theme\\View";
 
+    private static $element_name = 'name';
+
 }

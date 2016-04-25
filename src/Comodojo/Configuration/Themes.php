@@ -1,13 +1,6 @@
 <?php namespace Comodojo\Configuration;
 
-use \Comodojo\Themes\Theme as FrameworkTheme;
-use \Comodojo\Themes\Themes as FrameworkThemes;
-use \Comodojo\Exception\ConfigurationException;
-use \Exception;
-
 /**
- *
- *
  * @package     Comodojo Framework
  * @author      Marco Giovinazzi <marco.giovinazzi@comodojo.org>
  * @author      Marco Castiello <marco.castiello@gmail.com>
@@ -29,43 +22,8 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Themes extends AbstractConfiguration {
+class Theme extends AbstractConfiguration {
 
-    public function get() {
-
-        $return = new FrameworkThemes($this->database());
-
-        return $return;
-
-    }
-    
-    protected function parameters() {
-        
-        return array(
-            "package" => null,
-            "name" => null,
-            "description" => ""
-        );
-        
-        
-    }
-
-    protected function save($params) {
-        
-        if ($params['id'] == 0)
-            $return = new FrameworkTheme($this->database());
-        else
-            $return = $this->getById($id);
-            
-        if (empty($return)) throw new ConfigurationException("Unable to load object");
-            
-        $return->setName($params['name'])
-            ->setPackage($params['package'])
-            ->setDescription($params['description'])
-            ->save();
-
-        return $return;
-
-    }
+    protected $controller = "Comodojo\\Theme\\Controller";
 
 }
