@@ -1,4 +1,4 @@
-<?php namespace Comodojo\Base;
+<?php namespace Comodojo\Components;
 
 use \Comodojo\Database\EnhancedDatabase;
 use \Comodojo\Dispatcher\Components\Configuration;
@@ -46,7 +46,7 @@ abstract class AbstractIterator implements Iterator, ArrayAccess, Countable {
 
         $this->configuration = $configuration;
 
-        $this->database = self::initDatabase($database);
+        $this->initDatabase($this->configuration, $database);
 
     }
 

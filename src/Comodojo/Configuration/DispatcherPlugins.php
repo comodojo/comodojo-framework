@@ -1,9 +1,4 @@
-<?php namespace Comodojo\Plugin;
-
-use \Comodojo\Components\ControllerTrait;
-use \Comodojo\Components\ControllerPersistenceTrait;
-use \Comodojo\Components\PackageControllerTrait;
-use \Exception;
+<?php namespace Comodojo\Configuration;
 
 /**
  * @package     Comodojo Framework
@@ -27,10 +22,8 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Controller extends View {
+class DispatcherPlugins extends AbstractConfiguration {
 
-    use ControllerTrait;
-    use ControllerPersistenceTrait;
-    use PackageControllerTrait;
+    protected $controller = "Comodojo\\DispatcherPlugin\\Controller";
 
 }

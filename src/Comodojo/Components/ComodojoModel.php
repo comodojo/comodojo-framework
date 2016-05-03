@@ -49,7 +49,7 @@ abstract class ComodojoModel extends AbstractModel {
 
         $this->schema = $schema;
 
-        $this->fields = array_merge($this->data, $attributes);
+        $this->data = array_merge($this->data, $attributes);
 
         if ( !empty($values) ) $this->populate($values);
 
@@ -61,7 +61,7 @@ abstract class ComodojoModel extends AbstractModel {
 
     }
 
-    public function getFields() {
+    public function getData() {
 
         return array_keys($this->data);
 
@@ -69,7 +69,7 @@ abstract class ComodojoModel extends AbstractModel {
 
     public function __clone() {
 
-        list($schema, $fields, $values, $database, $configuration) = $this->args;
+        list($configuration, $schema, $attributes, $values, $database) = $this->args;
 
         $values = array_replace($values, $this->data);
 
@@ -77,14 +77,16 @@ abstract class ComodojoModel extends AbstractModel {
 
         $className = get_class($this);
 
-        return new $className($schema, $fields, $values, $database, $configuration);
+        return new $className($configuration, $database, $values);
 
     }
 
     public function load($id) {
 
-        if ( $fid = filter_var($id, FILTER_VALIDATE_INT) === false ) {
-            $className = getClass($this);
+        $fid = filter_var($id, FILTER_VALIDATE_INT);
+
+        if ( $fid === false ) {
+            $className = get_class($this);
             throw new Exception("Invalid id $id for $className");
         }
 
@@ -97,7 +99,7 @@ abstract class ComodojoModel extends AbstractModel {
                 ->get();
 
             if ( $result->getLength() != 1 ) {
-                $className = getClass($this);
+                $className = get_class($this);
                 throw new Exception("Unable to load object $className: missing id $id");
             }
 
@@ -145,8 +147,10 @@ abstract class ComodojoModel extends AbstractModel {
 
             $result = $this->database
                 ->table($this->schema)
-                ->keys(array_keys($this->args))
-                ->values(array_values(array_intersect($this->data, $this->args)))
+                ->keys(array_keys($this->data))
+                ->values(array_values($this->data))
+                // ->keys(array_keys($this->args))
+                // ->values(array_values(array_intersect($this->data, $this->args)))
                 ->where('id', '=', $this->id)
                 ->update();
 
@@ -169,7 +173,7 @@ abstract class ComodojoModel extends AbstractModel {
                 ->where('id', '=', $this->id)
                 ->delete();
 
-            $rows = $this->database->getAffectedRows();
+            $rows = $result->getAffectedRows();
 
         } catch (DatabaseException $de) {
             throw $de;
@@ -187,7 +191,11 @@ abstract class ComodojoModel extends AbstractModel {
 
         if ( !empty($diff) ) throw new Exception("Missing class attributes: ".implode(",",$diff));
 
-        $this->data = array_replace($this->data, $this->value);
+        //$this->data = array_replace($this->data, $values);
+
+        foreach ($values as $key => $value) {
+            $this->$key = $value;
+        }
 
         return $this;
 

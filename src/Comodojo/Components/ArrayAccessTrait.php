@@ -1,10 +1,5 @@
 <?php namespace Comodojo\Components;
 
-use \Comodojo\Dispatcher\Components\Configuration;
-use \Comodojo\Database\EnhancedDatabase;
-use \Serializable;
-use \Exception;
-
 /**
  * @package     Comodojo Framework
  * @author      Marco Giovinazzi <marco.giovinazzi@comodojo.org>
@@ -27,33 +22,52 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-abstract class AbstractModel implements Serializable {
+trait ArrayAccessTrait {
 
-    use SerializableTrait;
-    use DatabaseTrait;
+    /**
+     * Return the value at index
+     *
+     * @return string $index The offset
+     */
+     public function offsetGet($index) {
 
-    protected $configuration;
+         return $this->data[$index];
 
-    protected $data = array();
+     }
 
-    public function __construct(Configuration $configuration, EnhancedDatabase $database = null) {
+     /**
+     * Assigns a value to index offset
+     *
+     * @param string $index The offset to assign the value to
+     * @param mixed  $value The value to set
+     */
+     public function offsetSet($index, $value) {
 
-        $this->configuration = $configuration;
+         $this->data[$index] = $value;
 
-        $this->initDatabase($this->configuration, $database);
+     }
 
-    }
+     /**
+     * Unsets an index
+     *
+     * @param string $index The offset to unset
+     */
+     public function offsetUnset($index) {
 
-    public function configuration() {
+         unset($this->data[$index]);
 
-        return $this->configuration;
+     }
 
-    }
+     /**
+     * Check if an index exists
+     *
+     * @param string $index Offset
+     * @return boolean
+     */
+     public function offsetExists($index) {
 
-    public function toArray() {
+         return $this->offsetGet($index) !== null;
 
-        return $this->data;
-
-    }
+     }
 
 }

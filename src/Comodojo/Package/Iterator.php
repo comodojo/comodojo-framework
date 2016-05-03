@@ -31,6 +31,7 @@ use \Exception;
 class Iterator extends ComodojoIterator {
 
     use IteratorLoaderTrait;
+    use PackageTrait;
 
     public function __construct(
         Configuration $configuration,

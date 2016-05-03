@@ -1,9 +1,7 @@
-<?php namespace Comodojo\Plugin;
+<?php namespace Comodojo\DispatcherPlugin;
 
-use \Comodojo\Components\ComodojoModel;
-use \Comodojo\Dispatcher\Components\Configuration;
-use \Comodojo\Database\EnhancedDatabase;
-use \Comodojo\Components\ModelNameLoaderTrait;
+use \Comodojo\Components\ViewTrait;
+use \Comodojo\Components\PackageViewTrait;
 use \Exception;
 
 /**
@@ -28,25 +26,9 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Model extends ComodojoModel {
+class View extends Model {
 
     use PluginTrait;
-    use ModelNameLoaderTrait;
-
-    public function __construct(
-        Configuration $configuration,
-        EnhancedDatabase $database = null,
-        $values = array()
-    ) {
-
-        parent::__construct(
-            $configuration,
-            self::$element_schema,
-            self::$element_attributes,
-            $values,
-            $database
-        );
-
-    }
+    use PackageViewTrait;
 
 }

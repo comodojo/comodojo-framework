@@ -1,5 +1,7 @@
 <?php namespace Comodojo\Components;
 
+use \Exception;
+
 /**
  * @package     Comodojo Framework
  * @author      Marco Giovinazzi <marco.giovinazzi@comodojo.org>
@@ -32,7 +34,7 @@ trait ViewTrait {
 
         }
 
-        $className = getClass($this);
+        $className = get_class($this);
 
         throw new Exception("Invalid property $name for $className");
 

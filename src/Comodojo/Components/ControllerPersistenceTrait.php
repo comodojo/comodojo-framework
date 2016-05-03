@@ -22,11 +22,11 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-trait ControllerTrait {
+trait ControllerPersistenceTrait {
 
     public function persist() {
 
-        if ( $this->get('id') == 0 ) return $this->create();
+        if ( $this->id === 0 ) return $this->create();
 
         return $this->update();
 

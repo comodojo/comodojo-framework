@@ -1,8 +1,4 @@
-<?php namespace Comodojo\Plugin;
-
-use \Comodojo\Components\ViewTrait;
-use \Comodojo\Components\PackageViewTrait;
-use \Exception;
+<?php namespace Comodojo\DispatcherPlugin;
 
 /**
  * @package     Comodojo Framework
@@ -26,9 +22,22 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class View extends Model {
+trait PluginTrait {
 
-    use PluginTrait;
-    use PackageViewTrait;
+    private static $element_schema = "plugins";
+
+    private static $element_attributes = array(
+        "name" => null,
+        "class" => null,
+        "method" => null,
+        "event" => null,
+        "package" => null
+    );
+
+    private static $element_controller = "\\Comodojo\\Plugin\\Controller";
+
+    private static $element_view = "\\Comodojo\\Plugin\\View";
+
+    private static $element_name = 'name';
 
 }

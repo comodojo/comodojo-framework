@@ -32,7 +32,7 @@ trait IteratorLoaderTrait {
         EnhancedDatabase $database = null,
         $controller = false) {
 
-        $iteratorClass = getClass();
+        $iteratorClass = get_class();
 
         $iterator = new $iteratorClass($configuration, $database, $controller);
 
@@ -46,7 +46,7 @@ trait IteratorLoaderTrait {
         EnhancedDatabase $database = null,
         $controller = false) {
 
-        $iteratorClass = getClass();
+        $iteratorClass = get_class();
 
         $iterator = new $iteratorClass($configuration, $database, $controller);
 

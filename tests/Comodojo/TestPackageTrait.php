@@ -1,8 +1,6 @@
-<?php namespace Comodojo\Components;
+<?php namespace Comodojo\Test;
 
-use \Comodojo\Dispatcher\Components\Configuration;
-use \Comodojo\Database\EnhancedDatabase;
-use \Serializable;
+use \Comodojo\Package\Controller as PackageController;
 use \Exception;
 
 /**
@@ -27,32 +25,28 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-abstract class AbstractModel implements Serializable {
+trait TestPackageTrait {
 
-    use SerializableTrait;
-    use DatabaseTrait;
+    protected $pid;
 
-    protected $configuration;
+    public function createTestPackage() {
 
-    protected $data = array();
+        $package = new PackageController($this->configuration(), $this->database());
 
-    public function __construct(Configuration $configuration, EnhancedDatabase $database = null) {
+        $package->package = "TestPackage";
+        $package->version = "1.0.0";
+        $data = $package->persist();
 
-        $this->configuration = $configuration;
+        $this->pid = $data->id;
 
-        $this->initDatabase($this->configuration, $database);
-
-    }
-
-    public function configuration() {
-
-        return $this->configuration;
+        return $this->pid;
 
     }
 
-    public function toArray() {
+    public function removeTestPackage() {
 
-        return $this->data;
+        $package = new PackageController($this->configuration(), $this->database());
+        return $package->load($this->pid)->delete();
 
     }
 

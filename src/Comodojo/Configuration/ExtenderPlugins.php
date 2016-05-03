@@ -1,9 +1,4 @@
-<?php namespace Comodojo\Components;
-
-use \Comodojo\Dispatcher\Components\Configuration;
-use \Comodojo\Database\EnhancedDatabase;
-use \Serializable;
-use \Exception;
+<?php namespace Comodojo\Configuration;
 
 /**
  * @package     Comodojo Framework
@@ -27,33 +22,8 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-abstract class AbstractModel implements Serializable {
+class ExtenderPlugins extends AbstractConfiguration {
 
-    use SerializableTrait;
-    use DatabaseTrait;
-
-    protected $configuration;
-
-    protected $data = array();
-
-    public function __construct(Configuration $configuration, EnhancedDatabase $database = null) {
-
-        $this->configuration = $configuration;
-
-        $this->initDatabase($this->configuration, $database);
-
-    }
-
-    public function configuration() {
-
-        return $this->configuration;
-
-    }
-
-    public function toArray() {
-
-        return $this->data;
-
-    }
+    protected $controller = "Comodojo\\ExtenderPlugin\\Controller";
 
 }

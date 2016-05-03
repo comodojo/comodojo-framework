@@ -37,7 +37,9 @@ class Installer extends Firestarter {
 
     protected $packages;
 
-    protected $plugins;
+    protected $dispatcher_plugins;
+
+    protected $extender_plugins;
 
     protected $routes;
 
@@ -61,7 +63,9 @@ class Installer extends Firestarter {
 
         $this->packages = new Packages($this->configuration(), $this->database());
 
-        $this->plugins = new Plugins($this->configuration(), $this->database());
+        $this->dispatcherplugins = new DispatcherPlugins($this->configuration(), $this->database());
+
+        $this->extenderplugins = new ExtenderPlugins($this->configuration(), $this->database());
 
         $this->routes = new Routes($this->configuration(), $this->database());
 
@@ -93,9 +97,15 @@ class Installer extends Firestarter {
 
     }
 
-    final public function plugins() {
+    final public function dispatcherplugins() {
 
-        return $this->plugins;
+        return $this->dispatcher_plugins;
+
+    }
+
+    final public function extenderplugins() {
+
+        return $this->extender_plugins;
 
     }
 

@@ -2,6 +2,7 @@
 
 use \Comodojo\Database\EnhancedDatabase;
 use \Comodojo\Exception\DatabaseException;
+use \Comodojo\Dispatcher\Components\Configuration;
 use \Exception;
 
 /**
@@ -36,21 +37,26 @@ trait DatabaseTrait {
 
     }
 
-    protected function initDatabase(EnhancedDatabase $database = null) {
+    protected function initDatabase(Configuration $configuration, EnhancedDatabase $database = null) {
 
-        if ( $database != null ) return $database;
+        if ( $database != null ) {
 
-        $model = $this->configuration->get('database-model');
-        $host = $this->configuration->get('database-host');
-        $port = $this->configuration->get('database-port');
-        $name = $this->configuration->get('database-name');
-        $user = $this->configuration->get('database-user');
-        $password = $this->configuration->get('database-password');
-        $prefix = $this->configuration->get('database-prefix');
+            $this->database = $database;
+            return $database;
+
+        }
+
+        $model = $configuration->get('database-model');
+        $host = $configuration->get('database-host');
+        $port = $configuration->get('database-port');
+        $name = $configuration->get('database-name');
+        $user = $configuration->get('database-user');
+        $password = $configuration->get('database-password');
+        $prefix = $configuration->get('database-prefix');
 
         try {
 
-            $database = new EnhancedDatabase(
+            $this->database = new EnhancedDatabase(
                 $model,
                 $host,
                 $port,
@@ -59,9 +65,9 @@ trait DatabaseTrait {
                 $password
             );
 
-            $database->tablePrefix($prefix);
+            $this->database->tablePrefix($prefix);
 
-            $database->autoClean();
+            $this->database->autoClean();
 
         } catch (DatabaseException $de) {
 
@@ -73,7 +79,7 @@ trait DatabaseTrait {
 
         }
 
-        return $database;
+        return $this->database;
 
     }
 

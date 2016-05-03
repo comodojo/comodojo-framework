@@ -1,5 +1,7 @@
 <?php namespace Comodojo\Components;
 
+use \Exception;
+
 /**
  * @package     Comodojo Framework
  * @author      Marco Giovinazzi <marco.giovinazzi@comodojo.org>

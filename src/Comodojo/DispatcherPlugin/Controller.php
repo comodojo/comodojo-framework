@@ -1,8 +1,8 @@
-<?php namespace Comodojo\Components;
+<?php namespace Comodojo\DispatcherPlugin;
 
-use \Comodojo\Dispatcher\Components\Configuration;
-use \Comodojo\Database\EnhancedDatabase;
-use \Serializable;
+use \Comodojo\Components\ControllerTrait;
+use \Comodojo\Components\ControllerPersistenceTrait;
+use \Comodojo\Components\PackageControllerTrait;
 use \Exception;
 
 /**
@@ -27,33 +27,10 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-abstract class AbstractModel implements Serializable {
+class Controller extends View {
 
-    use SerializableTrait;
-    use DatabaseTrait;
-
-    protected $configuration;
-
-    protected $data = array();
-
-    public function __construct(Configuration $configuration, EnhancedDatabase $database = null) {
-
-        $this->configuration = $configuration;
-
-        $this->initDatabase($this->configuration, $database);
-
-    }
-
-    public function configuration() {
-
-        return $this->configuration;
-
-    }
-
-    public function toArray() {
-
-        return $this->data;
-
-    }
+    use ControllerTrait;
+    use ControllerPersistenceTrait;
+    use PackageControllerTrait;
 
 }

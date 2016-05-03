@@ -116,10 +116,10 @@ abstract class ComodojoIterator extends AbstractIterator {
 
             $instance = new $this->className(
                 $this->configuration,
-                $this->schema,
-                $this->fields,
-                $element,
-                $this->database
+                //$this->schema,
+                //$this->fields,
+                $this->database,
+                $element
             );
 
             $this->data[] = $instance;

@@ -1,4 +1,10 @@
-<?php namespace Comodojo\Plugin;
+<?php namespace Comodojo\DispatcherPlugin;
+
+use \Comodojo\Components\ComodojoModel;
+use \Comodojo\Dispatcher\Components\Configuration;
+use \Comodojo\Database\EnhancedDatabase;
+use \Comodojo\Components\ModelNameLoaderTrait;
+use \Exception;
 
 /**
  * @package     Comodojo Framework
@@ -22,23 +28,25 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-trait PluginTrait {
+class Model extends ComodojoModel {
 
-    private static $element_schema = "plugins";
+    use DispatcherPluginTrait;
+    use ModelNameLoaderTrait;
 
-    private static $element_attributes = array(
-        "name" => null,
-        "class" => null,
-        "method" => null,
-        "event" => null,
-        "framework" => null,
-        "package" => null
-    );
+    public function __construct(
+        Configuration $configuration,
+        EnhancedDatabase $database = null,
+        $values = array()
+    ) {
 
-    private static $element_controller = "\\Comodojo\\Plugin\\Controller";
+        parent::__construct(
+            $configuration,
+            self::$element_schema,
+            self::$element_attributes,
+            $values,
+            $database
+        );
 
-    private static $element_view = "\\Comodojo\\Plugin\\View";
-
-    private static $element_name = 'name';
+    }
 
 }

@@ -1,4 +1,10 @@
-<?php namespace Comodojo\Configuration;
+<?php namespace Comodojo\ExtenderPlugin;
+
+use \Comodojo\Components\ComodojoIterator;
+use \Comodojo\Components\IteratorLoaderTrait;
+use \Comodojo\Dispatcher\Components\Configuration;
+use \Comodojo\Database\EnhancedDatabase;
+use \Exception;
 
 /**
  * @package     Comodojo Framework
@@ -22,8 +28,25 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Plugins extends AbstractConfiguration {
+class Iterator extends ComodojoIterator {
 
-    protected $controller = "Comodojo\\Plugin\\Controller";
+    use ExtenderPluginTrait;
+    use IteratorLoaderTrait;
+
+    public function __construct(
+        Configuration $configuration,
+        EnhancedDatabase $database = null,
+        $controller = false
+    ) {
+
+        parent::__construct(
+            $configuration,
+            self::$element_schema,
+            array_keys(self::$element_attributes),
+            $controller === true ? self::$element_controller : self::$element_view,
+            $database
+        );
+
+    }
 
 }

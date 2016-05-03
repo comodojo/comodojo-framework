@@ -1,8 +1,9 @@
-<?php namespace Comodojo\Components;
+<?php namespace Comodojo\DispatcherPlugin;
 
+use \Comodojo\Components\ComodojoIterator;
+use \Comodojo\Components\IteratorLoaderTrait;
 use \Comodojo\Dispatcher\Components\Configuration;
 use \Comodojo\Database\EnhancedDatabase;
-use \Serializable;
 use \Exception;
 
 /**
@@ -27,32 +28,24 @@ use \Exception;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-abstract class AbstractModel implements Serializable {
+class Iterator extends ComodojoIterator {
 
-    use SerializableTrait;
-    use DatabaseTrait;
+    use DispatcherPluginTrait;
+    use IteratorLoaderTrait;
 
-    protected $configuration;
+    public function __construct(
+        Configuration $configuration,
+        EnhancedDatabase $database = null,
+        $controller = false
+    ) {
 
-    protected $data = array();
-
-    public function __construct(Configuration $configuration, EnhancedDatabase $database = null) {
-
-        $this->configuration = $configuration;
-
-        $this->initDatabase($this->configuration, $database);
-
-    }
-
-    public function configuration() {
-
-        return $this->configuration;
-
-    }
-
-    public function toArray() {
-
-        return $this->data;
+        parent::__construct(
+            $configuration,
+            self::$element_schema,
+            array_keys(self::$element_attributes),
+            $controller === true ? self::$element_controller : self::$element_view,
+            $database
+        );
 
     }
 
